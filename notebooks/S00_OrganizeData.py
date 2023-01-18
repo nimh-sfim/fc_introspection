@@ -8,9 +8,9 @@
 #       format_version: '1.5'
 #       jupytext_version: 1.12.0
 #   kernelspec:
-#     display_name: Dyneusr + NiMare (Dec 2021
+#     display_name: FC Instrospection (Jan 2023)
 #     language: python
-#     name: myenv
+#     name: fc_introspection
 # ---
 
 # # Dataset Description
@@ -81,13 +81,20 @@ import json
 import os.path as osp
 from   collections import OrderedDict
 
-PRJ_DIR         = '/data/SFIMJGC_Introspec/prj2021_dyneusr/'
-ORIG_FMRI_DIR   = '/data/DSST/MPI_LEMON/ds000221-download/'
-ORIG_BEHAV_DIR  = '/data/SFIMJGC_Introspec/lsd_dataset/behavioral/'
+from utils.basics import PRJ_DIR, ORIG_BEHAV_DIR, ORIG_FMRI_DIR
+
+# ***
+# ## 1. Download the behavioral data from the link in Mendes et al. 2019 paper
+#
+# Prior to running the next set of cells make sure to download the behavioral data associated with the MPI dataset from this location: https://dataverse.harvard.edu/dataset.xhtml?persistentId=doi:10.7910/DVN/VMJ6NV
+#
+# Next, unzip the contents of the downloaded file into ```ORIG_BEHAV_DIR```
+
+# ## 2. Create paths to all files/folders of interest
 
 # +
 orig_files_dir = osp.join(ORIG_BEHAV_DIR,'behavioral_data_MPILMBB','phenotype') # Path to the SNYCQ files
-proc_files_dir = osp.join(PRJ_DIR,'Resources')                                              # Output path for this notebook
+proc_files_dir = osp.join(PRJ_DIR,'resources/dataset_info')                     # Output path for this notebook
 
 # Input Files
 # ===========
@@ -102,7 +109,7 @@ anat_info_path      = osp.join(proc_files_dir,'NC_anat_info.csv')
 
 # + [markdown] tags=[]
 # ***
-# ## 1. Check basic Information in the sNYCQ downloaded files 
+# ## 3. Check basic Information in the sNYCQ downloaded files 
 # -
 
 print('++ Basic Information:')
@@ -133,7 +140,7 @@ print(' + Rest Scan IDs     [%d] : %s' % (len(rest_scanIDs),rest_scanIDs ))
 print(' + Rest Question IDs [%d]: %s' % (len(rest_questionIDs),rest_questionIDs))
 
 # ***
-# ## 2. Extract the description about when each questionaire took place
+# ## 4. Extract the description about when each questionaire took place
 
 scan_desc = {}
 print('++ When did the questionaire happened?')
@@ -148,7 +155,7 @@ for item in sample_question_names:
     print(' + %s --> %s' % (item_name, desc))
 
 # ***
-# ## 3. Extract the questions associated with each item of the questionaire
+# ## 5. Extract the questions associated with each item of the questionaire
 
 rest_question_desc = {}
 print('++ Questions in the SNYC-Questionaire:')
@@ -161,7 +168,7 @@ for i,item in enumerate(sample_question_names):
     print(' + [%d] %s --> %s' % (i+1,question, desc))
 
 # ***
-# ## 4. Reorganize the sNYCQ data obtained from the public repository
+# ## 6. Reorganize the sNYCQ data obtained from the public repository
 #
 # The original way the data is organized, there is one entry per subject, and then there is one column per question/per administration. So there are as many rows as subjects, but there are more columns than questions in a questionaire, becuase the same quesion will have multiple columns (as many times as the number of times the questionaire was administered). 
 
@@ -186,24 +193,28 @@ snycq_data.dropna(inplace=True)
 
 snycq_data.columns = ['Positive','Negative','Future','Past','Myself','People','Surroundings','Vigilance','Images','Words','Specific','Intrusive']
 
-print('Here is the data for the 693 runs that have a short-NYC-Q associated with them')
-snycq_data.head()
+snycq_data.head(10)
 
-#sbj_list = list(set(list(snycq_data.index.get_level_values(0))))
 sbj_list = list(snycq_data.index.get_level_values('Subject').drop_duplicates())
 print('++ INFO: Number of subjects with at least one run with SNYC data: %d' % len(sbj_list))
 
 # ***
-# ## 5. Save the newly formated questionaire answers to disk
+# ## 7. Save the newly formated questionaire answers to disk
 
 print ("++ INFO: Saving snycq_data to disk [%s]." % snycq_proc_path)
 snycq_data.to_csv(snycq_proc_path)
 
+# + [markdown] tags=[]
 # ***
 #
-# ## 6. Write to disk a list of subjects with at least one valid rest + SNYCQ run
+# ## 8. Write to disk a list of subjects with at least one valid rest + SNYCQ run
 #
-# This is the list of subjects, for which according to the SNYCQ there is data of interest for us to analyze. It is only for these subjects that we will attempt the pre-processing of their anatomical and functional data. Those analyses may fail for a subset of them (e.g., missing data, freesurfer errors). We will remove the entries for these "bad" scans from the SNYCQ dataframe in a later notebook prior to any analyses of the SNYCQ data.
+# This is the list of subjects, for which according to the SNYCQ there is data of interest for us to analyze. 
+#
+# It is only for these subjects that we will attempt the pre-processing of their anatomical and functional data. 
+#
+# Those analyses may fail for a subset of them (e.g., missing data, freesurfer errors). We will remove the entries for these "bad" scans from the SNYCQ dataframe in a later notebook prior to any analyses of the SNYCQ data.
+# -
 
 # List of subjects with at least one resting-state run that has sNYCQ
 # For these subjects, I will need to run the structural pre-processing pipeline
@@ -215,9 +226,13 @@ with open(final_sbj_list_path, 'w') as filehandle:
 print('++ INFO: Subject IDs available at [%s]' % final_sbj_list_path)
 
 # ***
-# ## 7. Get information about when was anat acquired
+# ## 9. Get information about when was anat acquired
 #
-# As some subjects participated in both parts of the Mind-Body-Brain study, there are subjects for whom the anatomical data is located under ses-01, and for others under ses-02. The following cell creates a new dataframe with information about the location of the anatomical scans for all 175 subjects. We will use this information in ```S03_NC_run_structural``` to provide the correct anatomical input to the structural pre-processing pipeline.
+# As some subjects participated in both parts of the Mind-Body-Brain study, there are subjects for whom the anatomical data is located under ses-01, and for others under ses-02. 
+#
+# The following cell creates a new dataframe with information about the location of the anatomical scans for all 175 subjects. 
+#
+# We will use this information in ```S03_NC_run_structural``` to provide the correct anatomical input to the structural pre-processing pipeline.
 
 anat_loc_df = pd.DataFrame(index=subjects_to_analyze,columns=['ses-01','ses-02','anat_path'])
 anat_loc_df.index = anat_loc_df.index.rename('subject')
