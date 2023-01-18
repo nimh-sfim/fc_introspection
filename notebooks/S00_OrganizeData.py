@@ -15,19 +15,7 @@
 
 # # Dataset Description
 #
-# This notebook helps us get a basic understanding of the components of the MPI dataset that will be used in this project. Here we are only interested in the NC subset becuase it contains the resting-state scans that were followed by the short NYCQ.
-#
-# This notebook will generate the following output files in the ```Resources``` folder:
-#
-# * ```SNYCQ_Preproc.csv```: dataframe with responses to SNYCQ administered only following resting state scans. Subjects with no responses have been removed. Data re-sorted so there is one row per scan (693) and one column per question (12). New meaningful labels for each quesion.
-# * ```NC_sbj_rest_and_snycq.txt```: text file with the list of subjects that have at least one resting-state scan with SNYCQ answers. These deserve attempting pre-processing of their anatomical data.
-#
-# * ```NC_anat_info.csv```: table with information regarding the location of the anatomical data for each subject. This is necessary becuase the anatomical scan was not acquired on the same session for all subjects.
-#
-#
-# ***
-#
-# ### s-NYCQ: When was it used?
+# ## s-NYCQ: When was it used?
 #
 # The s-NYCQ was administered in 7 different occasions: 
 #
@@ -37,24 +25,21 @@
 #
 # Here we will use only the questionnaires administered following each resting state scan.
 #
-# ***
-#
-# ### s-NYCQ: Content/Structure
+# ## s-NYCQ: Content/Structure
 #
 # Desciption of the sNYCQ - as described in <a href='https://www.nature.com/articles/sdata2018307'>Mendes et al. (2019)</a>:
 #
 # * sNYCQ is similar to NYC-Q, but only includes 12 questions (instead of 31).
-# * sNYCQ also attempts to measure the form and content of mind-wandering.
+# * sNYCQ also attempts to measure the form and content of mind-wandering (as it is the case with the original version of the NYC-Q).
 # * sNYCQ was administered digitally (while in the scanner) using a digital format of a scale bar:
 #     * Resolution = increments of 5%
 #     * 0% = "describes my thoughts not at all"
 #     * 100% = "describes my thoughts completely"
 #
-# **<u>NOTE</u>**: Although <a href='https://www.nature.com/articles/sdata2018307'>Mendes et al. (2019)</a> mentions that this shorter version of the NYC-Q was previosly used by <a href='https://journals.plos.org/plosone/article?id=10.1371/journal.pone.0077554'>Ruby et al. (2013)</a>, that is not correct. Ruby et al. only used 9 questions (not 12 as in here), and their questions were about content and mood, which is an additional difference.
+# **<u>NOTE</u>**: Although <a href='https://www.nature.com/articles/sdata2018307'>Mendes et al. (2019)</a> mentions that this shorter version of the NYC-Q was previosly used by <a href='https://journals.plos.org/plosone/article?id=10.1371/journal.pone.0077554'>Ruby et al. (2013)</a>, that is not exactly correct. Ruby et al. only used 9 questions (not 12 as in here), and their questions were about content and mood, which is an additional difference.
 #
-# ***
 #
-# ### MPI-Dataset: Subject / Scan counts
+# ## MPI-Dataset: Subject / Scan counts
 #
 # * MPI Mind-Brain-Body Dataset total number of subjects: 318*
 # * LEMON (ses-01) number of subjects: 228 subjects
@@ -76,6 +61,16 @@
 # ***
 
 # # Description of this notebook
+# This notebook helps us get a basic understanding of the components of the MPI dataset that will be used in this project. Here we are only interested in the NC subset becuase it contains the resting-state scans that were followed by the short NYCQ.
+#
+# This notebook will generate the following output files in the ```resources/dataset_info``` folder:
+#
+# * ```SNYCQ_Preproc.csv```: dataframe with responses to SNYCQ administered only following resting state scans. Subjects with no responses have been removed. Data re-sorted so there is one row per scan (693) and one column per question (12). New meaningful labels for each quesion.
+# * ```NC_sbj_rest_and_snycq.txt```: text file with the list of subjects that have at least one resting-state scan with SNYCQ answers. These deserve attempting pre-processing of their anatomical data.
+#
+# * ```NC_anat_info.csv```: table with information regarding the location of the anatomical data for each subject. This is necessary becuase the anatomical scan was not acquired on the same session for all subjects.
+#
+# #### Notes/Facts to keep in mind
 #
 # This notebook assumes you have a local copy of the NC portion of the Leipzing Mind-Brain-Body dataset located in folder ```ORIG_FMRI_DIR```
 #
