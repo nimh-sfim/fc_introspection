@@ -11,6 +11,7 @@ ORIG_BEHAV_DIR  = osp.join(PRJ_DIR,'downloads','behavioral')
 # Code folders
 NOTEBOOKS_DIR = osp.join(PRJ_DIR,'code','fc_introspection','notebooks')
 SCRIPTS_DIR   = osp.join(PRJ_DIR,'code','fc_introspection','bash')
+PREPROCESSING_NOTES_DIR = osp.join(PRJ_DIR,'code','fc_introspection','resources','preprocessing_notes')
 
 # Resources folders
 RESOURCES_DINFO_DIR = osp.join(PRJ_DIR,'resources/dataset_info')
