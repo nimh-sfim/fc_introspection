@@ -18,5 +18,6 @@ PREPROCESSING_NOTES_DIR = osp.join(PRJ_DIR,'code','fc_introspection','resources'
 RESOURCES_DINFO_DIR = osp.join(PRJ_DIR,'resources/dataset_info')
 
 # QA Configuration
-FINAL_NUM_VOLS    = 652 # Number of volumes in fully pre-processed runs
-REL_MOT_THRESHOLD = 0.2 # Maximum Relative Displacement (in mm)
+FINAL_NUM_VOLS     = 652 # Number of volumes in fully pre-processed runs
+REL_MOT_THRESHOLD  = 0.2 # Maximum Relative Displacement (in mm)
+MAX_CENSOR_PERCENT = 30  # Maximum percentage of censored volumes accepted per scan
