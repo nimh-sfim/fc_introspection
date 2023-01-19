@@ -81,7 +81,7 @@ import json
 import os.path as osp
 from   collections import OrderedDict
 
-from utils.basics import PRJ_DIR, ORIG_BEHAV_DIR, ORIG_FMRI_DIR
+from utils.basics import PRJ_DIR, ORIG_BEHAV_DIR, ORIG_FMRI_DIR, RESOURCES_DINFO_DIR
 
 # ***
 # ## 1. Download the behavioral data from the link in Mendes et al. 2019 paper
@@ -93,8 +93,8 @@ from utils.basics import PRJ_DIR, ORIG_BEHAV_DIR, ORIG_FMRI_DIR
 # ## 2. Create paths to all files/folders of interest
 
 # +
-orig_files_dir = osp.join(ORIG_BEHAV_DIR,'behavioral_data_MPILMBB','phenotype') # Path to the SNYCQ files
-proc_files_dir = osp.join(PRJ_DIR,'resources/dataset_info')                     # Output path for this notebook
+orig_files_dir      = osp.join(ORIG_BEHAV_DIR,'behavioral_data_MPILMBB','phenotype') # Path to the SNYCQ files
+RESOURCES_DINFO_DIR = osp.join(PRJ_DIR,'resources/dataset_info')                     # Output path for this notebook
 
 # Input Files
 # ===========
@@ -103,9 +103,9 @@ snycq_json_path = osp.join(orig_files_dir,'SNYCQ.json')
 
 # Output Files
 # ============
-snycq_proc_path     = osp.join(proc_files_dir,'SNYCQ_Preproc.csv')
-final_sbj_list_path = osp.join(proc_files_dir,'NC_withSNYCQ_subjects.txt')
-anat_info_path      = osp.join(proc_files_dir,'NC_anat_info.csv')
+snycq_proc_path     = osp.join(RESOURCES_DINFO_DIR,'SNYCQ_Preproc.csv')
+final_sbj_list_path = osp.join(RESOURCES_DINFO_DIR,'NC_withSNYCQ_subjects.txt')
+anat_info_path      = osp.join(RESOURCES_DINFO_DIR,'NC_anat_info.csv')
 
 # + [markdown] tags=[]
 # ***
