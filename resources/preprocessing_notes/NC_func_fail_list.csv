@@ -1,0 +1,14 @@
+﻿Subject,Run,reason for failure
+sub-010020,post-ses-02-run-01-acq-AP,no ses-02 data available
+sub-010020,post-ses-02-run-02-acq-AP,no ses-02 data available
+sub-010020,post-ses-02-run-01-acq-PA,no ses-02 data available
+sub-010020,post-ses-02-run-02-acq-PA,no ses-02 data available
+sub-010061,post-ses-02-run-01-acq-AP,no ses-02 data available
+sub-010061,post-ses-02-run-02-acq-AP,no ses-02 data available
+sub-010061,post-ses-02-run-01-acq-PA,no ses-02 data available
+sub-010061,post-ses-02-run-02-acq-PA,no ses-02 data available
+sub-010138,post-ses-02-run-01-acq-AP,missing fmap file magnitude2 run2
+sub-010138,post-ses-02-run-02-acq-AP,missing fmap file magnitude2 run2
+sub-010138,post-ses-02-run-01-acq-PA,missing fmap file magnitude2 run2
+sub-010138,post-ses-02-run-02-acq-PA,missing fmap file magnitude2 run2
+sub-010201,post-ses-02-run-02-acq-PA,missing acquisitions
