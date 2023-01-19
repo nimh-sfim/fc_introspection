@@ -1,0 +1,26 @@
+﻿Subject,func_scans,reason
+sub-010049,4,Hypersensitivity in white matter in T2 image
+sub-010085,4,White matter segmentation nipype error 
+sub-010092,4,White matter segmentation nipype error
+sub-010088,4,White matter segmentation nipype error
+sub-010051,4,White matter segmentation nipype error
+sub-010048,4,White matter segmentation nipype error
+sub-010057,4,White matter segmentation nipype error
+sub-010006,4,White matter segmentation nipype error
+sub-010086,4,White matter segmentation nipype error
+sub-010055,4,White matter segmentation nipype error
+sub-010044,4,White matter segmentation nipype error
+sub-010205,4,Anatomical preprocessing timed out (48 hours +)
+sub-010045,4,Anatomical preprocessing timed out (48 hours +)
+sub-010087,1,Anatomical preprocessing timed out (48 hours +)
+sub-010090,4,Skull stripping failed
+sub-010050,4,Skull stripping failed
+sub-010031,4,Skull stripping failed
+sub-010046,4,Skull stripping failed
+sub-010153,4,Skull stripping failed
+sub-010074,3,Skull stripping failed
+sub-010093,4,Skull stripping failed
+sub-010040,4,Skull stripping failed
+sub-010059,4,Skull stripping failed
+sub-010041,4,Skull stripping failed
+sub-010079,4,Skull stripping failed and Missing session 2 functional data
