@@ -6,9 +6,9 @@
 #       extension: .py
 #       format_name: light
 #       format_version: '1.5'
-#       jupytext_version: 1.12.0
+#       jupytext_version: 1.14.4
 #   kernelspec:
-#     display_name: FC Instrospection (Jan 2023)
+#     display_name: FC Introspection (Jan 2023)
 #     language: python
 #     name: fc_introspection
 # ---
@@ -42,19 +42,6 @@ logs_folder    = osp.join(PRJ_DIR,'Logs.{username}'.format(username=username))
                           
 anat_info_path = osp.join(RESOURCES_DINFO_DIR,'NC_anat_info.csv')
 swarm_path     = osp.join(swarm_folder,'S01_NC_run_structural.SWARM.sh')
-
-# + active=""
-# project_folder = '/data/SFIMJGC_Introspec/prj2021_dyneusr/'
-# scripts_folder = osp.join(project_folder,'Notebooks')
-# proc_files_dir = '/data/SFIMJGC_Introspec/prj2021_dyneusr/Resources/'
-#
-# #user specific folders
-# #=====================
-# swarm_folder   = osp.join(project_folder,'SwarmFiles.{username}'.format(username=username))
-# logs_folder    = osp.join(project_folder,'Logs.{username}'.format(username=username))         
-#                           
-# anat_info_path = osp.join(proc_files_dir,'NC_anat_info.csv')
-# swarm_path     = osp.join(swarm_folder,'S01_NC_run_structural.SWARM.sh')
 # -
 
 # create user specific folders if needed
@@ -110,5 +97,3 @@ for sbj,row in anat_info.iterrows():
                                                                                                                                              scripts_folder=SCRIPTS_DIR))
     swarm_file.write('\n')
 swarm_file.close()
-
-
