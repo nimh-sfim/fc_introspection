@@ -6,9 +6,9 @@
 #       extension: .py
 #       format_name: light
 #       format_version: '1.5'
-#       jupytext_version: 1.12.0
+#       jupytext_version: 1.14.4
 #   kernelspec:
-#     display_name: FC Instrospection (Jan 2023)
+#     display_name: FC Introspection (Jan 2023)
 #     language: python
 #     name: fc_introspection
 # ---
@@ -24,12 +24,11 @@ import os.path as osp
 import os
 from datetime import datetime
 import getpass
-from utils.basics import PRJ_DIR, NOTEBOOKS_DIR, SCRIPTS_DIR, RESOURCES_DINFO_DIR, PREPROCESSING_NOTES_DIR
+from utils.basics import PRJ_DIR, SCRIPTS_DIR, RESOURCES_DINFO_DIR
+from utils.basics import get_sbj_scan_list
 print('++ INFO: Project Dir:                  %s' % PRJ_DIR) 
-print('++ INFO: Notebooks Dir:                %s' % NOTEBOOKS_DIR) 
 print('++ INFO: Bash Scripts Dir:             %s' % SCRIPTS_DIR)
 print('++ INFO: Resources (Dataset Info) Dir: %s' % RESOURCES_DINFO_DIR)
-print('++ INFO: Pre-processing Notes Dir:     %s' % PREPROCESSING_NOTES_DIR)
 
 username = getpass.getuser()
 print('++ INFO: user working now --> %s' % username)
@@ -50,31 +49,13 @@ if not osp.exists(logs_folder):
     print('++ INFO: New folder for log files created [%s]' % logs_folder)
 
 anat_info_path           = osp.join(RESOURCES_DINFO_DIR,'NC_anat_info.pkl')
-bad_struct_subjects_path = osp.join(RESOURCES_DINFO_DIR,'NC_struc_fail_list.csv')
 swarm_path               = osp.join(swarm_folder,'S02_NC_run_func_preproc.SWARM.sh')
 
 # ***
-# # 1. Load list of subjects with at least one rest run with accompanying SNYQ data
-
-sbj_list = (pd.read_csv(osp.join(RESOURCES_DINFO_DIR,'NC_withSNYCQ_subjects.txt'), header=None)[0]).tolist()
-print("++ INFO: Number of subjects: %s" % len(sbj_list))
-
-# ***
-# # 2. Load list of subjects that failed structural pre-processing
-
-bad_struct_sbj_df   = pd.read_csv(osp.join(PREPROCESSING_NOTES_DIR,'NC_struct_fail_list.csv'))
-bad_struct_sbj_list = list(bad_struct_sbj_df['Subject'].values)
-bad_struct_sbj_df.head()
-print("++ INFO: Number of subjects with incomplete structural pre-processing:                          %d subjects" % len(bad_struct_sbj_list))
-print("++ INFO: Number of rest scans that will be removed due to incomplete structural pre-processing: %d scans " % bad_struct_sbj_df['func_scans'].sum())
-
-# ***
-# # 3. Don't attempt functional pre-processing on subjects that failed the structural
 #
-# If the structual pre-processing failed for a subject, we will not be able to complete our analysis. For that reason, we will not attempt functional pre-processing of scans from subjects with failed anatomical scans
+# # 1. Gather information about what scans/subjects completed structural pre-processing
 
-sbj_list = [sbj for sbj in sbj_list if sbj not in bad_struct_sbj_list]
-print('++ INFO: Number of subjects for which we will attempt functional pre-processing: %d' % len(sbj_list))
+sbj_list, scan_list, SNYCQ_data = get_sbj_scan_list('post_struct')
 
 # ***
 # # 2. Create Log Directory for swarm jobs
