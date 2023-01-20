@@ -23,39 +23,18 @@ import os.path as osp
 import hvplot.pandas
 import holoviews as hv
 
-from utils.basics import DATA_DIR, RESOURCES_DINFO_DIR, PREPROCESSING_NOTES_DIR
+from utils.basics import DATA_DIR, RESOURCES_DINFO_DIR, PREPROCESSING_NOTES_DIR, BAD_MOTION_LIST_PATH
 from utils.basics import REL_MOT_THRESHOLD, FINAL_NUM_VOLS, MAX_CENSOR_PERCENT
+from utils.basics import get_sbj_scan_list
 
-# # 1. Load Original SNYCQ Dataframe with all 693 entries
+# # 1. Load list of scans that completed struct and func pre-processing
 
-SNYCQ_data=pd.read_csv(osp.join(RESOURCES_DINFO_DIR, 'SNYCQ_Preproc.csv'), index_col=['Subject','Run'])
-print('++ INFO: SNYCQ Dataframe shape = %s' % str(SNYCQ_data.shape))
-SNYCQ_data.sample(4)
-
-# # 2. Remove entries for scans associated with subjects that failed anatomical pre-processing
-
-struct_fail_list = pd.read_csv(osp.join(PREPROCESSING_NOTES_DIR, 'NC_struct_fail_list.csv'))
-sbj_to_remove    = struct_fail_list['Subject'].unique()
-print('++ INFO: Number of subjects to remove due to incomplete struc preproc = %d' % len(sbj_to_remove))
-
-SNYCQ_data = SNYCQ_data.drop(SNYCQ_data.loc[sbj_to_remove,:].index)
-print('++ INFO: Number of remaining scans: %d scans' % SNYCQ_data.shape[0])
-print('++ INFO: Number of subjects with at least one scan still available: %d subjects' % len(SNYCQ_data.reset_index()['Subject'].unique()))
+sbj_list, scan_list, SNYCQ_data = get_sbj_scan_list('post_funct')
 
 # ***
-# # 3. Remove entries for scans with issues during functional pre-preprocessing
-
-func_fail_list             = pd.read_csv(osp.join(PREPROCESSING_NOTES_DIR, 'NC_func_fail_list.csv'), index_col=['Subject','Run'])
-print('++ INFO: Number of scans to remove due to failed func preproc = %d' % len(func_fail_list))
-
-SNYCQ_data = SNYCQ_data.drop(func_fail_list.index)
-print('++ INFO: Number of remaining scans:                                 %d scans' % SNYCQ_data.shape[0])
-print('++ INFO: Number of subjects with at least one scan still available: %d subjects' % len(SNYCQ_data.reset_index()['Subject'].unique()))
-
-# ***
-# # 4. Discard scans with excessive motion
+# # 2. Discard scans with excessive motion
 #
-# ## 4.1 Load Relative Motion Traces
+# ## 2.1 Load Relative Motion Traces
 
 motion_df = pd.DataFrame(index=SNYCQ_data.index,columns=np.arange(651))
 for sbj,run in motion_df.index:
@@ -68,7 +47,7 @@ for sbj,run in motion_df.index:
 
 print('++ INFO: Shape of motion_df = %s' % str(motion_df.shape))
 
-# ## 4.2 Search for volumes with excessive motion
+# ## 2.2 Search for volumes with excessive motion
 #
 # For every volume with relative motion above the threshold, we mark as volumes to be censored that volume, the one before and the following two.
 
@@ -113,8 +92,9 @@ print('++ INFO: Number of scans to remove due to excessive motion:              
 print('++ INFO: Number of remaining scans:                                                 %d scans' % SNYCQ_data.shape[0])
 print('++ INFO: Number of subjects remaining after removal of scans with excessive motion: %d subjects' % len(SNYCQ_data.reset_index()['Subject'].unique()))
 
-# ## 4.3. Write list of scans with excessive motion to disk
+# ## 2.3. Write list of scans with excessive motion to disk
 
-output_path = osp.join(PREPROCESSING_NOTES_DIR,'NC_func_too_much_motion_list.csv')
-scans_to_remove_due_to_excessive_motion.to_csv(output_path)
-print('++ INFO: List of scans with excessive motion written to disk: [%s]' % output_path)
+scans_to_remove_due_to_excessive_motion.to_csv(BAD_MOTION_LIST_PATH)
+print('++ INFO: List of scans with excessive motion written to disk: [%s]' % BAD_MOTION_LIST_PATH)
+
+
