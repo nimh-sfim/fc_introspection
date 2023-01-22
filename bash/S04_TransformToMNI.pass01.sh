@@ -60,7 +60,7 @@ antsApplyTransforms --default-value 0 --float 0 \
     
 # Transform Motion Corrected Timeseries into MNI space (4.2G)
 # ===========================================================
-echo "++ INFO: Running ANTs (anat --> MNI transformation in one step)"
+echo "++ INFO: Running ANTs (volreg -> MNI transformation in one step)"
 echo "++ ------------------------------------------------------------"
 antsApplyTransforms --default-value 0 --float 0 \
                     --input ${INPUT_DIR}/rest2anat.nii.gz \
