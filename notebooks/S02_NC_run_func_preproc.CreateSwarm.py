@@ -48,7 +48,6 @@ if not osp.exists(logs_folder):
     os.makedirs(logs_folder)
     print('++ INFO: New folder for log files created [%s]' % logs_folder)
 
-anat_info_path           = osp.join(RESOURCES_DINFO_DIR,'NC_anat_info.pkl')
 swarm_path               = osp.join(swarm_folder,'S02_NC_run_func_preproc.SWARM.sh')
 
 # ***
