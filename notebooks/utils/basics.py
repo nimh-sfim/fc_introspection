@@ -33,7 +33,7 @@ BAD_MOTION_LIST_PATH = osp.join(PREPROCESSING_NOTES_DIR,'NC_func_too_much_motion
 
 # Parcellation Configuration
 # ==========================
-ATLASES_DIR = ''
+ATLASES_DIR = osp.join(PRJ_DIR,'atlases')
 ATLAS_NAME  = 'Schaefer2018_200Parcels_7Networks'
 ATLAS_PATH  = osp.join(ATLASES_DIR,ATLAS_NAME)
 
