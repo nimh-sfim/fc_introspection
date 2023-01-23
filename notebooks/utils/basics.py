@@ -30,6 +30,13 @@ ANAT_PATHINFO_PATH   = osp.join(RESOURCES_DINFO_DIR,'NC_anat_info.csv')         
 BAD_STPROC_LIST_PATH = osp.join(PREPROCESSING_NOTES_DIR, 'NC_struct_fail_list.csv') # List of scans that failed structural pre-processing
 BAD_FNPROC_LIST_PATH = osp.join(PREPROCESSING_NOTES_DIR, 'NC_func_fail_list.csv')   # List of scans that failed functional pre-processing
 BAD_MOTION_LIST_PATH = osp.join(PREPROCESSING_NOTES_DIR,'NC_func_too_much_motion_list.csv') # List of scans with excessive motion
+
+# Parcellation Configuration
+# ==========================
+ATLASES_DIR = ''
+ATLAS_NAME  = 'Schaefer2018_200Parcels_7Networks'
+ATLAS_PATH  = osp.join(ATLASES_DIR,ATLAS_NAME)
+
 # Functions
 
 def get_sbj_scan_list(when='orig', return_snycq=True):
