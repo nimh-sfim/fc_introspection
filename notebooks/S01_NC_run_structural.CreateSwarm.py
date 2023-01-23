@@ -29,7 +29,7 @@ import os
 from datetime import datetime
 import getpass
 
-from utils.basics import NOTEBOOKS_DIR, RESOURCES_DINFO_DIR, PRJ_DIR, SCRIPTS_DIR
+from utils.basics import PRJ_DIR, SCRIPTS_DIR, ANAT_PATHINFO_PATH
 
 username = getpass.getuser()
 print('++ INFO: user working now --> %s' % username)
@@ -40,7 +40,6 @@ print('++ INFO: user working now --> %s' % username)
 swarm_folder   = osp.join(PRJ_DIR,'SwarmFiles.{username}'.format(username=username))
 logs_folder    = osp.join(PRJ_DIR,'Logs.{username}'.format(username=username))         
                           
-anat_info_path = osp.join(RESOURCES_DINFO_DIR,'NC_anat_info.csv')
 swarm_path     = osp.join(swarm_folder,'S01_NC_run_structural.SWARM.sh')
 # -
 
@@ -54,7 +53,7 @@ if not osp.exists(logs_folder):
 # ***
 # # 1. Load DataFrame with subject list and path to anatomical
 
-anat_info = pd.read_csv(anat_info_path, index_col='subject')
+anat_info = pd.read_csv(ANAT_PATHINFO_PATH, index_col='subject')
 
 anat_info.head()
 
