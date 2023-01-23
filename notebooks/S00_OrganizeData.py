@@ -6,9 +6,9 @@
 #       extension: .py
 #       format_name: light
 #       format_version: '1.5'
-#       jupytext_version: 1.12.0
+#       jupytext_version: 1.14.4
 #   kernelspec:
-#     display_name: FC Instrospection (Jan 2023)
+#     display_name: FC Introspection (Jan 2023)
 #     language: python
 #     name: fc_introspection
 # ---
@@ -81,7 +81,11 @@ import json
 import os.path as osp
 from   collections import OrderedDict
 
-from utils.basics import PRJ_DIR, ORIG_BEHAV_DIR, ORIG_FMRI_DIR, RESOURCES_DINFO_DIR
+from utils.basics import ORIG_BEHAV_DIR, ORIG_FMRI_DIR
+from utils.basics import ORIG_SNYCQ_PATH, SBJS_WITH_SNYCQ_PATH,ANAT_PATHINFO_PATH
+print('++ INFO [Output file]: Path to sorted SNYCQ responses:                                   %s' % ORIG_SNYCQ_PATH)
+print('++ INFO [Output file]: List of subjects with at least one scan accompanied by SNYCQ:     %s' % SBJS_WITH_SNYCQ_PATH)
+print('++ INFO [Output file]: Information about where to find anatomical scan for each subject: %s' % ANAT_PATHINFO_PATH)
 
 # ***
 # ## 1. Download the behavioral data from the link in Mendes et al. 2019 paper
@@ -94,7 +98,7 @@ from utils.basics import PRJ_DIR, ORIG_BEHAV_DIR, ORIG_FMRI_DIR, RESOURCES_DINFO
 
 # +
 orig_files_dir      = osp.join(ORIG_BEHAV_DIR,'behavioral_data_MPILMBB','phenotype') # Path to the SNYCQ files
-RESOURCES_DINFO_DIR = osp.join(PRJ_DIR,'resources/dataset_info')                     # Output path for this notebook
+#RESOURCES_DINFO_DIR = osp.join(PRJ_DIR,'resources/dataset_info')                     # Output path for this notebook
 
 # Input Files
 # ===========
@@ -103,9 +107,9 @@ snycq_json_path = osp.join(orig_files_dir,'SNYCQ.json')
 
 # Output Files
 # ============
-snycq_proc_path     = osp.join(RESOURCES_DINFO_DIR,'SNYCQ_Preproc.csv')
-final_sbj_list_path = osp.join(RESOURCES_DINFO_DIR,'NC_withSNYCQ_subjects.txt')
-anat_info_path      = osp.join(RESOURCES_DINFO_DIR,'NC_anat_info.csv')
+#ORIG_SNYCQ_PATH     = osp.join(RESOURCES_DINFO_DIR,'SNYCQ_Preproc.csv')
+#SBJS_WITH_SNYCQ_PATH = osp.join(RESOURCES_DINFO_DIR,'NC_withSNYCQ_subjects.txt')
+#ANAT_PATHINFO_PATH      = osp.join(RESOURCES_DINFO_DIR,'NC_anat_info.csv')
 
 # + [markdown] tags=[]
 # ***
@@ -201,8 +205,8 @@ print('++ INFO: Number of subjects with at least one run with SNYC data: %d' % l
 # ***
 # ## 7. Save the newly formated questionaire answers to disk
 
-print ("++ INFO: Saving snycq_data to disk [%s]." % snycq_proc_path)
-snycq_data.to_csv(snycq_proc_path)
+print ("++ INFO: Saving snycq_data to disk [%s]." % ORIG_SNYCQ_PATH)
+snycq_data.to_csv(ORIG_SNYCQ_PATH)
 
 # + [markdown] tags=[]
 # ***
@@ -220,10 +224,10 @@ snycq_data.to_csv(snycq_proc_path)
 # For these subjects, I will need to run the structural pre-processing pipeline
 subjects_to_analyze = list(OrderedDict.fromkeys(snycq_data.index.get_level_values('Subject')))
 print('++ INFO: Number of subjects with at least 1 rest + sNYCQ: %s subjects' % len(subjects_to_analyze))
-with open(final_sbj_list_path, 'w') as filehandle:
+with open(SBJS_WITH_SNYCQ_PATH, 'w') as filehandle:
     for listitem in subjects_to_analyze:
         filehandle.write('%s\n' % listitem)
-print('++ INFO: Subject IDs available at [%s]' % final_sbj_list_path)
+print('++ INFO: Subject IDs available at [%s]' % SBJS_WITH_SNYCQ_PATH)
 
 # ***
 # ## 9. Get information about when was anat acquired
@@ -255,7 +259,7 @@ print(' + Number of subjects with anat in each session:')
 print(anat_loc_df.sum())
 print(' + Number of subjects with 2 anatomicals: %d' % anat_loc_df[anat_loc_df.drop('anat_path',axis=1).sum(axis=1)==2].shape[0])
 anat_loc_df[anat_loc_df.drop('anat_path',axis=1).sum(axis=1)==2]
-print('++ INFO: This information is now available at [%s]' % anat_info_path)
-anat_loc_df.to_csv(anat_info_path)
+print('++ INFO: This information is now available at [%s]' % ANAT_PATHINFO_PATH)
+anat_loc_df.to_csv(ANAT_PATHINFO_PATH)
 
 anat_loc_df.head()

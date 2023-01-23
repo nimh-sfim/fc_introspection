@@ -7,16 +7,15 @@ PRJ_DIR              = osp.join(BIOWULF_SHARE_FOLDER,'2023_fc_introspection')
 DATA_DIR             = osp.join(BIOWULF_SHARE_FOLDER,'pdn')
 
 # Folders with original data (fmri and behav)
-ORIG_FMRI_DIR        = '/data/DSST/MPI_LEMON/ds000221-download/'
+ORIG_FMRI_DIR   = '/data/DSST/MPI_LEMON/ds000221-download/'
 ORIG_BEHAV_DIR  = osp.join(PRJ_DIR,'downloads','behavioral')
 
 # Code folders
-NOTEBOOKS_DIR = osp.join(PRJ_DIR,'code','fc_introspection','notebooks')
-SCRIPTS_DIR   = osp.join(PRJ_DIR,'code','fc_introspection','bash')
+NOTEBOOKS_DIR           = osp.join(PRJ_DIR,'code','fc_introspection','notebooks')
+SCRIPTS_DIR             = osp.join(PRJ_DIR,'code','fc_introspection','bash')
 PREPROCESSING_NOTES_DIR = osp.join(PRJ_DIR,'code','fc_introspection','resources','preprocessing_notes')
-
-# Resources folders
-RESOURCES_DINFO_DIR = osp.join(PRJ_DIR,'resources/dataset_info')
+RESOURCES_DINFO_DIR     = osp.join(PRJ_DIR,'code','fc_introspection','resources','dataset_info')
+PROC_BEHAV_DIR          = osp.join(PRJ_DIR,'data','snycq')
 
 # QA Configuration
 FINAL_NUM_VOLS     = 652 # Number of volumes in fully pre-processed runs
@@ -25,7 +24,9 @@ MAX_CENSOR_PERCENT = 30  # Maximum percentage of censored volumes accepted per s
 
 # Paths to files we use often
 # ===========================
-ORIG_SNYCQ_PATH      = osp.join(RESOURCES_DINFO_DIR, 'SNYCQ_Preproc.csv')
+ORIG_SNYCQ_PATH      = osp.join(PROC_BEHAV_DIR, 'SNYCQ_Preproc.csv')                # Files with all SNYCQ answers compiled into a single dataframe
+SBJS_WITH_SNYCQ_PATH = osp.join(RESOURCES_DINFO_DIR,'NC_withSNYCQ_subjects.txt')    # List of subjects with at least one rest scan with SNYCQ
+ANAT_PATHINFO_PATH   = osp.join(RESOURCES_DINFO_DIR,'NC_anat_info.csv')             # Where to find anatomical for each subject (sess-01 or sess-02)
 BAD_STPROC_LIST_PATH = osp.join(PREPROCESSING_NOTES_DIR, 'NC_struct_fail_list.csv') # List of scans that failed structural pre-processing
 BAD_FNPROC_LIST_PATH = osp.join(PREPROCESSING_NOTES_DIR, 'NC_func_fail_list.csv')   # List of scans that failed functional pre-processing
 BAD_MOTION_LIST_PATH = osp.join(PREPROCESSING_NOTES_DIR,'NC_func_too_much_motion_list.csv') # List of scans with excessive motion
