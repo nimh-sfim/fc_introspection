@@ -15,7 +15,16 @@
 
 # # Description - Create Swarm File to run transformation to MNI pipeline on the preprocessed data
 #
-# This script creates the SWARM file to run the pipeline that will transform the data to MNI space, which is necessary for the following step of this project.
+# This script creates the swarm file that will perform the following steps on the functional scans:
+#
+# * Create scan specific tissue mask to extract compcorr regressors
+# * Scale the data to signal percent change
+# * Prepare regressors for bandpass filtering, motion and compcorr
+# * Perform nuissance regression.
+#
+# The name of the fully pre-processed files will be ```rest2mni.b0.scale.denoise.nii.gz```.
+#
+# By the end of running this code, you should have of these for each of the scans that passed all QAs.
 
 # +
 import pandas as pd
