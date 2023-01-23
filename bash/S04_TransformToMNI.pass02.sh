@@ -31,5 +31,13 @@ cd ALL_SCANS
 3dZeropad -overwrite -master all_mean.box.nii.gz -prefix all_mean.SS.boxed.nii.gz all_mean.SS.nii.gz
 3dZeropad -overwrite -master all_mean.box.nii.gz -prefix all_mean.mask.boxed.nii.gz all_mean.mask.nii.gz
 
+# Additionally we manually created a mask that is an large version of the ventricles, but has no CSF above the pial surface. This help us create the final
+# mask used for CompCorr in later stages. This mask is available in the extra_files folder of the repo and should be manually copied to ALL_SCANS folder
+# prior to running subsequent steps.
+
+echo "Additionally we manually created a mask that is an large version of the ventricles, but has no CSF above the pial surface. This help us create the final"
+echo "mask used for CompCorr in later stages. This mask is available in the extra_files folder of the repo and should be manually copied to ALL_SCANS folder "
+echo "prior to running subsequent steps."
+echo "========================================================================================================================================================"
 # Print completion message
 echo "++ INFO: Script finished correctly"
