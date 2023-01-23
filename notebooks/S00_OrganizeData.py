@@ -97,19 +97,13 @@ print('++ INFO [Output file]: Information about where to find anatomical scan fo
 # ## 2. Create paths to all files/folders of interest
 
 # +
+# Location of downloaded and unzipped beahvioral data
 orig_files_dir      = osp.join(ORIG_BEHAV_DIR,'behavioral_data_MPILMBB','phenotype') # Path to the SNYCQ files
-#RESOURCES_DINFO_DIR = osp.join(PRJ_DIR,'resources/dataset_info')                     # Output path for this notebook
 
 # Input Files
 # ===========
 snycq_data_path = osp.join(orig_files_dir,'SNYCQ.tsv')
 snycq_json_path = osp.join(orig_files_dir,'SNYCQ.json')
-
-# Output Files
-# ============
-#ORIG_SNYCQ_PATH     = osp.join(RESOURCES_DINFO_DIR,'SNYCQ_Preproc.csv')
-#SBJS_WITH_SNYCQ_PATH = osp.join(RESOURCES_DINFO_DIR,'NC_withSNYCQ_subjects.txt')
-#ANAT_PATHINFO_PATH      = osp.join(RESOURCES_DINFO_DIR,'NC_anat_info.csv')
 
 # + [markdown] tags=[]
 # ***
