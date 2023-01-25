@@ -8,9 +8,9 @@
 #       format_version: '1.5'
 #       jupytext_version: 1.14.4
 #   kernelspec:
-#     display_name: Dyneusr (Nov 2021)
+#     display_name: FC Introspection (Jan 2023)
 #     language: python
-#     name: dyneusr_nov2021
+#     name: fc_introspection
 # ---
 
 # # Description
