@@ -38,9 +38,12 @@ from scipy.spatial.distance import squareform
 from utils.basics import DATA_DIR, ATLAS_NAME, ATLASES_DIR
 from utils.plotting import hvplot_fc, plot_fc
 from sfim_lib.io.afni import load_netcc
-from scipy.spatial.distance import cosine, euclidean, correlation
+from scipy.spatial.distance import cosine      as cosine_distance
+from scipy.spatial.distance import correlation as correlation_distance
+from scipy.spatial.distance import euclidean   as euclidean_distance
 import seaborn as sns
 import panel as pn
+from sklearn.utils.validation import check_symmetric
 
 import os
 port_tunnel = int(os.environ['PORT2'])
@@ -86,17 +89,97 @@ for sbj,run in tqdm(scan_list):
 
 REFERENCE_fc = np.tanh(all_sfc_Z.mean(dim='Scan')).values
 
+# Put the matrix into a properly annotated DataFrame structure
+
+REFERENCE_fc = pd.DataFrame(REFERENCE_fc, columns=list(roi_info['ROI_Name']),index=list(roi_info['ROI_Name']))
+REFERENCE_fc.index.name   = 'ROI1'
+REFERENCE_fc.columns.name = 'ROI2'
+
+# Plot the sample mean (or Reference) FC matrix
+
 hvplot_fc(REFERENCE_fc, ATLASINFO_PATH, cbar_title='Average FC for the whole sample')
 
-# # 5. Compute Vectorized versions of all individual scan FC
+# ## 4.1. Vectorize Reference FC Matrix
+#
+# For many subsequent operations it is necessary to go back and forth between the full matrix and its vectorized version (e.g., only the values in the top triangular half). 
+#
+# The following code allows to do that tansformation and the retain information about the ROI pairs associated with each entry of the vectorized version of the matrices.
 
-Nrois  = REFERENCE_fc.shape[0]
-Nconns = int(Nrois * (Nrois-1) / 2)
+Nrois  = REFERENCE_fc.shape[0]          # Number of ROIs
+Nconns = int(Nrois * (Nrois-1) / 2)     # Number of Connections
+
+# This cell vectorized the REFERENCE matrix into a numpy array
 
 # Create a vectorized version of the sample mean FC
-np.fill_diagonal(REFERENCE_fc,0)
-REFERENCE_fc_VECT = squareform(REFERENCE_fc)
-assert Nconns == len(REFERENCE_fc_VECT)
+REFERENCE_fc_array = REFERENCE_fc.values.copy()
+np.fill_diagonal(REFERENCE_fc_array,0)              # scipy squareform only takes as input symmetric matrices with zeros on the diagonal
+REFERENCE_fc_VECT = squareform(REFERENCE_fc_array)
+assert Nconns == len(REFERENCE_fc_VECT)             # ensuring the output has the correct number of items
+
+# +
+# Code to ensure that there is agreement between using squareform and using trui to select the top triangle of a symmetric matrix
+# There are different ways in which one can go from symm matrix to vector. One can go up and down the columns or left to right on 
+# the rows. Scipy squareform does the latter. As we cannot use that function to vectorized our array with ROI names, we needed to
+# find an alternative based on np.triu. This cell is just a sanity check that our procedure for extracting conn names will be co-
+# rrect.
+
+example_square_mat   = np.array([[0,1,2,3,4],[1,0,5,6,7],[2,5,0,8,9],[3,6,8,0,10],[4,7,9,10,0]])
+top_triangle_idx_mat = np.triu(np.ones(example_square_mat.shape),1)
+top_triangle_idx_mat = top_triangle_idx_mat.astype(bool)
+selected_values_a    = example_square_mat[top_triangle_idx_mat]
+selected_values_b    = squareform(example_square_mat)
+#idx = idx.astype(bool)
+fig, axs = plt.subplots(1,3,figsize=(10,2))
+sns.heatmap(example_square_mat,   annot=True, square=True, ax=axs[0])
+sns.heatmap(top_triangle_idx_mat, annot=True, square=True, ax=axs[1])
+sns.heatmap([selected_values_a, selected_values_b], annot=True, ax=axs[2])
+# -
+
+# This cell will obtian the name of each connection in the vector, which we will subsequently used as an index to a pandas.Series structure that will hold the vectorized version of the Reference FC matrix
+
+conn_names = pd.DataFrame(index=range(Nrois), columns=range(Nrois))
+roi_names = roi_info['ROI_Name']
+for i,roi1 in enumerate(roi_names):
+    for j,roi2 in enumerate(roi_names):
+        conn_names.loc[i,j]=(roi1,roi2)
+conn_names_triu_idx_mat = np.triu(np.ones(conn_names.shape),1)
+conn_names_triu_idx_mat = conn_names_triu_idx_mat.astype(bool)
+conn_names_VECT = conn_names.values[conn_names_triu_idx_mat]
+
+REFERENCE_fc_VECT = pd.Series(REFERENCE_fc_VECT, index=conn_names_VECT)
+REFERENCE_fc_VECT.name = 'Sample FC'
+REFERENCE_fc_VECT.head(5)
+
+# ## 4.2. Create Sorting index for connections
+#
+# The interpretability of FC matrices and their vectorized versions can change significantly depending on how entries are sorted. The content of the matrix is the same, but its visual appearance can drastically change.
+#
+# To evaluate if there is any differences in across-subject variability between within- and across-network connections and/or connections between primary regions and those associated with hihgher order cognitive functions, the next cell creates a sorted index for the connections axis that we will use during plotting. In particular, we creare an index that lists first all intra-network connections, followed by connections between primary and higher order networks and finalized with connections between two regions from higher order cognitive networks. 
+
+anat_sorting            = [ ]
+anat_sorting_blocks     = [ ]
+net_names    = list(roi_info['Network'].unique())
+hm_names     = ['LH','RH']
+# Within Network Connections
+init = len(anat_sorting)
+for nw in net_names:
+    anat_sorting = anat_sorting + [(roi1,roi2) for roi1,roi2 in conn_names_VECT if (nw in roi1) and (nw in roi2)]
+end  = len(anat_sorting)
+anat_sorting_blocks.append(('Within',init,end))
+# Primary Vis / Som to everything else
+init = len(anat_sorting)
+for nw in ['Vis','SomMot']:
+    anat_sorting = anat_sorting + [(roi1,roi2) for roi1,roi2 in conn_names_VECT if ((roi1,roi2) not in anat_sorting) & ((nw in roi1) | (nw in roi2)) ]
+end  = len(anat_sorting)
+anat_sorting_blocks.append(('Primary <-> Higher',init,end))
+# Everything else
+init = len(anat_sorting)
+anat_sorting = anat_sorting + [(roi1,roi2) for roi1,roi2 in conn_names_VECT if ((roi1,roi2) not in anat_sorting)]
+end  = len(anat_sorting)
+anat_sorting_blocks.append(('Higher <-> Higher',init,end))
+anat_sorting_blocks
+
+# # 5. Compute Vectorized versions of all individual scan FC
 
 all_sfc_R_VECT = pd.DataFrame(index=np.arange(Nconns),columns=[sbj+'|'+run for sbj,run in scan_list])
 for sbj,run in tqdm(scan_list):
@@ -105,41 +188,90 @@ for sbj,run in tqdm(scan_list):
     np.fill_diagonal(this_scan_fc_matrix,0)
     this_scan_fc_vector = squareform(this_scan_fc_matrix)
     all_sfc_R_VECT[scan_label] = this_scan_fc_vector
+all_sfc_R_VECT.index        = conn_names_VECT
+all_sfc_R_VECT.index.name   = 'Connections'
+all_sfc_R_VECT.columns.name = 'Scans'
+all_sfc_R_VECT.head(5)
 
-# # 6. Compute Similarity to Mean (corr, cov, cosine) and get sorted list of scans
+# # 6. Compute Similarity to REFERENC Matrix (corr, cov, cosine) and get sorted list of scans
+#
+# First, we will compute the Pearson's Correlation between the vectorized version of the reference FC matrix and those from each individual scan
 
 corr_to_REFERENCE    = all_sfc_R_VECT.corrwith(pd.Series(REFERENCE_fc_VECT))
 corr_to_REFERENCE.name = 'R'
+
+# Second, we will compute the covariance
 
 cov_to_REFERENCE = pd.Series(dtype=float)
 for sbj,run in scan_list:
     scan_label = sbj+'|'+run
     aux        = all_sfc_R_VECT[scan_label]
     cov_to_REFERENCE[scan_label] = np.cov(REFERENCE_fc_VECT,aux)[0,1]
-cov_to_REFERENCE.name = 'Covariance'
+cov_to_REFERENCE.name = 'cov'
 
-cos_to_REFERENCE = pd.Series(dtype=float)
+# Third, we compute the Correlation distance (1-R): Dc = 0 (fully correlated) | Dc = 1 (not correlated) | Dc = 2 (anticorrelated)
+
+Dcor_to_REFERENCE = pd.Series(dtype=float)
 for sbj,run in scan_list:
     scan_label = sbj+'|'+run
     aux        = all_sfc_R_VECT[scan_label]
-    cos_to_REFERENCE[scan_label] = cosine(REFERENCE_fc_VECT,aux)
-cos_to_REFERENCE.name = 'Cosine'
+    Dcor_to_REFERENCE[scan_label] = correlation_distance(REFERENCE_fc_VECT,aux)
+Dcor_to_REFERENCE.name = 'Dr'
+
+# Fourth, we will compute the cosine distance: 0 = same vector (zero angle) | 1 = orthogonal (90 degrees) | 2 = oposite (180 degrees) ]
+
+Dcos_to_REFERENCE = pd.Series(dtype=float)
+for sbj,run in scan_list:
+    scan_label = sbj+'|'+run
+    aux        = all_sfc_R_VECT[scan_label]
+    Dcos_to_REFERENCE[scan_label] = cosine_distance(REFERENCE_fc_VECT,aux)
+Dcos_to_REFERENCE.name = 'Dcos'
+
+# Fifth, we will compute the euclidean distance
+
+Deuc_to_REFERENCE = pd.Series(dtype=float)
+for sbj,run in scan_list:
+    scan_label = sbj+'|'+run
+    aux        = all_sfc_R_VECT[scan_label]
+    Deuc_to_REFERENCE[scan_label] = euclidean_distance(REFERENCE_fc_VECT,aux)
+Deuc_to_REFERENCE.name = 'Deuc'
+
+# We will use these similarity and disimilarity metrix to sort scans (for visualization purposes)
 
 scan_list_sorted={'none':['|'.join([sbj,run]) for sbj,run in scan_list],
-                  'cosine':list(cos_to_REFERENCE.sort_values(ascending=False).index),
                   'correlation':list(corr_to_REFERENCE.sort_values(ascending=False).index),
-                  'covariance':list(cov_to_REFERENCE.sort_values(ascending=False).index)}
+                  'covariance':list(cov_to_REFERENCE.sort_values(ascending=False).index),
+                  'cosine distance':list(Dcos_to_REFERENCE.sort_values(ascending=False).index),
+                  'correlation distance':list(Dcor_to_REFERENCE.sort_values(ascending=False).index),
+                  'euclidean distance':list(Deuc_to_REFERENCE.sort_values(ascending=False).index),}
 
-sort_method_select = pn.widgets.Select(name='Sort Method', options=list(scan_list_sorted.keys()), value='none')
-@pn.depends(sort_method_select)
-def plot_carpet(sorting_method):
+# +
+scan_sort_method_select = pn.widgets.Select(name='Scan Sort Method', options=list(scan_list_sorted.keys()), value='none')
+conn_sort_method_select = pn.widgets.Select(name='Conn Sort Method', options=['none','network'],            value='none')
+
+@pn.depends(scan_sort_method_select,conn_sort_method_select)
+def plot_carpet(scan_sorting_method, conn_sort_method):
+    if conn_sort_method == 'none':
+        conn_list = list(all_sfc_R_VECT.index)
+    if conn_sort_method == 'network':
+        conn_list = anat_sorting
     fig, ax = plt.subplots(1,1,figsize=(20,5))
-    plot = sns.heatmap(all_sfc_R_VECT[scan_list_sorted[sorting_method]],cmap='RdBu_r', vmin=-.8, vmax=.8, xticklabels=False, yticklabels=False)
+    plot = sns.heatmap(all_sfc_R_VECT.loc[conn_list,scan_list_sorted[scan_sorting_method]],cmap='RdBu_r', vmin=-.8, vmax=.8, xticklabels=False, yticklabels=False)
     plot.set_xlabel('Scans', fontsize=14)
     plot.set_ylabel('Connections', fontsize=14)
+    ytick_locs, ytick_labs = [],[]
+    if conn_sort_method is 'network':
+        for name,init,end in anat_sorting_blocks:
+            ytick_locs = ytick_locs + [init + ((end-init)/2)]
+            ytick_labs = ytick_labs + [name]
+            plt.plot([0,Nconns],[end,end],'k--',lw=1)
+            plt.plot([0,Nconns],[init,init],'k--',lw=1)
+        ax.set_yticks(ytick_locs, fontsize=8);
+        ax.set_yticklabels(ytick_labs, fontsize=9, rotation=90, va='center'); 
     plt.close()
     return fig
-dashboard01 = pn.Column(sort_method_select,plot_carpet)
+dashboard01 = pn.Row(pn.Card(scan_sort_method_select,conn_sort_method_select,title='Options'),pn.Card(plot_carpet,title='Roaster of FC for the whole dataset'))
+# -
 
 dashboard01_server = dashboard01.show(port=port_tunnel,open=False)
 
@@ -147,12 +279,16 @@ dashboard01_server.stop()
 
 # # 7. Plot Distribution of correlatations towards the REFERENCE
 
-(corr_to_REFERENCE.hvplot.hist(bins=50, normed=True, title='Corr(Scan,REF)', xlabel='Correlation to Sample Mean', ylabel='Distribution', fontsize=14, xlim=(0,1), width=500) \
+((corr_to_REFERENCE.hvplot.hist(bins=50, normed=True, title='R(Scan,REF)', xlabel='Correlation to Sample Mean', ylabel='Distribution', fontsize=14, xlim=(0,1), width=500) \
 * corr_to_REFERENCE.hvplot.kde()) + \
 (cov_to_REFERENCE.hvplot.hist(bins=50, normed=True, title='Cov(Scan,REF)', xlabel='Covariance to Sample Mean', ylabel='Distribution', fontsize=14, width=500) \
 * cov_to_REFERENCE.hvplot.kde()) + \
-(cos_to_REFERENCE.hvplot.hist(bins=50, normed=True, title='Cosine(Scan,REF)', xlabel='Covariance to Sample Mean', ylabel='Distribution', fontsize=14, width=500) \
-* cos_to_REFERENCE.hvplot.kde())
+(Dcor_to_REFERENCE.hvplot.hist(bins=50, normed=True, title='Dcorr(Scan,REF)', xlabel='Correlation Distance to Sample Mean', ylabel='Distribution', fontsize=14, xlim=(0,1), width=500) \
+* Dcor_to_REFERENCE.hvplot.kde()) + \
+(Dcos_to_REFERENCE.hvplot.hist(bins=50, normed=True, title='Dcos(Scan,REF)', xlabel='Cosine Distance to Sample Mean', ylabel='Distribution', fontsize=14, width=500) \
+* Dcos_to_REFERENCE.hvplot.kde()) + \
+(Deuc_to_REFERENCE.hvplot.hist(bins=50, normed=True, title='Deuc(Scan,REF)', xlabel='Euclidean Distance to Sample Mean', ylabel='Distribution', fontsize=14, width=500) \
+* Deuc_to_REFERENCE.hvplot.kde())).cols(3)
 
 # # 8. Generate dashboard to explore all individual scan FC matrices
 #
@@ -164,19 +300,19 @@ rcParams.update({'figure.autolayout': True})
 
 Nscans          = len(scan_list)
 scan_selector   = pn.widgets.Player(name='Scan Number', start=0, end=Nscans-1, value=0, width=700)
-@pn.depends(scan_selector,sort_method_select)
+@pn.depends(scan_selector,scan_sort_method_select)
 def plot_one_scan(scan_num,sorting_method):
     aux_scan_list             = scan_list_sorted[sorting_method]
     scan_name                 = aux_scan_list[scan_num]
     sbj, run                  = scan_name.split('|')
     _,_,_,_,run_num,_,run_acq = (run).split('-')
-    scan_label = sbj + ',' + run_num+'_'+run_acq + ' | R = %.3f' % corr_to_REFERENCE[scan_name] + ' | Cos = %.3f' % cos_to_REFERENCE[scan_name] + ' | Cov = %.3f' % cov_to_REFERENCE[scan_name]
+    scan_label = sbj + ',' + run_num+'_'+run_acq + ' | R = %.3f' % corr_to_REFERENCE[scan_name]  + ' | Cov = %.2f' % cov_to_REFERENCE[scan_name] + ' | DCos = %.2f' % Dcos_to_REFERENCE[scan_name] + ' | DCor = %.2f' % Dcor_to_REFERENCE[scan_name] + ' | DEuc = %.2f' % Deuc_to_REFERENCE[scan_name]
     data = all_sfc_R.loc[scan_name].values
     fig  = plot_fc(data,ATLASINFO_PATH, figsize=(10,10))
     return pn.Card(pn.pane.Matplotlib(fig),title=scan_label,collapsible=False)
 
 
-dashboard = pn.Column(sort_method_select,scan_selector,plot_one_scan)
+dashboard = pn.Column(pn.Card(scan_sort_method_select,scan_selector,title='Options'),plot_one_scan)
 
 dashboard_server = dashboard.show(port=port_tunnel,open=False)
 
