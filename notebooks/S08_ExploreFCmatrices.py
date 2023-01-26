@@ -193,7 +193,7 @@ all_sfc_R_VECT.index.name   = 'Connections'
 all_sfc_R_VECT.columns.name = 'Scans'
 all_sfc_R_VECT.head(5)
 
-# # 6. Compute Similarity to REFERENC Matrix (corr, cov, cosine) and get sorted list of scans
+# # 6. Compute Similarity to REFERENCE Matrix (corr, cov, cosine) and get sorted list of scans
 #
 # First, we will compute the Pearson's Correlation between the vectorized version of the reference FC matrix and those from each individual scan
 
@@ -270,7 +270,7 @@ def plot_carpet(scan_sorting_method, conn_sort_method):
         ax.set_yticklabels(ytick_labs, fontsize=9, rotation=90, va='center'); 
     plt.close()
     return fig
-dashboard01 = pn.Row(pn.Card(scan_sort_method_select,conn_sort_method_select,title='Options'),pn.Card(plot_carpet,title='Roaster of FC for the whole dataset'))
+dashboard01 = pn.Row(pn.Card(scan_sort_method_select,conn_sort_method_select,title='Options'),pn.Card(plot_carpet,title='Carpet Plot of FC for the whole dataset'))
 # -
 
 dashboard01_server = dashboard01.show(port=port_tunnel,open=False)
