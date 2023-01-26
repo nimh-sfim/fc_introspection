@@ -154,12 +154,10 @@ dashboard01_server.stop()
 (cos_to_REFERENCE.hvplot.hist(bins=50, normed=True, title='Cosine(Scan,REF)', xlabel='Covariance to Sample Mean', ylabel='Distribution', fontsize=14, width=500) \
 * cos_to_REFERENCE.hvplot.kde())
 
-# # 7. Generate dashboard to explore all individual scan FC matrices
+# # 8. Generate dashboard to explore all individual scan FC matrices
 #
 # > **NOTE**: If you run the code within the notebook, the dashboard does not update when you hit play. Make sure to open it by clicking on the URL that the show command below returns
 
-import panel as pn
-import time
 # This is needed to ensure the labels are not cut when serving the matplotlib figures via pn.Column
 from matplotlib import rcParams
 rcParams.update({'figure.autolayout': True})
