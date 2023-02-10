@@ -13,24 +13,20 @@
 #     name: fc_introspection
 # ---
 
-# # Description - Create Swarm File to run transformation to MNI pipeline on the preprocessed data
+# # Description - Information and Code to prepare the atlases used in this work
 #
-# This notebook contians the code to extract representative timeseries for ROIs using the 7 Networks / 200 ROIs version of the Yeo Atlas.
+# For this paper we use a combination of two altases: Schaeffer 200 ROI atlas (for cortical regions) and AAL v2 atlas (for subcortical regions).
 #
-# First, we will prepare the atlas for its use in this work
+# This notebook will help you prepare final versions of the atlases that contain ROIs well within the imaging FOV of the sample and with ROIs numbered contigously. It will also help you generate accessory files with color, ROI ID and ROI location info needed for plotting and for sorting ROI by network membership.
 #
-# Next, we will run AFNI's program ```3dNetCorr``` to extract the represenative timeseries. This second step will be done via a swarm job.
-
+# By the end of this notebook, there will be two atlases of interest:
+#
+# * ```Schaefer2018_200Parcels_7Networks```: Atlase with 187 ROI distributed across 6 Yeo Networks (all ROIs from the Limbic network are removed due to FOV constrains)
+# * ```Schaefer2018_200Parcels_7Networks_AAL2```: Atlas with 195 ROIs that include the 187 from the atlas above plus 8 extra subcortical ROIs: L/R Thalamus, L/R Pallidum, L/R Caudate, L/R Putamen
+#
 # Prior to running this notebook you need to make sure the following variables are correctly set:
 #
 # 1. Assign the full path to the atlases folder to variable [```ATLASES_DIR``` in ```basics.py```](https://github.com/nimh-sfim/fc_introspection/blob/main/notebooks/utils/basics.py#L65).
-#
-# 2. Assign the name of the cortical atlas (Schaefer2018_200Parcels_7Networks) to the [```CORTICAL_ATLAS_NAME``` variable in ```basics.py```](https://github.com/nimh-sfim/fc_introspection/blob/main/notebooks/utils/basics.py#L66).
-#
-# 3. Assign the name of the cortical atlas (aal2) to the [```SUBCORTICAL_ATLAS_NAME``` variable in ```basics.py```](https://github.com/nimh-sfim/fc_introspection/blob/main/notebooks/utils/basics.py#L68).
-#
-# > **NOTE**: Initially, you will only need to change the ATLASES_DIR value to match your system configuration. For the other two, you should be able to use the values provided.
-#
 
 import subprocess
 import getpass
