@@ -79,13 +79,15 @@
 import pandas as pd
 import json
 import os.path as osp
+import os
 from   collections import OrderedDict
 
 from utils.basics import ORIG_BEHAV_DIR, ORIG_FMRI_DIR
-from utils.basics import ORIG_SNYCQ_PATH, SBJS_WITH_SNYCQ_PATH,ANAT_PATHINFO_PATH
+from utils.basics import ORIG_SNYCQ_PATH, SBJS_WITH_SNYCQ_PATH,ANAT_PATHINFO_PATH, PROC_SNYCQ_DIR
 print('++ INFO [Output file]: Path to sorted SNYCQ responses:                                   %s' % ORIG_SNYCQ_PATH)
 print('++ INFO [Output file]: List of subjects with at least one scan accompanied by SNYCQ:     %s' % SBJS_WITH_SNYCQ_PATH)
 print('++ INFO [Output file]: Information about where to find anatomical scan for each subject: %s' % ANAT_PATHINFO_PATH)
+print('++ INFO [Output folder]: Folder containing all pre-processed versions of the SNYCQ:      %s' % PROC_SNYCQ_DIR)
 
 # ***
 # ## 1. Download the behavioral data from the link in Mendes et al. 2019 paper
@@ -199,6 +201,9 @@ print('++ INFO: Number of subjects with at least one run with SNYC data: %d' % l
 # ***
 # ## 7. Save the newly formated questionaire answers to disk
 
+if not osp.exists(PROC_SNYCQ_DIR):
+    print('++ WRNING: Creating a folder for pre-processed SNYCQ data [%s]' % PROC_SNYCQ_DIR)
+    os.makedirs(PROC_SNYCQ_DIR)
 print ("++ INFO: Saving snycq_data to disk [%s]." % ORIG_SNYCQ_PATH)
 snycq_data.to_csv(ORIG_SNYCQ_PATH)
 
@@ -256,4 +261,4 @@ anat_loc_df[anat_loc_df.drop('anat_path',axis=1).sum(axis=1)==2]
 print('++ INFO: This information is now available at [%s]' % ANAT_PATHINFO_PATH)
 anat_loc_df.to_csv(ANAT_PATHINFO_PATH)
 
-anat_loc_df.head()
+
