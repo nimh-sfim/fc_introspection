@@ -53,7 +53,9 @@ def hvplot_fc(data,roi_info_path, hm_cmap=hm_color_map, net_cmap=nw_color_map, c
     Nrois, Nrois_LH, Nrois_RH, Nnet_segments, Nnetworks, net_names, hm_net_names, hm_net_edges, hm_net_meds = get_net_divisions(roi_info_path)
     
     # Remove axes from data
-    if data is pd.DataFrame:
+    if isinstance(data,pd.DataFrame):
+        if verbose:
+           print('++ INFO[hvplot_fc]: removing index and column names from inputted data structure')
         data = data.values
     matrix_to_plot              = pd.DataFrame(data)
     matrix_to_plot.index        = np.arange(matrix_to_plot.shape[0])
