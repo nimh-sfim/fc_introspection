@@ -21,13 +21,13 @@ PRJ_DIR='/data/SFIMJGC_Introspec/2023_fc_introspection/'
 
 SFC_DIR=`echo ${PRCS_DATA_DIR}/${SBJ}/preprocessed/func/pb06_staticFC`
 ATLAS_NAME=$1
-
 ATLAS_DIR=`echo ${PRJ_DIR}/atlases/${ATLAS_NAME}`
-if [[ "${ATLAS_NAME}" == "Schaefer2018_200Parcels_7Networks" ]]; then
-   ATLAS_PATH=`echo ${ATLAS_DIR}/Schaefer2018_200Parcels_7Networks_order_FSLMNI152_2mm.ranked.nii.gz`
-else
-   ATLAS_PATH=`echo ${ATLAS_DIR}/${ATLAS_NAME}.ranked.nii.gz`
-fi
+ATLAS_PATH=`echo ${ATLAS_DIR}/${ATLAS_NAME}.nii.gz`
+#if [[ "${ATLAS_NAME}" == "Schaefer2018_200Parcels_7Networks" ]]; then
+#   ATLAS_PATH=`echo ${ATLAS_DIR}/Schaefer2018_200Parcels_7Networks_order_FSLMNI152_2mm.ranked.nii.gz`
+#else
+#   ATLAS_PATH=`echo ${ATLAS_DIR}/${ATLAS_NAME}.ranked.nii.gz`
+#fi
 
 INPUT_PATH=`echo ${PRCS_DATA_DIR}/${SBJ}/preprocessed/func/pb05_mni/_scan_id_ses-02_task-rest_acq-${RUN}_bold/rest2mni.b0.scale.denoise.nii.gz`
 INPUT_FILE=`basename ${INPUT_PATH}`
