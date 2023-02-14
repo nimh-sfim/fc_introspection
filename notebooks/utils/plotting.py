@@ -6,6 +6,9 @@ from holoviews import dim, opts
 from nilearn.plotting import plot_matrix
 from matplotlib import patches
 import matplotlib.pyplot as plt
+import networkx as nx
+from nxviz.utils import node_table, edge_table
+from nxviz import plots, nodes, edges, lines
 
 nw_color_map = {'LH-Vis':'purple',      'RH-Vis':'purple','Vis':'purple',
                    'LH-SomMot':'lightblue'  ,'RH-SomMot':'lightblue','SomMot':'lightblue',
@@ -242,3 +245,127 @@ def hvplot_fc_nwlevel(data,mode='percent',clim_max=None,clim_min=0, cmap='viridi
             plot = heatmap * hv.Labels(heatmap).opts(opts.Labels(text_color='white'))
     #Return plot
     return plot   
+
+# CIRCOS PLOTS
+# ============
+def get_node_positions(roi_info,r=0.5,c_x=0.0,c_y=0.0):
+    # Get list of networks
+    # ====================
+    networks    = list(roi_info['Network'].unique())
+    # Create Node Positions
+    # =====================
+    # 1. Max number of nodes per networks in one or another hemisphere
+    max_num_nodes_per_network = {}
+    for nw in networks:
+        aux = roi_info[roi_info['Network']==nw]
+        max_num_nodes_per_network[nw] = np.max([aux[aux['Hemisphere']=='LH'].shape[0],aux[aux['Hemisphere']=='RH'].shape[0]])
+    # 2. Number of locations to choose from in circle: 2 * (Max_PerNetwork + Pads on both ends)
+    pad_nodes   = 5
+    n_locations = 2 * (np.array([max_num_nodes_per_network[nw] for nw in max_num_nodes_per_network.keys()]).sum() + 2 * pad_nodes)
+    
+    # 3. Evently distributed angels (in radians) across the circle
+    avail_angles = np.linspace(0,2*np.pi,n_locations)
+    avail_angles = np.roll(avail_angles,-58)
+    
+    # 4. Convert the angles to (x,y) locations
+    positions = []
+    for t in avail_angles:
+        x = r*np.cos(t) + c_x
+        y = r*np.sin(t) + c_y
+        positions.append(np.array([x,y]))
+    positions_per_hemi = {'RH': positions[0:int(n_locations/2)], 
+                          'LH': positions[int(n_locations/2)::][::-1]}
+    # 5. Create Final Layout Object
+    G_circos_layout = {}
+    for hm in ['LH','RH']:
+        index = pad_nodes
+        for nw in networks:
+            index_init = index 
+            aux = roi_info[(roi_info['Network']==nw) & (roi_info['Hemisphere']==hm)]
+            for n,node in enumerate(list(aux['ROI_ID'])):
+                G_circos_layout[node] = positions_per_hemi[hm][index]
+                index = index + 1
+            index = index_init + max_num_nodes_per_network[nw]
+    return G_circos_layout
+   
+def plot_as_circos(data,roi_info,figsize=(10,10),edge_weight=2):
+    # Check inputs meet expectations
+    assert isinstance(data,pd.DataFrame), "++ERROR [plot_as_circos]: input data expected to be a pandas dataframe"
+    assert 'ROI_ID'     in data.index.names, "++ERROR [plot_as_circos]: roi_info expected to have one column named ROI_ID"
+    assert 'Hemisphere' in roi_info.columns, "++ERROR [plot_as_circos]: roi_info expected to have one column named Hemisphere"
+    assert 'Network'    in roi_info.columns, "++ERROR [plot_as_circos]: roi_info expected to have one column named Network"
+    assert 'RGB'    in roi_info.columns, "++ERROR [plot_as_circos]: roi_info expected to have one column named RGB"
+
+    # Convert input to ints (this function only works for unweigthed graphs)
+    fdata          = data.copy().astype('int')
+    fdata.index    = fdata.index.get_level_values('ROI_ID')
+    fdata.columns  = fdata.index
+    # Create None objects for the graphs
+    G_pos, G_neg, G = None, None, None
+    # Count the input values
+    val_counts = pd.Series(fdata.values.flatten()).value_counts()
+    # Check for the presence of positive edges
+    if 1 in val_counts.index:
+        fdata_pos              = fdata.copy()
+        #fdata_pos.index        = fdata.index.get_level_values('ROI_ID')
+        #fdata_pos.columns      = fdata.index.get_level_values('ROI_ID')
+        fdata_pos[fdata_pos<0] = 0 # Removing -1 from positive graph
+        G_pos = nx.from_pandas_adjacency(fdata_pos)
+    # Check for the present of negative edges
+    if -1 in val_counts.index:
+        fdata_neg              = fdata.copy()
+        #fdata_neg.index        = fdata.index.get_level_values('ROI_ID')
+        #fdata_neg.columns      = fdata.index.get_level_values('ROI_ID')
+        fdata_neg[fdata_neg>0] = 0 # Removing 1 from negative graph
+        G_neg = nx.from_pandas_adjacency(fdata_neg)
+    # Create Graph with all nodes (for positioning purposes - edges do not matter)
+    
+    G             = nx.from_pandas_adjacency(fdata+100) # Ensure we have a graph with all nodes
+    # Add information about positive or negative edge
+    model_attribs = {}
+    for edge in G_pos.edges:
+        model_attribs[edge] = 'pos'
+    for edge in G_neg.edges:
+        model_attribs[edge] = 'neg'
+    nx.set_edge_attributes(G,model_attribs,'Model')
+    # Add information about hemisphere and network
+    hemi_attribs = {row['ROI_ID']:row['Hemisphere'] for r,row in roi_info.iterrows()}
+    nw_attribs   = {row['ROI_ID']:row['Network'] for r,row in roi_info.iterrows()}
+    nx.set_node_attributes(G,hemi_attribs,'Hemi')
+    nx.set_node_attributes(G,nw_attribs,'Network')
+    # Obtain Node Positions
+    pos =  get_node_positions(roi_info)
+    # Node Styling
+    nt  = node_table(G)
+    node_color = roi_info.set_index('ROI_ID')['RGB']
+    node_alpha = pd.Series(1.0, index=node_color.index)
+    node_size  = pd.Series(0.01, index=node_color.index)
+    # Positive Edges Styling
+    if G_pos is not None:
+        pos_et         = edge_table(G_pos)
+        pos_et_color   = pd.Series('red', index=range(pos_et.shape[0]))
+        pos_lw         = edge_weight*pos_et["weight"] 
+        pos_alpha      = pd.Series(0.5, index=range(pos_et.shape[0]))
+    # Negative Edges Styling
+    if G_neg is not None:
+        neg_et         = edge_table(G_neg)
+        neg_et_color   = pd.Series('lightblue', index=range(neg_et.shape[0]))#edges.edge_colors(et, nt=None, color_by=None, node_color_by=None)
+        neg_lw         = edge_weight*neg_et["weight"] 
+        neg_alpha      = pd.Series(0.3, index=range(neg_et.shape[0]))
+    #Create plot
+    fig, ax = plt.subplots(1,1,figsize=figsize)
+    patches = nodes.node_glyphs( nt, pos, node_color=node_color, alpha=node_alpha, size=node_size, **{'edgecolor':None, 'linewidth':0})
+    for patch in patches: 
+        ax.add_patch(patch)
+    if G_pos is not None: 
+        patches = lines.circos( pos_et, pos, edge_color=pos_et_color, alpha=pos_alpha, lw=pos_lw, aes_kw={"fc": "none"} ) 
+        for patch in patches: 
+            ax.add_patch(patch)
+    if G_neg is not None:
+        patches = lines.circos( neg_et, pos, edge_color=neg_et_color, alpha=neg_alpha, lw=neg_lw, aes_kw={"fc": "none"} ) 
+        for patch in patches: 
+            ax.add_patch(patch)
+    plots.rescale(G) 
+    plots.aspect_equal()
+    plots.despine()
+    return plots
