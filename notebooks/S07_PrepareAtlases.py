@@ -36,7 +36,7 @@ from datetime import datetime
 from shutil import rmtree
 from utils.basics import CORTICAL_ATLAS_PATH, CORTICAL_ATLAS_NAME, SUBCORTICAL_ATLAS_PATH, SUBCORTICAL_ATLAS_NAME, FB_ATLAS_NAME, FB_ATLAS_PATH
 from utils.basics import DATA_DIR, PRJ_DIR, SCRIPTS_DIR, ATLASES_DIR
-from utils.basics import get_sbj_scan_list
+from utils.basics import get_sbj_scan_list, rgb2hex
 import os.path as osp
 from sfim_lib.atlases.raking import correct_ranked_atlas
 
@@ -151,6 +151,7 @@ color_info = pd.read_csv(osp.join(ATLASES_DIR, CORTICAL_ATLAS_NAME,'{ATLAS_NAME}
 # Combine all the useful columns into a single new dataframe
 df         = pd.concat([centroids_info[['ROI Label','Hemisphere','Network','ROI Name','R','A','S']],color_info[[2,3,4]]], axis=1)
 df.columns = ['ROI_ID','Hemisphere','Network','ROI_Name','pos_R','pos_A','pos_S','color_R','color_G','color_B']
+df['RGB']  = [rgb2hex(r,g,b) for r,g,b in df.set_index('ROI_ID')[['color_R','color_G','color_B']].values]
 # Save the new data frame to disk
 df.to_csv(osp.join(ATLASES_DIR,CORTICAL_ATLAS_NAME,'{ATLAS_NAME}.ranked.roi_info.csv'.format(ATLAS_NAME=CORTICAL_ATLAS_NAME)), index=False)
 
@@ -256,7 +257,7 @@ print(output.strip().decode())
 # * ```aal2.subcortical_order.txt```: contains ROI_ID, ROI_Name, RGB Color, Size
 
 command = """cd {ATLAS_PATH}; \
-             cat {ATLAS_NAME}.nii.txt | grep -e Thalamus -e Pallidum -e Caudate -e Putamen | awk -F '[ _]' '{{print $1"\taal2_"$3"H_Subcortical_"$2"\t128\t128\t128\t0"}}' > {ATLAS_NAME}.subcortical_order.txt;
+             cat {ATLAS_NAME}.nii.txt | grep -e Thalamus -e Pallidum -e Caudate -e Putamen | awk -F '[ _]' '{{print $1"\taal2_"$3"H_Subcortical_"$2"\t255\t255\t0\t0"}}' > {ATLAS_NAME}.subcortical_order.txt;
              """.format(ATLAS_PATH=SUBCORTICAL_ATLAS_PATH,ATLAS_NAME=SUBCORTICAL_ATLAS_NAME)
 output  = subprocess.check_output(command, shell=True, stderr=subprocess.STDOUT)
 print(output.strip().decode())
@@ -302,6 +303,7 @@ color_info = pd.read_csv(osp.join(ATLASES_DIR, SUBCORTICAL_ATLAS_NAME,'aal2.subc
 # Combine all the useful columns into a single new dataframe
 df         = pd.concat([centroids_info[['ROI Label','Hemisphere','Network','ROI Name','R','A','S']],color_info[[2,3,4]]], axis=1)
 df.columns = ['ROI_ID','Hemisphere','Network','ROI_Name','pos_R','pos_A','pos_S','color_R','color_G','color_B']
+df['RGB']  = [rgb2hex(r,g,b) for r,g,b in df.set_index('ROI_ID')[['color_R','color_G','color_B']].values]
 # Save the new data frame to disk
 df.to_csv(osp.join(ATLASES_DIR,SUBCORTICAL_ATLAS_NAME,'aal2.subcortical.ranked.roi_info.csv'), index=False)
 
@@ -402,9 +404,12 @@ color_info = pd.read_csv(osp.join(ATLASES_DIR, FB_ATLAS_NAME,'{ATLAS_NAME}_order
 # Combine all the useful columns into a single new dataframe
 df         = pd.concat([centroids_info[['ROI Label','Hemisphere','Network','ROI Name','R','A','S']],color_info[[2,3,4]]], axis=1)
 df.columns = ['ROI_ID','Hemisphere','Network','ROI_Name','pos_R','pos_A','pos_S','color_R','color_G','color_B']
+df['RGB']  = [rgb2hex(r,g,b) for r,g,b in df.set_index('ROI_ID')[['color_R','color_G','color_B']].values]
 # Save the new data frame to disk
 df.to_csv(osp.join(ATLASES_DIR,FB_ATLAS_NAME,'{ATLAS_NAME}.roi_info.csv'.format(ATLAS_NAME=FB_ATLAS_NAME)), index=False)
 
+# 11. Clean-up atlas folder
+#
 # ```bash
 # # cd /data/SFIMJGC_Introspec/2023_fc_introspection/atlases/Schaefer2018_200Parcels_7Networks_AAL2
 # # rm rm.*
@@ -412,5 +417,3 @@ df.to_csv(osp.join(ATLASES_DIR,FB_ATLAS_NAME,'{ATLAS_NAME}.roi_info.csv'.format(
 # # mv Schaefer2018_200Parcels_7Networks_AAL2_order.ranked.niml.lt Schaefer2018_200Parcels_7Networks_AAL2_order.niml.lt
 # # mv Schaefer2018_200Parcels_7Networks_AAL2_order.ranked.txt Schaefer2018_200Parcels_7Networks_AAL2_order.txt
 # ```
-
-
