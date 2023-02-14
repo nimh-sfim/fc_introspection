@@ -75,8 +75,36 @@ SUBCORTICAL_BRAINNET_NODES_PATH = osp.join(RESOURCES_NBS_DIR,SUBCORTICAL_ATLAS_N
 FB_BRAINNET_NODES_PATH = osp.join(RESOURCES_NBS_DIR,FB_ATLAS_NAME,'{FB_ATLAS_NAME}_BrainNet_Nodes.node'.format(FB_ATLAS_NAME=FB_ATLAS_NAME))
 
 # Functions
+# =========
 
+def rgb2hex(r,g,b):
+    """
+    Converts between two different versions of RGB color codes. Input as three separate integers between 0 and 256.
+    Output will be in hexadecimal code.
+    """
+    return "#{:02x}{:02x}{:02x}".format(r,g,b)
+ 
+ 
 def get_sbj_scan_list(when='orig', return_snycq=True):
+    """
+    Get list of scans, subjects and snycq table at different pre-processing stages as selected via the when input.
+    
+    INPUTS:
+    
+    when: this can take the following values
+        'orig' --> all available data
+        'post_struct' --> only data that successfully completed the anatomical pre-processing pipeline.
+        'post_funct' --> only data that successfully completed the functional pre-processing pipeline.
+        'post_motion' --> only data that has low motion
+        
+    return_snycq: flag to select whether or not to return the corresponding sncq table
+    
+    OUTPUTS:
+    
+    sbj_list: list with subject ids
+    scan_list: list with scan ids as a combination of subject_id and run_id
+    snycq_df: dataframe with SNYCQ answers
+    """
     if when not in ['orig','post_struct','post_funct','post_motion']:
         print("++ ERROR: Wrong when argument, returning empty lists")
         return None,None
