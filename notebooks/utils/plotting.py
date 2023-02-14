@@ -2,18 +2,18 @@ import pandas as pd
 import numpy as np
 import hvplot.pandas
 import holoviews as hv
-from holoviews import dim
+from holoviews import dim, opts
 from nilearn.plotting import plot_matrix
 from matplotlib import patches
 import matplotlib.pyplot as plt
 
-nw_color_map = {'LH-Vis':'purple',      'RH-Vis':'purple',
-                   'LH-SomMot':'lightblue'  ,'RH-SomMot':'lightblue',
-                   'LH-DorsAttn':'green'    ,'RH-DorsAttn':'green',
-                   'LH-SalVentAttn':'violet','RH-SalVentAttn':'violet',
-                   'LH-Cont':'orange','RH-Cont':'orange',
-                   'LH-Default':'red','RH-Default':'red',
-                   'LH-Subcortical':'yellow',      'RH-Subcortical':'yellow'}
+nw_color_map = {'LH-Vis':'purple',      'RH-Vis':'purple','Vis':'purple',
+                   'LH-SomMot':'lightblue'  ,'RH-SomMot':'lightblue','SomMot':'lightblue',
+                   'LH-DorsAttn':'green'    ,'RH-DorsAttn':'green','DorsAttn':'green',
+                   'LH-SalVentAttn':'violet','RH-SalVentAttn':'violet','SalVentAttn':'violet',
+                   'LH-Cont':'orange','RH-Cont':'orange','Cont':'orange',
+                   'LH-Default':'red','RH-Default':'red','Default':'red',
+                   'LH-Subcortical':'yellow',      'RH-Subcortical':'yellow','Subcortical':'yellow'}
 hm_color_map = {'LH':'grey','RH':'darkgrey'}
 
 def get_net_divisions(roi_info_path, verbose=False):
@@ -160,3 +160,85 @@ def plot_fc(data,roi_info_path, hm_cmap=hm_color_map, net_cmap=nw_color_map, cba
     
     plt.close()
     return fig
+   
+def hvplot_fc_nwlevel(data,mode='percent',clim_max=None,clim_min=0, cmap='viridis', title='', add_net_colors=False):
+    """
+    This function plots a summary view of how many within- and between- network connections
+    are significantly different in a given contrast.
+    
+    Inputs:
+    data: this is dataframe with the outputs from NBS or a combination of those. It is expected to only contains 0,1 and -1 values.
+          it is also expected to be indexed by a multi-index with one level having the name 'Network' that contains the name of the
+          networks. This is used for plotting and counting purposes, so it is very important to adhere to this requirement.
+    
+    mode: instruct to report results in terms of absolute number of connections 'count' or percentage of possible connections 'percent'.
+    
+    clim_max: max value for the colorbar. If unset, it will be automatically set to the 95% percentile.
+    
+    clim_min: min value for the colorbar. It unset, it will be automatically set to zero.
+    
+    cmap: colormap. [default = viridis]
+
+    title: title for the plot. [default = '']
+    
+    add_net_colors: flag to remove substitute text labels in the X-axis by colored segments denoting the different networks.
+    """
+    assert mode in ['percent','count']
+    data         = data.copy()
+    networks     = list(data.index.get_level_values('Network').unique())
+    num_networks = len(networks)
+    num_sig_cons = pd.DataFrame(index=networks, columns=networks)
+    pc_sig_cons  = pd.DataFrame(index=networks, columns=networks)
+    for n1 in networks:
+        for n2 in networks:
+            aux = data.loc[data.index.get_level_values('Network')==n1,data.columns.get_level_values('Network')==n2]
+            if n1 == n2:
+                ncons = aux.shape[0] * (aux.shape[0] -1 ) / 2
+                num_sig_cons.loc[n1,n2] = int(aux.sum().sum()/2) 
+                pc_sig_cons.loc[n1,n2]  = 100 * num_sig_cons.loc[n1,n2] / ncons
+            else:
+                ncons = aux.shape[0] * aux.shape[1] 
+                num_sig_cons.loc[n1,n2] = int(aux.sum().sum())
+                pc_sig_cons.loc[n1,n2]  = 100 * num_sig_cons.loc[n1,n2] / ncons
+    num_sig_cons = num_sig_cons.infer_objects()
+    pc_sig_cons  = pc_sig_cons.infer_objects()
+    #Advance plotting mode with colored segments in the horizontal axis.
+    if add_net_colors:
+       # Create Y axis ticks and labels
+       y_ticks_info = list(tuple(zip(range(num_networks), networks))) 
+       # Create Network Colorbar
+       if add_net_colors:
+           net_segments_y = hv.Segments((tuple(np.arange(num_networks)+1),tuple(np.ones(num_networks)-1.5),
+                                      tuple(np.arange(num_networks)),tuple(np.ones(num_networks)-1.5), networks),vdims='Networks').opts(cmap=nw_color_map, color=dim('Networks'), line_width=10,show_legend=False)    
+    
+       # Remove axes from data
+       if mode=='percent':
+           matrix_to_plot              = pd.DataFrame(pc_sig_cons.values)
+           cbar_title = 'Percent of Connections:'
+       else:
+           matrix_to_plot              = pd.DataFrame(num_sig_cons.values)
+           cbar_title = 'Number of Connections:'
+       matrix_to_plot.index        = np.arange(matrix_to_plot.shape[0], dtype=int)
+       matrix_to_plot.columns      = np.arange(matrix_to_plot.shape[1], dtype=int)
+       #return matrix_to_plot 
+       if clim_max is None:
+          clim_max = matrix_to_plot.quantile(.95).max()
+       heatmap = matrix_to_plot.round(1).hvplot.heatmap(aspect='square', clim=(0,clim_max), cmap=cmap, 
+                                                        title=title, ylim=(-.5,num_networks-.5), yticks= y_ticks_info, xaxis=None).opts(xrotation=90,colorbar_opts={'title':cbar_title})
+       plot = heatmap * hv.Labels(heatmap).opts(opts.Labels(text_color='white'))
+       plot = plot * net_segments_y
+    
+    #Basic Plotting Mode
+    else:
+        if mode=='percent':
+            if clim_max is None:
+                clim_max = pc_sig_cons.quantile(.95).max()
+            heatmap = pc_sig_cons.round(1).hvplot.heatmap(aspect='square', clim=(0,clim_max), cmap=cmap, title=title).opts(xrotation=90, colorbar_opts={'title':'Percent of Connections:'})
+            plot = heatmap * hv.Labels(heatmap).opts(opts.Labels(text_color='white')) 
+        if mode=='count':
+            if clim_max is None:
+                clim_max = num_sig_cons.quantile(.95).max()
+            heatmap  = num_sig_cons.round(1).hvplot.heatmap(aspect='square', clim=(clim_min,clim_max), cmap=cmap, title=title ).opts(xrotation=90,colorbar_opts={'title':'Number of Connections:'})
+            plot = heatmap * hv.Labels(heatmap).opts(opts.Labels(text_color='white'))
+    #Return plot
+    return plot   
