@@ -45,6 +45,8 @@ RESOURCES_DINFO_DIR     = osp.join(PRJ_DIR,'code','fc_introspection','resources'
 PROC_SNYCQ_DIR          = osp.join(PRJ_DIR,'data','snycq')
 RESOURCES_SNYCQ_DIR     = osp.join(PRJ_DIR,'code','fc_introspection','resources','snycq')
 RESOURCES_NBS_DIR       = osp.join(PRJ_DIR,'code','fc_introspection','resources','nbs')
+RESOURCES_CPM_DIR       = osp.join(PRJ_DIR,'code','fc_introspection','resources','cpm')
+
 # QA Configuration
 FINAL_NUM_VOLS     = 652 # Number of volumes in fully pre-processed runs
 REL_MOT_THRESHOLD  = 0.2 # Maximum Relative Displacement (in mm)
