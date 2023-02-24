@@ -91,6 +91,8 @@ del Waux, cluster_ids, cluster_labels_translate
 
 plot_W_scatter(W, clusters_info=clusters_info, plot_kde=True, plot_hist=True, marker_size=20)
 
+clusters_info.value_counts('Cluster Label')
+
 q_order = ['Future', 'Specific', 'Past', 'Positive', 'People', 'Images', 'Words', 'Negative', 'Surroundings', 'Myself', 'Intrusive']
 
 sort_clf1f2_list = []
