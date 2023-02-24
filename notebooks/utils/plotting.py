@@ -288,7 +288,7 @@ def get_node_positions(roi_info,r=0.5,c_x=0.0,c_y=0.0):
             index = index_init + max_num_nodes_per_network[nw]
     return G_circos_layout
    
-def plot_as_circos(data,roi_info,figsize=(10,10),edge_weight=2):
+def plot_as_circos(data,roi_info,figsize=(10,10),edge_weight=2,title=None):
     # Check inputs meet expectations
     assert isinstance(data,pd.DataFrame), "++ERROR [plot_as_circos]: input data expected to be a pandas dataframe"
     assert 'ROI_ID'     in data.index.names, "++ERROR [plot_as_circos]: roi_info expected to have one column named ROI_ID"
@@ -365,7 +365,10 @@ def plot_as_circos(data,roi_info,figsize=(10,10),edge_weight=2):
         patches = lines.circos( neg_et, pos, edge_color=neg_et_color, alpha=neg_alpha, lw=neg_lw, aes_kw={"fc": "none"} ) 
         for patch in patches: 
             ax.add_patch(patch)
+    if title is not None:
+       plt.title(title)
     plots.rescale(G) 
     plots.aspect_equal()
     plots.despine()
-    return plots
+    plt.close()
+    return fig
