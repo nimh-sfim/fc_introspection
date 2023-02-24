@@ -24,7 +24,8 @@ import os
 from datetime import datetime
 import getpass
 from utils.basics import get_sbj_scan_list
-from utils.basics import PRJ_DIR, SCRIPTS_DIR, RESOURCES_CPM_DIR
+from utils.basics import PRJ_DIR, SCRIPTS_DIR, RESOURCES_CPM_DIR, DATA_DIR, FB_ATLAS_NAME
+from cpm.cpm import read_fc_matrices
 
 CPM_NITERATIONS      = 100       # Number of iterations on real data (to evaluate robustness against fold generation)
 CPM_NULL_NITERATIONS = 10000     # Number of iterations used to build a null distribution
@@ -40,9 +41,40 @@ print(behaviors)
 username = getpass.getuser()
 print('++ INFO: user working now --> %s' % username)
 
-# We will generate separate swarm files per question. Similarly we will separate the swarm jobs that are for computations on real data and those that are for the generation of the null distribution.
+# ***
+#
+# ## 0. Prepare all necessary data for the CPM
+#
+# 1. Create resources folder for CPM analyses
 
+if not osp.exists(RESOURCES_CPM_DIR):
+    print('++ INFO: Creating resources folder for CPM analyses [%s]' % RESOURCES_CPM_DIR)
+    os.makedirs(RESOURCES_CPM_DIR)
+
+# 2. Load list of scans that passed all QAs
+
+sbj_list, scan_list, snycq_df = get_sbj_scan_list(when='post_motion', return_snycq=True)
+
+# 3. Load FC data into memory
+
+fc_data = read_fc_matrices(scan_list,DATA_DIR,FB_ATLAS_NAME)
+
+# 4. Save FC data in vectorized form for all scans into a single file for easy access for batch jobs
+
+out_path = osp.join(RESOURCES_CPM_DIR,'fc_data.csv')
+fc_data.to_csv(out_path)
+print('++ INFO: FC data saved to disk [%s]' % out_path)
+
+# 5. Save SNYCQ in the cpm resources folder
+
+out_path = osp.join(RESOURCES_CPM_DIR,'behav_data.csv')
+snycq_df.to_csv(out_path)
+print('++ INFO: Behavioral data saved to disk [%s]' % out_path)
+
+# ***
 # ## 1. Swarm Jobs for the real data
+
+# We will generate separate swarm files per question. Similarly we will separate the swarm jobs that are for computations on real data and those that are for the generation of the null distribution.
 
 #user specific folders
 #=====================
