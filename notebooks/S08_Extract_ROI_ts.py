@@ -25,10 +25,15 @@ import os
 import pandas as pd
 from datetime import datetime
 from shutil import rmtree
-from utils.basics import CORTICAL_ATLAS_PATH, CORTICAL_ATLAS_NAME, SUBCORTICAL_ATLAS_PATH, SUBCORTICAL_ATLAS_NAME, FB_ATLAS_NAME, FB_ATLAS_PATH
+from utils.basics import CORTICAL_400ROI_ATLAS_PATH, CORTICAL_400ROI_ATLAS_NAME, SUBCORTICAL_ATLAS_PATH, SUBCORTICAL_ATLAS_NAME, FB_400ROI_ATLAS_NAME, FB_400ROI_ATLAS_PATH
 from utils.basics import DATA_DIR, PRJ_DIR, SCRIPTS_DIR, ATLASES_DIR
 from utils.basics import get_sbj_scan_list
 import os.path as osp
+
+#CORTICAL_ATLAS_NAME = CORTICAL_400ROI_ATLAS_NAME
+#CORTICAL_ATLAS_PATH = CORTICAL_400ROI_ATLAS_PATH
+ATLAS_NAME       = FB_400ROI_ATLAS_NAME
+ATLAS_PATH       = FB_400ROI_ATLAS_PATH
 
 # ***
 # 1. Retrieve user ID
@@ -54,11 +59,11 @@ for sbj in sbj_list:
 # +
 #user specific folders
 #=====================
-swarm_folder   = osp.join(PRJ_DIR,'SwarmFiles.{username}'.format(username=username))
-logs_folder    = osp.join(PRJ_DIR,'Logs.{username}'.format(username=username))
+swarm_folder   = osp.join(PRJ_DIR,f'SwarmFiles.{username}','S08')
+logs_folder    = osp.join(PRJ_DIR,f'Logs.{username}','S08')
 
-swarm_path     = osp.join(swarm_folder,'S08_Extract_ROI_ts.SWARM.sh')
-logdir_path    = osp.join(logs_folder, 'S08_Extract_ROI_ts.logs')
+swarm_path     = osp.join(swarm_folder,f'S08_Extract_ROI_ts_{ATLAS_NAME}.SWARM.sh')
+logdir_path    = osp.join(logs_folder, f'S08_Extract_ROI_ts_{ATLAS_NAME}.logs')
 # -
 
 # create user specific folders if needed
@@ -83,10 +88,11 @@ swarm_file.write('\n')
 # Insert one line per subject
 for sbj,run in scan_list:
     run = run[-2:] + "_" + run[12:18]
-    swarm_file.write("export SBJ={sbj} RUN={RUN}; sh {scripts_folder}/S08_ExtractROIts.sh Schaefer2018_200Parcels_7Networks \n".format(sbj=sbj, RUN=run, scripts_folder = SCRIPTS_DIR))
-    swarm_file.write("export SBJ={sbj} RUN={RUN}; sh {scripts_folder}/S08_ExtractROIts.sh Schaefer2018_200Parcels_7Networks_AAL2 \n".format(sbj=sbj, RUN=run, scripts_folder = SCRIPTS_DIR))
+    swarm_file.write(f"export SBJ={sbj} RUN={run}; sh {SCRIPTS_DIR}/S08_ExtractROIts.sh {ATLAS_NAME} \n")
 swarm_file.close()
 # -
 print(swarm_path)
+
+next(os.walk('/data/SFIMJGC_Introspec/2023_fc_introspection/code/fc_introspection/resources/cpm/swarm_outputs/real/Schaefer2018_200Parcels_7Networks_AAL2/subject_aware/conf_not_residualized/spearman_sum/'))[1]
 
 
