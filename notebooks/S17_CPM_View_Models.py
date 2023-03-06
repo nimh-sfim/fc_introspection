@@ -31,20 +31,23 @@ import os
 port_tunnel = int(os.environ['PORT2'])
 print('++ INFO: Second Port available: %d' % port_tunnel)
 
-from utils.basics import ATLASES_DIR, FB_ATLAS_NAME
+from utils.basics import ATLASES_DIR, FB_400ROI_ATLAS_NAME
 CORR_TYPE='pearson'
 E_SUMMARY_METRIC='sum'
 CPM_NITERATIONS      = 100
 CPM_NULL_NITERATIONS = 10000
+SPLIT_MODE           = 'subject_aware'
+ATLAS_NAME           = FB_400ROI_ATLAS_NAME
+CONFOUNDS            = 'conf_not_residualized'
 
 # Load one case, simply to obtain the number of edges
 
-ref_path = path = osp.join(RESOURCES_CPM_DIR,'results','Images',CORR_TYPE, E_SUMMARY_METRIC,'cpm_Images_rep-{r}.pkl'.format(r=str(1).zfill(5)))
+ref_path = osp.join(RESOURCES_CPM_DIR,'swarm_outputs','real',ATLAS_NAME,SPLIT_MODE, CONFOUNDS,CORR_TYPE+'_'+E_SUMMARY_METRIC,'Images','cpm_Images_rep-{r}.pkl'.format(r=str(1).zfill(5)))
 with open(ref_path,'rb') as f:
     ref_data = pickle.load(f)
 n_edges = ref_data['models']['pos'].shape[1]
 
-ATLASINFO_PATH = osp.join(ATLASES_DIR,FB_ATLAS_NAME,'{ATLAS_NAME}.roi_info.csv'.format(ATLAS_NAME=FB_ATLAS_NAME))
+ATLASINFO_PATH = osp.join(ATLASES_DIR,ATLAS_NAME,f'{ATLAS_NAME}.roi_info.csv')
 roi_info       = pd.read_csv(ATLASINFO_PATH)
 
 # ## Load all real models
@@ -57,7 +60,7 @@ for BEHAVIOR in ['Images','Words','People','Myself','Positive','Negative','Surro
               (BEHAVIOR,'neg'):pd.DataFrame(index=range(CPM_NITERATIONS), columns=range(n_edges))}
     df = pd.DataFrame(index=range(CPM_NITERATIONS),columns=['pos','neg','glm'])
     for r in tqdm(range(CPM_NITERATIONS), desc='Iteration [%s]' % BEHAVIOR):
-        path = osp.join(RESOURCES_CPM_DIR,'results',BEHAVIOR,CORR_TYPE, E_SUMMARY_METRIC,'cpm_{b}_rep-{r}.pkl'.format(b=BEHAVIOR,r=str(r+1).zfill(5)))
+        path = osp.join(RESOURCES_CPM_DIR,'swarm_outputs','real',ATLAS_NAME,SPLIT_MODE, CONFOUNDS,CORR_TYPE+'_'+E_SUMMARY_METRIC,BEHAVIOR,'cpm_{b}_rep-{r}.pkl'.format(b=BEHAVIOR,r=str(r+1).zfill(5)))
         with open(path,'rb') as f:
             data = pickle.load(f)
         # We first averaged the number of times an edge was selected within each 10-fold run (resulting in a number between 0 and 1 for each edge)
