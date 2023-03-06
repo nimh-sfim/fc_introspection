@@ -52,6 +52,10 @@ FINAL_NUM_VOLS     = 652 # Number of volumes in fully pre-processed runs
 REL_MOT_THRESHOLD  = 0.2 # Maximum Relative Displacement (in mm)
 MAX_CENSOR_PERCENT = 30  # Maximum percentage of censored volumes accepted per scan
 
+
+CPM_NITERATIONS      = 100       # Number of iterations on real data (to evaluate robustness against fold generation)
+CPM_NULL_NITERATIONS = 10000     # Number of iterations used to build a null distribution
+
 # Paths to files we use often
 # ===========================
 ORIG_SNYCQ_PATH      = osp.join(PROC_SNYCQ_DIR, 'SNYCQ_Preproc.csv')                # Files with all SNYCQ answers compiled into a single dataframe
@@ -65,16 +69,25 @@ BAD_MOTION_LIST_PATH = osp.join(PREPROCESSING_NOTES_DIR,'NC_func_too_much_motion
 # Parcellation Configuration
 # ==========================
 ATLASES_DIR            = osp.join(PRJ_DIR,'atlases')
-CORTICAL_ATLAS_NAME    = 'Schaefer2018_200Parcels_7Networks'          # This atlas only contains definitions for cortical regions
-CORTICAL_ATLAS_PATH    = osp.join(ATLASES_DIR,CORTICAL_ATLAS_NAME)
-SUBCORTICAL_ATLAS_NAME = 'aal2'                                       # This atlas only contains definitions for sub-cortical regions
-SUBCORTICAL_ATLAS_PATH = osp.join(ATLASES_DIR,SUBCORTICAL_ATLAS_NAME) 
-FB_ATLAS_NAME          = 'Schaefer2018_200Parcels_7Networks_AAL2'     # This atlas is a combination of the cortical and subcortical atlas above
-FB_ATLAS_PATH          = osp.join(ATLASES_DIR,FB_ATLAS_NAME)
-
-CORTICAL_BRAINNET_NODES_PATH = osp.join(RESOURCES_NBS_DIR,CORTICAL_ATLAS_NAME,'{CORTICAL_ATLAS_NAME}_BrainNet_Nodes.node'.format(CORTICAL_ATLAS_NAME=CORTICAL_ATLAS_NAME))
+SUBCORTICAL_ATLAS_NAME          = 'aal2'                                       # This atlas only contains definitions for sub-cortical regions
+SUBCORTICAL_ATLAS_PATH          = osp.join(ATLASES_DIR,SUBCORTICAL_ATLAS_NAME) 
 SUBCORTICAL_BRAINNET_NODES_PATH = osp.join(RESOURCES_NBS_DIR,SUBCORTICAL_ATLAS_NAME,'{SUBCORTICAL_ATLAS_NAME}_BrainNet_Nodes.node'.format(SUBCORTICAL_ATLAS_NAME=SUBCORTICAL_ATLAS_NAME))
-FB_BRAINNET_NODES_PATH = osp.join(RESOURCES_NBS_DIR,FB_ATLAS_NAME,'{FB_ATLAS_NAME}_BrainNet_Nodes.node'.format(FB_ATLAS_NAME=FB_ATLAS_NAME))
+
+CORTICAL_200ROI_ATLAS_NAME    = 'Schaefer2018_200Parcels_7Networks'          # This atlas only contains definitions for cortical regions
+CORTICAL_200ROI_ATLAS_PATH    = osp.join(ATLASES_DIR,CORTICAL_200ROI_ATLAS_NAME)
+FB_200ROI_ATLAS_NAME          = 'Schaefer2018_200Parcels_7Networks_AAL2'     # This atlas is a combination of the cortical and subcortical atlas above
+FB_200ROI_ATLAS_PATH          = osp.join(ATLASES_DIR,FB_200ROI_ATLAS_NAME)
+CORTICAL_200ROI_BRAINNET_NODES_PATH = osp.join(RESOURCES_NBS_DIR,CORTICAL_200ROI_ATLAS_NAME,'{CORTICAL_ATLAS_NAME}_BrainNet_Nodes.node'.format(CORTICAL_ATLAS_NAME=CORTICAL_200ROI_ATLAS_NAME))
+FB_200ROI_BRAINNET_NODES_PATH       = osp.join(RESOURCES_NBS_DIR,FB_200ROI_ATLAS_NAME,      '{FB_ATLAS_NAME}_BrainNet_Nodes.node'.format(FB_ATLAS_NAME=FB_200ROI_ATLAS_NAME))
+
+
+CORTICAL_400ROI_ATLAS_NAME    = 'Schaefer2018_400Parcels_7Networks'          # This atlas only contains definitions for cortical regions
+CORTICAL_400ROI_ATLAS_PATH    = osp.join(ATLASES_DIR,CORTICAL_400ROI_ATLAS_NAME)
+FB_400ROI_ATLAS_NAME          = 'Schaefer2018_400Parcels_7Networks_AAL2'     # This atlas is a combination of the cortical and subcortical atlas above
+FB_400ROI_ATLAS_PATH          = osp.join(ATLASES_DIR,FB_400ROI_ATLAS_NAME)
+CORTICAL_400ROI_BRAINNET_NODES_PATH = osp.join(RESOURCES_NBS_DIR,CORTICAL_400ROI_ATLAS_NAME,'{CORTICAL_ATLAS_NAME}_BrainNet_Nodes.node'.format(CORTICAL_ATLAS_NAME=CORTICAL_400ROI_ATLAS_NAME))
+FB_400ROI_BRAINNET_NODES_PATH       = osp.join(RESOURCES_NBS_DIR,FB_400ROI_ATLAS_NAME,      '{FB_ATLAS_NAME}_BrainNet_Nodes.node'.format(FB_ATLAS_NAME=FB_400ROI_ATLAS_NAME))
+
 
 # Functions
 # =========
