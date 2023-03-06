@@ -7,6 +7,7 @@ from scipy.stats import pearsonr, spearmanr
 from sfim_lib.io.afni import load_netcc
 import numpy as np
 from tqdm import tqdm
+from sklearn.model_selection import GroupShuffleSplit
 # Input Functions
 # ===============
 def read_fc_matrices(scan_list,data_dir,atlas_name,fisher_transform=False):
@@ -86,6 +87,32 @@ def mk_kfold_indices(subj_list, k = 10):
     np.random.shuffle(indices) # shuffles in place
 
     return np.array(indices)
+
+# First step of the modeling: assign a k-fold to each entry in the FC matrix
+def mk_kfold_indices_subject_aware(scan_list, k = 10):
+    """
+    Splits scans into k folds taking into account subject identity
+    
+    INPUTS
+    ======
+    subj_list: list of scan identifiers (sbj,scan)
+    k: number of folds
+    
+    OUTPUTS
+    =======
+    indices: np.array with one value per scan indicating k-fold membership
+    """
+    # Count the number of scans
+    n_scans                        = len(scan_list)
+    # Shuffle scans to randomize the folds across iterations
+    groups    = [sbj for (sbj,scan) in  scan_list]
+    # Create GroupKFold object for k splits
+    grp_cv  = GroupShuffleSplit(n_splits=k)
+    indices = np.zeros(n_scans)
+    for fold, (_,ix_test) in enumerate(grp_cv.split(scan_list,groups=groups)):
+        indices[ix_test]=fold
+    indices = indices.astype(int)
+    return indices
 
 # Then get the subject/scan names for the given fold (train and test)
 def split_train_test(subj_list, indices, test_fold):
