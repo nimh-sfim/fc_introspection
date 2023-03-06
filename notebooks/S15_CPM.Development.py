@@ -87,3 +87,107 @@ model_consensus_to_plot = pd.DataFrame(squareform(model_consensus['pos'])-square
                           columns= roi_info.set_index(['ROI_ID','ROI_Name','Hemisphere','Network']).index)
 
 plot_as_circos(model_consensus_to_plot,roi_info,figsize=(5,5),edge_weight=1)
+
+# ***
+# ## Development of subject-aware split
+
+from collections import OrderedDict
+from itertools import chain
+from random import shuffle
+from sklearn.preprocessing import LabelEncoder
+from sklearn.model_selection import GroupKFold, GroupShuffleSplit
+
+scan_list = fc_data.index
+
+
+# First step of the modeling: assign a k-fold to each entry in the FC matrix
+def mk_kfold_subject_aware_indices(scan_list, k = 10):
+    """
+    Splits scans into k folds taking into account subject identity
+    
+    INPUTS
+    ======
+    subj_list: list of scan identifiers (sbj,scan)
+    k: number of folds
+    
+    OUTPUTS
+    =======
+    indices: np.array with one value per scan indicating k-fold membership
+    """
+    # Count the number of scans
+    n_scans                        = len(scan_list)
+    # Shuffle scans to randomize the folds across iterations
+    groups    = [sbj for (sbj,scan) in  scan_list]
+    # Create GroupKFold object for k splits
+    grp_cv  = GroupShuffleSplit(n_splits=k)
+    indices = np.zeros(n_scans)
+    for fold, (_,ix_test) in enumerate(grp_cv.split(scan_list,groups=groups)):
+        indices[ix_test]=fold
+    indices = indices.astype(int)
+    return indices
+
+
+indices,groups = mk_kfold_subject_aware_indices(scan_list)
+group_ids = LabelEncoder().fit_transform(groups)
+
+# +
+import matplotlib.pyplot as plt
+import numpy as np
+import matplotlib.pyplot as plt
+from matplotlib.patches import Patch
+
+rng = np.random.RandomState(1338)
+cmap_data = plt.cm.Paired
+cmap_cv = plt.cm.coolwarm
+
+def visualize_groups(classes, groups, name):
+    # Visualize dataset groups
+    fig, ax = plt.subplots()
+    ax.scatter(
+        range(len(groups)),
+        [0.5] * len(groups),
+        c=groups,
+        marker="_",
+        lw=50,
+        cmap=cmap_data,
+    )
+    ax.scatter(
+        range(len(groups)),
+        [3.5] * len(groups),
+        c=classes,
+        marker="_",
+        lw=50,
+        cmap=cmap_data,
+    )
+    ax.set(
+        ylim=[-1, 5],
+        yticks=[0.5, 3.5],
+        yticklabels=["Data\ngroup", "Data\nclass"],
+        xlabel="Sample index",
+    )
+
+
+visualize_groups(indices, group_ids, "no groups")
+# -
+
+group_ids
+
+original_grouping_vector = X['group']
+original_grouping_vector
+
+unique_values, indexes, inverse = np.unique(original_grouping_vector, return_inverse=True, return_index=True)
+print(unique_values)
+print(indexes)
+print(inverse)
+
+# +
+new_grouping_vector = indexes[inverse] # This is where the magic happens!
+
+splitter = GroupKFold()
+for train, test in splitter.split(X, y, groups=new_grouping_vector):
+    print(X.iloc[test, :])
+# -
+
+X.sort_values(by='group')
+
+
