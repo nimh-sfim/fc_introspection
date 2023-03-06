@@ -4,7 +4,7 @@ import os.path as osp
 import pickle
 import pandas as pd
 import numpy as np
-from cpm import mk_kfold_indices, split_train_test, get_train_test_data, select_features, build_model, apply_model
+from cpm import mk_kfold_indices, split_train_test, get_train_test_data, select_features, build_model, apply_model, mk_kfold_indices_subject_aware
 
 def read_command_line():
     parser = argparse.ArgumentParser(description='Run the CPM algorithm given a set of FC matrices (vectorized) and an external quantity (e.g., behavior) to be predicted.')
@@ -16,8 +16,9 @@ def read_command_line():
     parser.add_argument('-i','--iter',                type=int,   help="Repetition/Iteration number",                  required=False, default=0, dest='repetition')
     parser.add_argument('-p','--edge_threshold_p',    type=float, help="Threshold for edge-selection (as p-value)",    required=False, default=None, dest='e_thr_p')
     parser.add_argument('-r','--edge_threshold_r',    type=float, help="Threshold for edge-selection (as r-value)",    required=False, default=None, dest='e_thr_r')
-    parser.add_argument('-c','--corr_type',           type=str,   help="Correlation type to use in edge-selection",    required=False, default=['spearman'], choices=['spearman','pearson'], dest='corr_type')
-    parser.add_argument('-s','--edge_summary_metric', type=str,   help="How to summarize across edges in final model", required=False, default=['sum'], choices=['sum','mean'], dest='e_summary_metric')
+    parser.add_argument('-c','--corr_type',           type=str,   help="Correlation type to use in edge-selection",    required=False, default='spearman', choices=['spearman','pearson'], dest='corr_type')
+    parser.add_argument('-s','--edge_summary_metric', type=str,   help="How to summarize across edges in final model", required=False, default='sum',      choices=['sum','mean'], dest='e_summary_metric')
+    parser.add_argument('-m','--split_mode',          type=str,   help="Type of data split for k-fold",                required=False, default='basic',    choices=['basic','subject_aware'], dest='split_mode')
     parser.add_argument('-n','--randomize_behavior', action='store_true', help="Randomized behavioral values for creating null distibutions", dest='randomize_behavior', required=False)
     parser.add_argument('-v','--verbose',            action='store_true', help="Show additional information on screen",                       dest='verbose', required=False)
     parser.set_defaults(verbose=False)
@@ -40,6 +41,7 @@ def main():
     print('   * Behavior to predict                 : %s' % opts.behavior)
     print('   * Number of folds                     : %d folds' % opts.k)
     print('   * Repetition Number                   : %d' % opts.repetition)
+    print('   * [Cross-validation] Spliting mode    : %s' % opts.split_mode)
 
     assert ((opts.e_thr_p is not None) & (opts.e_thr_r is None)) | ((opts.e_thr_p is None) & (opts.e_thr_r is not None)), '++ ERROR [main]: Edge Thesholding must be set either as a p-value or R. You provided both. Program will exit.'
     if opts.e_thr_p is not None:
@@ -83,9 +85,11 @@ def main():
           
     # Prepare for Cross-validation step
     # =================================
-    print('++ INFO [main]: Generating lists of scans per k-fold')
-    indices = mk_kfold_indices(scan_list, k=opts.k)
-    
+    print('++ INFO [main]: Generating lists of scans per k-fold [%s]' % opts.split_mode)
+    if opts.split_mode == 'basic':
+        indices = mk_kfold_indices(scan_list, k=opts.k)
+    if opts.split_mode == 'subject_aware':
+        indices = mk_kfold_indices_subject_aware(scan_list, k=opts.k)
     # Create dictionary with configurations
     cpm_kwargs = {'r_thresh': opts.e_thr_r,
                   'p_thresh': opts.e_thr_p,
@@ -148,10 +152,11 @@ def main():
     cpm_outputs = {'cpm_kwargs':cpm_kwargs,
                    'models':all_masks,
                    'behav_obs_pred': behav_obs_pred}
-    if opts.randomize_behavior:
-        output_file = osp.join(opts.output_dir,'cpm_{beh}_rep-{rep}_NULL.pkl'.format(rep=str(opts.repetition).zfill(5), beh=opts.behavior))
-    else:
-        output_file = osp.join(opts.output_dir,'cpm_{beh}_rep-{rep}.pkl'.format(rep=str(opts.repetition).zfill(5), beh=opts.behavior))
+    # if opts.randomize_behavior:
+    #     output_file = osp.join(opts.output_dir,'cpm_{beh}_rep-{rep}_NULL.pkl'.format(rep=str(opts.repetition).zfill(5), beh=opts.behavior))
+    # else:
+    #     output_file = osp.join(opts.output_dir,'cpm_{beh}_rep-{rep}.pkl'.format(rep=str(opts.repetition).zfill(5), beh=opts.behavior))
+    output_file = osp.join(opts.output_dir,'cpm_{beh}_rep-{rep}.pkl'.format(rep=str(opts.repetition).zfill(5), beh=opts.behavior))
     with open(output_file, 'wb') as f:
         pickle.dump(cpm_outputs, f)
     print('++ INFO [main]: Results written to disk [%s]' % output_file)
