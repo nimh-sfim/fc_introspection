@@ -12,7 +12,7 @@ cd /data/SFIMJGC_Introspec/2023_fc_introspection/code/fc_introspection/notebooks
 # ----------------------
 unset DISPLAY
 
-BASIC_INPUT_ARG_LIST=`echo -b ${BEHAV_PATH} -f ${FC_PATH} -o ${OUT_DIR} -t ${BEHAVIOR} -k ${NUM_FOLDS} -i ${NUM_ITER} -c ${CORR_TYPE} -s ${E_SUMMARY_METRIC}`
+BASIC_INPUT_ARG_LIST=`echo -b ${BEHAV_PATH} -f ${FC_PATH} -o ${OUT_DIR} -t ${BEHAVIOR} -k ${NUM_FOLDS} -i ${NUM_ITER} -c ${CORR_TYPE} -s ${E_SUMMARY_METRIC} -m ${SPLIT_MODE}`
 
 if [[ ! -z "${E_THR_R}" ]]; then echo "++ Received R-based Threshold"; ARG_LIST=`echo ${BASIC_INPUT_ARG_LIST} -r ${E_THR_R}`; fi
 if [[ ! -z "${E_THR_P}" ]]; then echo "++ Received P-based Threshold"; ARG_LIST=`echo ${BASIC_INPUT_ARG_LIST} -p ${E_THR_P}`; fi
