@@ -35,7 +35,7 @@ import matplotlib.pyplot as plt
 #import holoviews as hv
 from utils.basics import get_sbj_scan_list
 from scipy.spatial.distance import squareform
-from utils.basics import DATA_DIR, CORTICAL_ATLAS_NAME, FB_ATLAS_NAME, ATLASES_DIR
+from utils.basics import DATA_DIR, CORTICAL_400ROI_ATLAS_NAME, FB_400ROI_ATLAS_NAME, ATLASES_DIR
 from utils.plotting import hvplot_fc, plot_fc
 from sfim_lib.io.afni import load_netcc
 from scipy.spatial.distance import cosine      as cosine_distance
@@ -55,7 +55,7 @@ sbj_list, scan_list = get_sbj_scan_list(when='post_motion', return_snycq=False)
 
 # # 2. Load information about the Atlas and ROI needed for plotting
 
-ATLASINFO_PATH = osp.join(ATLASES_DIR,FB_ATLAS_NAME,'{ATLAS_NAME}.roi_info.csv'.format(ATLAS_NAME=FB_ATLAS_NAME))
+ATLASINFO_PATH = osp.join(ATLASES_DIR,FB_400ROI_ATLAS_NAME,'{ATLAS_NAME}.roi_info.csv'.format(ATLAS_NAME=FB_400ROI_ATLAS_NAME))
 roi_info       = pd.read_csv(ATLASINFO_PATH)
 roi_info
 
@@ -78,7 +78,7 @@ all_rois = list(roi_info['ROI_Name'].values)
 # Load all matrices
 for sbj,run in tqdm(scan_list):
     _,_,_,_,run_num,_,run_acq = run.split('-')
-    netcc_path = osp.join(DATA_DIR,'PrcsData',sbj,'preprocessed','func','pb06_staticFC','{run_acq}_run-{run_num}.{ATLAS_NAME}_000.netcc'.format(run_acq = run_acq, run_num = run_num, ATLAS_NAME = FB_ATLAS_NAME))
+    netcc_path = osp.join(DATA_DIR,'PrcsData',sbj,'preprocessed','func','pb06_staticFC','{run_acq}_run-{run_num}.{ATLAS_NAME}_000.netcc'.format(run_acq = run_acq, run_num = run_num, ATLAS_NAME = FB_400ROI_ATLAS_NAME))
     netcc      = load_netcc(netcc_path)
     this_scan_rois = [ item.strip().strip('7Networks_') for item in list(netcc.columns)]
     all_sfc_R.loc[sbj+'|'+run,:,:] = netcc
@@ -310,6 +310,7 @@ def plot_one_scan(scan_num,sorting_method):
     scan_label = sbj + ',' + run_num+'_'+run_acq + ' | R = %.3f' % corr_to_REFERENCE[scan_name]  + ' | Cov = %.2f' % cov_to_REFERENCE[scan_name] + ' | DCos = %.2f' % Dcos_to_REFERENCE[scan_name] + ' | DCor = %.2f' % Dcor_to_REFERENCE[scan_name] + ' | DEuc = %.2f' % Deuc_to_REFERENCE[scan_name]
     data = all_sfc_R.loc[scan_name].values
     fig  = plot_fc(data,ATLASINFO_PATH, figsize=(10,10))
+    #return pn.Card(fig,title=scan_label,collapsible=False)
     return pn.Card(pn.pane.Matplotlib(fig),title=scan_label,collapsible=False)
 
 
