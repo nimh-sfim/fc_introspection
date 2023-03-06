@@ -16,7 +16,8 @@ nw_color_map = {'LH-Vis':'purple',      'RH-Vis':'purple','Vis':'purple',
                    'LH-SalVentAttn':'violet','RH-SalVentAttn':'violet','SalVentAttn':'violet',
                    'LH-Cont':'orange','RH-Cont':'orange','Cont':'orange',
                    'LH-Default':'red','RH-Default':'red','Default':'red',
-                   'LH-Subcortical':'yellow',      'RH-Subcortical':'yellow','Subcortical':'yellow'}
+                   'LH-Subcortical':'yellow',      'RH-Subcortical':'yellow','Subcortical':'yellow',
+                   'LH-Limbic':'lightgreen',      'RH-Limbic':'lightgreen','Limbic':'lightgreen'}
 hm_color_map = {'LH':'grey','RH':'darkgrey'}
 
 def get_net_divisions(roi_info_path, verbose=False):
