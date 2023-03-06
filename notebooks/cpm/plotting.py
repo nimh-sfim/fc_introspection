@@ -3,12 +3,12 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 from scipy.stats import pearsonr
 
-iimport numpy as np
+import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
 from scipy.stats import pearsonr
 
-def plot_predictions(behav_obs_pred, tail="glm", figsize=(10,10), color='gray', font_scale=2, verbose=False, p_value=None, ax=None, marker_size=1, xlabel=None, ylabel=None, xlim=None, ylim=None):
+def plot_predictions(behav_obs_pred, tail="glm", figsize=(10,10), color='gray', font_scale=2, verbose=False, accuracy_metric='pearson', p_value=None, ax=None, marker_size=1, xlabel=None, ylabel=None, xlim=None, ylim=None):
     if ax is None:
         create_new_fig = True
     else:
@@ -64,8 +64,18 @@ def plot_predictions(behav_obs_pred, tail="glm", figsize=(10,10), color='gray', 
         if y_values.shape[0] == 0:
             r,p_value = 0,1
         else:
-            r,p_value = pearsonr(x_values,y_values)
-    
+            if accuracy_metric == 'pearson':
+                 r,p_value = pearsonr(x_values,y_values)
+            if accuracy_metric == 'spearman':
+                 r,p_value = spearmanr(x_values, y_values)
+    else:
+        if y_values.shape[0] == 0:
+            r,p_value = 0,1
+        else:
+            if accuracy_metric == 'pearson':
+                 r,_ = pearsonr(x_values,y_values)
+            if accuracy_metric == 'spearman':
+                 r,_ = spearmanr(x_values, y_values)
     # Create Plot
     # ===========
     if create_new_fig:
@@ -79,7 +89,6 @@ def plot_predictions(behav_obs_pred, tail="glm", figsize=(10,10), color='gray', 
     g.set_xlim(ax_min, ax_max)
     g.set_ylim(ax_min, ax_max)
     g.set_aspect('equal', adjustable='box')
-    r,p_value = pearsonr(x.values.flatten(),y.values.flatten())
     if verbose:
         print(r,p_value)
     g.annotate('r = {0:.2f} | p={1:.2e}'.format(r,p_value), xy = (0.3, 0.1), xycoords = 'axes fraction');
