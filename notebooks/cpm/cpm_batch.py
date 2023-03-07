@@ -4,7 +4,7 @@ import os.path as osp
 import pickle
 import pandas as pd
 import numpy as np
-from cpm import mk_kfold_indices, split_train_test, get_train_test_data, select_features, build_model, apply_model, mk_kfold_indices_subject_aware
+from cpm import mk_kfold_indices, split_train_test, get_train_test_data, select_features, build_model, apply_model, mk_kfold_indices_subject_aware, build_ridge_model, apply_ridge_model
 
 def read_command_line():
     parser = argparse.ArgumentParser(description='Run the CPM algorithm given a set of FC matrices (vectorized) and an external quantity (e.g., behavior) to be predicted.')
@@ -17,10 +17,11 @@ def read_command_line():
     parser.add_argument('-p','--edge_threshold_p',    type=float, help="Threshold for edge-selection (as p-value)",    required=False, default=None, dest='e_thr_p')
     parser.add_argument('-r','--edge_threshold_r',    type=float, help="Threshold for edge-selection (as r-value)",    required=False, default=None, dest='e_thr_r')
     parser.add_argument('-c','--corr_type',           type=str,   help="Correlation type to use in edge-selection",    required=False, default='spearman', choices=['spearman','pearson'], dest='corr_type')
-    parser.add_argument('-s','--edge_summary_metric', type=str,   help="How to summarize across edges in final model", required=False, default='sum',      choices=['sum','mean'], dest='e_summary_metric')
+    parser.add_argument('-s','--edge_summary_metric', type=str,   help="How to summarize across edges in final model", required=False, default='sum',      choices=['sum','mean','ridge'], dest='e_summary_metric')
     parser.add_argument('-m','--split_mode',          type=str,   help="Type of data split for k-fold",                required=False, default='basic',    choices=['basic','subject_aware'], dest='split_mode')
     parser.add_argument('-n','--randomize_behavior', action='store_true', help="Randomized behavioral values for creating null distibutions", dest='randomize_behavior', required=False)
     parser.add_argument('-v','--verbose',            action='store_true', help="Show additional information on screen",                       dest='verbose', required=False)
+    parser.add_argument('-a','--ridge_alpha', type=float, help='Alpha parameter for ridge regression', required=False, default=1.0, dest='ridge_alpha')
     parser.set_defaults(verbose=False)
     parser.set_defaults(randomize_behavior=False)
     return parser.parse_args()
@@ -50,6 +51,8 @@ def main():
        print('   * [Edge Selection] - Threshold        : R > %.3f' % opts.e_thr_r)
     print('   * [Edge Selection] - Correlation Type : %s' % opts.corr_type)
     print('   * [Model] - Summarization Method      : %s' % opts.e_summary_metric)
+    if opts.e_summary_metric == 'ridge':
+       print('   * [Model] - Alpha for Ridge Regression      : %f' % opts.ridge_alpha)
     if opts.randomize_behavior:
        print('   * Randomization of Behavior Selected --> ####### Creating a set of null results #####')
           
@@ -95,20 +98,32 @@ def main():
                   'p_thresh': opts.e_thr_p,
                   'corr_type': opts.corr_type,
                   'verbose': opts.verbose,
-                  'edge_summary_metric': opts.e_summary_metric}
+                  'edge_summary_metric': opts.e_summary_metric,
+                  'ridge_alpha':opts.ridge_alpha}
+    
     # Create output data structures
     # =============================
-    
-    # 1. DataFrame for storing observed and predicted behaviors
-    col_list = []
-    for tail in ["pos", "neg", "glm"]:
-        col_list.append(opts.behavior + " predicted (" + tail + ")")
-    col_list.append(opts.behavior + " observed")
-    behav_obs_pred = pd.DataFrame(index=scan_list, columns = col_list)
-    # 2. Arrays for storing predictive models
     all_masks = {}
-    all_masks["pos"] = np.zeros((opts.k, n_edges))
-    all_masks["neg"] = np.zeros((opts.k, n_edges))
+    if opts.e_summary_metric == 'ridge':
+        # 1. DataFrame for storing observed and predicted behaviors
+        col_list = []
+        col_list.append(opts.behavior + " predicted (ridge)")
+        col_list.append(opts.behavior + " observed")
+        behav_obs_pred = pd.DataFrame(index=scan_list, columns = col_list)
+        # 2. Arrays for storing predictive models
+        all_masks["pos"]   = np.zeros((opts.k, n_edges))
+        all_masks["neg"]   = np.zeros((opts.k, n_edges))
+        all_masks["ridge"] = np.zeros((opts.k, n_edges))
+    else:
+        # 1. DataFrame for storing observed and predicted behaviors
+        col_list = []
+        for tail in ["pos", "neg", "glm"]:
+            col_list.append(opts.behavior + " predicted (" + tail + ")")
+        col_list.append(opts.behavior + " observed")
+        behav_obs_pred = pd.DataFrame(index=scan_list, columns = col_list)
+        # 2. Arrays for storing predictive models
+        all_masks["pos"]   = np.zeros((opts.k, n_edges))
+        all_masks["neg"]   = np.zeros((opts.k, n_edges)) 
     
     # Run Cross-validation
     # ====================
@@ -133,15 +148,23 @@ def main():
         all_masks["pos"][fold,:] = mask_dict["pos"]
         all_masks["neg"][fold,:] = mask_dict["neg"]
        
-        # Build model and predict behavior
-        print('build_model', end=' --> ')
-        model_dict = build_model(train_vcts, mask_dict, train_behav)
-        print('apply_model', end='\n')
-        behav_pred = apply_model(test_vcts, mask_dict, model_dict)
+        if opts.e_summary_metric == 'ridge':
+            all_masks["ridge"][fold,:] = mask_dict["pos"] + mask_dict["neg"]
+            print('build_ridge_model', end=' --> ')
+            model       = build_ridge_model(train_vcts, all_masks["ridge"][fold,:], train_behav, opts.ridge_alpha)
+            print('apply_model', end='\n')
+            predictions = apply_ridge_model(test_vcts, all_masks["ridge"][fold,:], model)
+            behav_obs_pred.loc[test_subs, opts.behavior + " predicted (ridge)"] = predictions 
+        else:
+            # Build model and predict behavior
+            print('build_model', end=' --> ')
+            model_dict = build_model(train_vcts, mask_dict, train_behav, edge_summary_method=opts.e_summary_metric)
+            print('apply_model', end='\n')
+            behav_pred = apply_model(test_vcts, mask_dict, model_dict, edge_summary_method=opts.e_summary_metric)
     
-        # Update behav_obs_pred with results for this particular fold (the predictions for the test subjects only)
-        for tail, predictions in behav_pred.items():
-            behav_obs_pred.loc[test_subs, opts.behavior + " predicted (" + tail + ")"] = predictions    
+            # Update behav_obs_pred with results for this particular fold (the predictions for the test subjects only)
+            for tail, predictions in behav_pred.items():
+                behav_obs_pred.loc[test_subs, opts.behavior + " predicted (" + tail + ")"] = predictions
         
     # Add observed behavior to the returned dataframe behav_obs_pred
     # ==============================================================
@@ -160,8 +183,11 @@ def main():
     with open(output_file, 'wb') as f:
         pickle.dump(cpm_outputs, f)
     print('++ INFO [main]: Results written to disk [%s]' % output_file)
-    for tail in ["pos","neg","glm"]:
-        print('++ INFO [main]: R(obs,pred-%s) = %.3f' % (tail, behav_obs_pred[opts.behavior + " observed"].corr(behav_obs_pred[opts.behavior + " predicted (" + tail + ")"])))
+    if opts.e_summary_metric == 'ridge':
+        print('++ INFO [main]: R(obs,pred-%s) = %.3f' % ('ridge', behav_obs_pred[opts.behavior + " observed"].corr(behav_obs_pred[opts.behavior + " predicted (ridge)"])))
+    else:
+        for tail in ["pos","neg","glm"]:
+            print('++ INFO [main]: R(obs,pred-%s) = %.3f' % (tail, behav_obs_pred[opts.behavior + " observed"].corr(behav_obs_pred[opts.behavior + " predicted (" + tail + ")"])))
     
 if __name__ == "__main__":
     main()
