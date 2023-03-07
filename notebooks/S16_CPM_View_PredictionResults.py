@@ -32,7 +32,7 @@ import holoviews as hv
 import xarray as xr
 import numpy as np
 import pickle
-from utils.basics import get_sbj_scan_list, FB_400ROI_ATLAS_NAME
+from utils.basics import get_sbj_scan_list, FB_400ROI_ATLAS_NAME, FB_200ROI_ATLAS_NAME
 from cpm.plotting import plot_predictions
 import seaborn as sns
 import panel as pn
@@ -41,11 +41,11 @@ from scipy.stats import pearsonr, spearmanr
 
 ACCURACY_METRIC      = 'pearson'
 CORR_TYPE            = 'pearson'
-E_SUMMARY_METRIC     = 'sum'
+E_SUMMARY_METRIC     = 'ridge'
 CONFOUNDS            = 'conf_not_residualized'
 BEHAVIOR_LIST        = ['Images','Words','People','Myself','Positive','Negative','Surroundings','Intrusive','Vigilance','Future','Past','Specific']
 SPLIT_MODE           = 'subject_aware'
-ATLAS                = FB_400ROI_ATLAS_NAME
+ATLAS                = FB_200ROI_ATLAS_NAME
 
 # ## 1. Load CPM results
 #
@@ -55,6 +55,7 @@ real_results_path = osp.join(RESOURCES_CPM_DIR,f'real-{ATLAS}-{SPLIT_MODE}-{CONF
 with open(real_results_path,'rb') as f:
      real_predictions_xr = pickle.load(f)
 Nbehavs, Niters_real, Nscans, Nresults = real_predictions_xr.shape
+print(Nbehavs, Niters_real, Nscans, Nresults)
 
 # 1.2. Randomized data
 
@@ -75,7 +76,10 @@ p_values = pd.DataFrame(index=BEHAVIOR_LIST,columns=['Non Parametric','Parametri
 for BEHAVIOR in BEHAVIOR_LIST:
     for niter in tqdm(range(Niters_real), desc=BEHAVIOR):
         observed  = pd.Series(real_predictions_xr.loc[BEHAVIOR,niter,:,'observed'].values)
-        predicted = pd.Series(real_predictions_xr.loc[BEHAVIOR,niter,:,'predicted (glm)'].values)
+        if E_SUMMARY_METRIC == 'ridge':
+            predicted = pd.Series(real_predictions_xr.loc[BEHAVIOR,niter,:,'predicted (ridge)'].values)
+        else:
+            predicted = pd.Series(real_predictions_xr.loc[BEHAVIOR,niter,:,'predicted (glm)'].values)
         accuracy_real[BEHAVIOR].loc[niter]  = observed.corr(predicted, method=ACCURACY_METRIC)
         if ACCURACY_METRIC == 'pearson':
             _,p_values.loc[BEHAVIOR,'Parametric'] = pearsonr(observed,predicted)
@@ -117,7 +121,7 @@ for BEHAVIOR in BEHAVIOR_LIST:
 median_width = 0.4
 sns.set(style='whitegrid')
 fig,ax = plt.subplots(1,1,figsize=(15,5))
-sns.boxenplot(data=null_df,x='Question',y='R', color='lightgray', ax=ax) 
+#sns.boxenplot(data=null_df,x='Question',y='R', color='lightgray', ax=ax) 
 sns.stripplot(data=real_df,x='Question', y='R', alpha=.8, ax=ax)
 plt.xticks(rotation=45);
 for tick, text in zip(ax.get_xticks(), ax.get_xticklabels()):
