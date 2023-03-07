@@ -8,6 +8,7 @@ from sfim_lib.io.afni import load_netcc
 import numpy as np
 from tqdm import tqdm
 from sklearn.model_selection import GroupShuffleSplit
+from sklearn.linear_model import Ridge
 # Input Functions
 # ===============
 def read_fc_matrices(scan_list,data_dir,atlas_name,fisher_transform=False):
@@ -306,7 +307,23 @@ def apply_model(test_vcts, mask_dict, model_dict, edge_summary_method='sum'):
        X_glm             = np.c_[X_glm, np.ones(X_glm.shape[0])]
        behav_pred["glm"] = pd.Series(np.dot(X_glm, model_dict["glm"])).set_axis(test_vcts.index)
     return behav_pred
-   
+
+# Ridge Regression Functions
+# ==========================
+def build_ridge_model(train_vcts, sel_edges, train_behav, alpha=0.5):
+    sel_edges_id = np.where(sel_edges==1)[0]
+    X            = train_vcts.copy().loc[:,sel_edges_id]
+    ridge_obj  = Ridge(alpha=alpha)
+    ridge_obj.fit(X,train_behav)
+    return ridge_obj
+
+def apply_ridge_model(test_vcts, sel_edges, model):
+    sel_edges_id = np.where(sel_edges==1)[0]
+    X            = test_vcts.copy().loc[:,sel_edges_id]
+    behav_pred   = pd.Series(model.predict(X)).set_axis(test_vcts.index)
+    return behav_pred
+# End ridge functions
+
 def cpm_wrapper(fc_data, behav_data, behav, k=10, **cpm_kwargs):
     """This function will run the whole CPM algorithm given a set of connectivity data, a target behavior to predict and a few hyper-parameters.
     
