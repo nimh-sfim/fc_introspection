@@ -9,6 +9,8 @@ import numpy as np
 from tqdm import tqdm
 from sklearn.model_selection import GroupShuffleSplit
 from sklearn.linear_model import Ridge
+from sklearn.linear_model import LinearRegression
+
 # Input Functions
 # ===============
 def read_fc_matrices(scan_list,data_dir,atlas_name,fisher_transform=False):
@@ -169,37 +171,17 @@ def select_features(train_vcts, train_behav, r_thresh=None, p_thresh=None, corr_
     # Select edges according to thresholding criteria
     mask_dict = {}
     if p_thresh is not None:
+        print('++ INFO [select_features]: Threshold based on p_value [p<%f]' % p_thresh, end=' ')
         mask_dict["pos"] = (r > 0) & (p<p_thresh)
         mask_dict["neg"] = (r < 0) & (p<p_thresh)
     if r_thresh is not None:
+        print('++ INFO [select_features]: Threshold based on R value [R>%f]' % r_thresh, end=' ')
         mask_dict["pos"] = r > r_thresh
         mask_dict["neg"] = r < -r_thresh
     if verbose:
-        print("Found ({}/{}) edges positively/negatively correlated with behavior in the training set".format(mask_dict["pos"].sum(), mask_dict["neg"].sum()), end='') # for debugging
+        print("[{} pos/ {} neg] edges correlated with behavior".format(mask_dict["pos"].sum(), mask_dict["neg"].sum()), end='') # for debugging
     return mask_dict
 
-##def select_features(train_vcts, train_behav, r_thresh=None, p_thresh=None, corr_type='pearson', verbose=False, **other_options):
-##    """
-##    Runs the CPM feature selection step: 
-##    - correlates each edge with behavior, and returns a mask of edges that are correlated above some threshold, one for each tail (positive and negative)
-##    """
-##
-##    assert train_vcts.index.equals(train_behav.index), "Row indices of FC vcts and behavior don't match!"
-##    
-##    # Correlate all edges with behav vector
-##    
-##    corr = train_vcts.corrwith(train_behav, method=corr_type)
-##    
-##    # Define positive and negative masks
-##    mask_dict = {}
-##    mask_dict["pos"] = corr > r_thresh
-##    mask_dict["neg"] = corr < -r_thresh
-##    
-##    if verbose:
-##        print("Found ({}/{}) edges positively/negatively correlated with behavior in the training set".format(mask_dict["pos"].sum(), mask_dict["neg"].sum())) # for debugging
-##
-##    return mask_dict
-   
 def build_model(train_vcts, mask_dict, train_behav, edge_summary_method='sum'):
     """
     Builds a CPM model:
@@ -308,8 +290,9 @@ def apply_model(test_vcts, mask_dict, model_dict, edge_summary_method='sum'):
        behav_pred["glm"] = pd.Series(np.dot(X_glm, model_dict["glm"])).set_axis(test_vcts.index)
     return behav_pred
 
-# Ridge Regression Functions
-# ==========================
+# =====================================
+#      Ridge Regression Functions
+# =====================================
 def build_ridge_model(train_vcts, sel_edges, train_behav, alpha=0.5):
     sel_edges_id = np.where(sel_edges==1)[0]
     X            = train_vcts.copy().loc[:,sel_edges_id]
@@ -322,8 +305,57 @@ def apply_ridge_model(test_vcts, sel_edges, model):
     X            = test_vcts.copy().loc[:,sel_edges_id]
     behav_pred   = pd.Series(model.predict(X)).set_axis(test_vcts.index)
     return behav_pred
-# End ridge functions
+# ======================================
+# End of Ridge functions
+# ======================================
 
+
+# ======================================
+#     Confound Removal Functions
+# ======================================
+def get_confounds(train_subs, test_subs, motion_data, behav_data=None, motion=True, vigilance=False):
+    """
+    Remove motion from target to be predicted
+    """
+    train_index = pd.MultiIndex.from_tuples(train_subs, names=['Subject','Run'])
+    test_index  = pd.MultiIndex.from_tuples(test_subs, names=['Subject','Run'])
+    cols = []
+    if motion:
+        cols.append('Motion')
+    if vigilance:
+        cols.append('Vigilance')
+    train_confounds_df = pd.DataFrame(index=train_index, columns=cols)
+    test_confounds_df  = pd.DataFrame(index=test_index, columns=cols)
+    # Get motion confounds
+    if motion is True:
+        train_confounds_df['Motion'] = motion_data.loc[train_index].values
+        test_confounds_df['Motion']  = motion_data.loc[test_index].values
+    # Get vigilance confounds
+    if vigilance is True:
+        train_confounds_df['Vigilance'] = behav_data.loc[train_index,'Vigilance'].values
+        test_confounds_df['Vigilance']  = behav_data.loc[test_index,'Vigilance'].values
+    return train_confounds_df, test_confounds_df
+
+def residualize(y,confounds):
+    "Residualize the training set and returns a model to be used on the test set"
+    for confound in confounds.columns:
+        print("R_before = {:.3f}".format(pearsonr(y, confounds[confound])[0]), end=', ')
+
+    lm = LinearRegression().fit(confounds, y)
+    y_resid = y - lm.predict(confounds)
+
+    for confound in confounds.columns:
+        print("R_after = {:.3f}".format(pearsonr(y_resid, confounds[confound])[0]), end=' ')
+
+    return y_resid, lm
+# ==========================================
+#      End of confound removal functions
+# ==========================================
+   
+ 
+ 
+ 
+# Deprecated function, we now run code as separate programs
 def cpm_wrapper(fc_data, behav_data, behav, k=10, **cpm_kwargs):
     """This function will run the whole CPM algorithm given a set of connectivity data, a target behavior to predict and a few hyper-parameters.
     
