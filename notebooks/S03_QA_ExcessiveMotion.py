@@ -97,4 +97,15 @@ print('++ INFO: Number of subjects remaining after removal of scans with excessi
 scans_to_remove_due_to_excessive_motion.to_csv(BAD_MOTION_LIST_PATH)
 print('++ INFO: List of scans with excessive motion written to disk: [%s]' % BAD_MOTION_LIST_PATH)
 
+# ## 2.4. Extract motion info to be used as confounds in CPM
+
+motion_df = motion_df.loc[SNYCQ_data.index]
+
+motion_confound_cpm = motion_df[motion_df < REL_MOT_THRESHOLD].mean(axis=1)
+motion_confound_cpm.name = 'Mean Rel Motion'
+
+motion_confound_cpm_path = osp.join(RESOURCES_DINFO_DIR,'motion_confounds.csv')
+motion_confound_cpm.to_csv(motion_confound_cpm_path)
+print('++ INFO: motion confounds saved to disk [%s]' % motion_confound_cpm_path)
+
 
