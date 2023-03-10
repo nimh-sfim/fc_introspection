@@ -41,8 +41,8 @@ from scipy.stats import pearsonr, spearmanr
 
 ACCURACY_METRIC      = 'pearson'
 CORR_TYPE            = 'pearson'
-E_SUMMARY_METRIC     = 'ridge'
-CONFOUNDS            = 'conf_not_residualized'
+E_SUMMARY_METRIC     = 'sum'
+CONFOUNDS            = 'conf_residualized'
 BEHAVIOR_LIST        = ['Images','Words','People','Myself','Positive','Negative','Surroundings','Intrusive','Vigilance','Future','Past','Specific']
 SPLIT_MODE           = 'subject_aware'
 ATLAS                = FB_200ROI_ATLAS_NAME
@@ -51,7 +51,8 @@ ATLAS                = FB_200ROI_ATLAS_NAME
 #
 # 1.1. Real data
 
-real_results_path = osp.join(RESOURCES_CPM_DIR,f'real-{ATLAS}-{SPLIT_MODE}-{CONFOUNDS}-{CORR_TYPE}_{E_SUMMARY_METRIC}.pkl')
+#real_results_path = osp.join(RESOURCES_CPM_DIR,f'real-{ATLAS}-{SPLIT_MODE}-{CONFOUNDS}-{CORR_TYPE}_{E_SUMMARY_METRIC}.pkl')
+real_results_path = osp.join(RESOURCES_CPM_DIR,f'R0p15_thr_real-{ATLAS}-{SPLIT_MODE}-{CONFOUNDS}-{CORR_TYPE}_{E_SUMMARY_METRIC}.pkl')
 with open(real_results_path,'rb') as f:
      real_predictions_xr = pickle.load(f)
 Nbehavs, Niters_real, Nscans, Nresults = real_predictions_xr.shape
@@ -59,10 +60,14 @@ print(Nbehavs, Niters_real, Nscans, Nresults)
 
 # 1.2. Randomized data
 
-null_results_path = osp.join(RESOURCES_CPM_DIR,f'null-{ATLAS}-{SPLIT_MODE}-{CONFOUNDS}-{CORR_TYPE}_{E_SUMMARY_METRIC}.pkl')
+# +
+#null_results_path = osp.join(RESOURCES_CPM_DIR,f'null-{ATLAS}-{SPLIT_MODE}-{CONFOUNDS}-{CORR_TYPE}_{E_SUMMARY_METRIC}.pkl')
+null_results_path = osp.join(RESOURCES_CPM_DIR,f'R0p15_thr_null-{ATLAS}-{SPLIT_MODE}-{CONFOUNDS}-{CORR_TYPE}_{E_SUMMARY_METRIC}.pkl')
+
 with open(null_results_path,'rb') as f:
      null_predictions_xr = pickle.load(f)
 _, Niters_null, _, _ = null_predictions_xr.shape
+# -
 
 # # 2. Compute accuracy values
 #
@@ -93,7 +98,10 @@ accuracy_null = {BEHAVIOR:pd.DataFrame(index=range(Niters_null), columns=['Accur
 for BEHAVIOR in BEHAVIOR_LIST:
     for niter in tqdm(range(Niters_null), desc=BEHAVIOR):
         observed  = pd.Series(null_predictions_xr.loc[BEHAVIOR,niter,:,'observed'].values)
-        predicted = pd.Series(null_predictions_xr.loc[BEHAVIOR,niter,:,'predicted (glm)'].values)
+        if E_SUMMARY_METRIC == 'ridge':
+            predicted = pd.Series(null_predictions_xr.loc[BEHAVIOR,niter,:,'predicted (ridge)'].values)
+        else:
+            predicted = pd.Series(null_predictions_xr.loc[BEHAVIOR,niter,:,'predicted (glm)'].values)
         accuracy_null[BEHAVIOR].loc[niter]  = observed.corr(predicted, method=ACCURACY_METRIC)
 
 # # 3. Compute non-parameter p-values
@@ -115,7 +123,7 @@ for BEHAVIOR in BEHAVIOR_LIST:
 
 real_df = pd.DataFrame(columns=['Question','Iteration','R'])
 for BEHAVIOR in BEHAVIOR_LIST:
-    for i in tqdm(range(Niters_real), desc='Iteration [%s]' % BEHAVIOR):
+    for i in tqdm(range(Niters_real), desc=BEHAVIOR):
         real_df = real_df.append({'Question':BEHAVIOR,'Iteration':i,'R':accuracy_real[BEHAVIOR].loc[i].values[0]}, ignore_index=True)
 
 median_width = 0.4
@@ -132,8 +140,12 @@ ax.set_ylim(-.3,.4)
 ax.set_ylabel('R (Observed,Predicted)');
 ax.set_xlabel('SNYCQ Item')
 
+p_values
+
 fig,ax = plt.subplots(3,4,figsize=(20,15))
 for i,BEHAVIOR in enumerate(BEHAVIOR_LIST):
     row,col        = np.unravel_index(i,(3,4))
     behav_obs_pred = pd.DataFrame(real_predictions_xr.median(dim='Iteration').loc[BEHAVIOR,:,['observed','predicted (glm)']], columns=['observed','predicted (glm)'])
     r,p = plot_predictions(behav_obs_pred, ax=ax[row,col], xlabel='Observed [%s]' % BEHAVIOR, ylabel='Predicted [%s]' % BEHAVIOR, font_scale=1,p_value=p_values.loc[BEHAVIOR,'Non Parametric'] )
+
+
