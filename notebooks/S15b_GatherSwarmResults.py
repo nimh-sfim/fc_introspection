@@ -15,7 +15,9 @@ def read_command_line():
     #parser.add_argument('-c','--corr_type', type=str, help='Metric to evaluate relation between observed / predicted in final model eval', required=True, dest='corr_type', choices=['pearson','spearman'])
     parser.add_argument('-t','--target', type=str, help='Use if you want to only load files for an specific target', required=False, dest='target', default=None)
     parser.add_argument('-T','--test_only', help='Do not load files, just check for their existence', dest='test', required=False, action='store_true')
+    parser.add_argument('-v','--verbose', help='Show additional information', required=False, dest='verbose', action='store_true')
     parser.set_defaults(test=False)
+    parser.set_defaults(verbose=False)
     return parser.parse_args()
 
 def main():
@@ -62,8 +64,9 @@ def main():
             if opts.test is True:
                 if not osp.exists(path):
                     num_missing[TARGET] = num_missing[TARGET] + 1
-                    print('++ WARNING [test]: Missing file [%s]' % path)
-                    next_swarm_grep = next_swarm_grep + ' -e "NUM_ITER={r} "'.format(r=r)
+                    if opts.verbose:
+                        print('++ WARNING [test]: Missing file [%s]' % path)
+                    next_swarm_grep = next_swarm_grep + ' -e "NUM_ITER={r} "'.format(r=r+1)
                 continue
             try:
                 with open(path,'rb') as f:
@@ -80,16 +83,18 @@ def main():
                 col_name = 'predicted ('+tail+')'
                 if TARGET + ' ' + col_name in pred.columns:
                     predictions_xr.loc[TARGET,r,:,col_name] = pred[TARGET+' '+col_name].values
+    
     # Save to disk as a single structure to save time        
-    print('++ INFO: Saving generated data structures to disk [%s]' % opts.output_path)
-    #data_to_disk = {'real_pred_r':real_pred_r, 'predictions_xr':predictions_xr, 'real_pred':real_pred}
-    with open(opts.output_path,'wb') as f:
-        pickle.dump(predictions_xr,f)
+    if not opts.test:
+        print('++ INFO: Saving generated data structures to disk [%s]' % opts.output_path)
+        with open(opts.output_path,'wb') as f:
+             pickle.dump(predictions_xr,f)
     # Summary
     print('++ INFO: Summary of missing files per target....')
     print(num_missing)
-    print('++ INFO: Grep command to select unfinished swarm jobs')
-    print(next_swarm_grep)
+    if opts.verbose:
+        print('++ INFO: Grep command to select unfinished swarm jobs')
+        print(next_swarm_grep)
 
 if __name__ == "__main__":
     main()
