@@ -6,7 +6,7 @@ from scipy.stats import pearsonr
 import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
-from scipy.stats import pearsonr
+from scipy.stats import pearsonr,spearmanr
 
 def plot_predictions(behav_obs_pred, tail="glm", figsize=(10,10), color='gray', font_scale=2, verbose=False, accuracy_metric='pearson', p_value=None, ax=None, marker_size=1, xlabel=None, ylabel=None, xlim=None, ylim=None):
     if ax is None:
