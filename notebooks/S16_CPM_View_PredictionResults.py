@@ -129,7 +129,7 @@ for BEHAVIOR in BEHAVIOR_LIST:
 median_width = 0.4
 sns.set(style='whitegrid')
 fig,ax = plt.subplots(1,1,figsize=(15,5))
-#sns.boxenplot(data=null_df,x='Question',y='R', color='lightgray', ax=ax) 
+sns.boxenplot(data=null_df,x='Question',y='R', color='lightgray', ax=ax) 
 sns.stripplot(data=real_df,x='Question', y='R', alpha=.8, ax=ax)
 plt.xticks(rotation=45);
 for tick, text in zip(ax.get_xticks(), ax.get_xticklabels()):
@@ -140,7 +140,7 @@ ax.set_ylim(-.3,.4)
 ax.set_ylabel('R (Observed,Predicted)');
 ax.set_xlabel('SNYCQ Item')
 
-p_values
+p_values[p_values<0.05]
 
 fig,ax = plt.subplots(3,4,figsize=(20,15))
 for i,BEHAVIOR in enumerate(BEHAVIOR_LIST):
