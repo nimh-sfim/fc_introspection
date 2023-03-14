@@ -3,3 +3,10 @@ notebooks/utils/.ipynb_checkpoints/
 notebooks/utils/__pycache__/
 bash/.ipynb_checkpoints/
 resources/preprocessing_notes/.ipynb_checkpoints/
+notebooks/figures/
+notebooks/results/
+resources/cpm/
+resources/dataset_info/
+resources/mtl_snycq/
+resources/nbs/
+resources/snycq/
