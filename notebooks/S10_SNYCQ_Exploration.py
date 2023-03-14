@@ -151,5 +151,3 @@ for sparsity in sparsity_to_explore:
     rmse[sparsity]=np.sqrt(np.power(SNYCQ - Precon,2).melt()['value'].mean())
 
 rmse.hvplot.scatter(logx=True, xlabel='Sparsity', ylabel='RMSE', title='', xlim=(1e-4,10)).opts(show_legend=False) * rmse.hvplot(logx=True, xlim=(1e-4,10)).opts(show_legend=False)
-
-
