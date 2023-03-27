@@ -52,7 +52,7 @@ def get_net_divisions(roi_info_path, verbose=False):
 def hvplot_fc(data,roi_info_path, hm_cmap=hm_color_map, net_cmap=nw_color_map, cbar_title='',
                     clim=(-.8,.8), cbar_title_fontsize=16, 
                     add_net_colors=True, add_net_labels=True,
-                    add_hm_colors=True, add_hm_labels=True, verbose=False):
+                    add_hm_colors=True, add_hm_labels=True, verbose=False, cmap=['blue','white','red'], nw_sep_lw=0.5, nw_sep_ld='dashed'):
     
     # Load ROI Info File
     Nrois, Nrois_LH, Nrois_RH, Nnet_segments, Nnetworks, net_names, hm_net_names, hm_net_edges, hm_net_meds = get_net_divisions(roi_info_path)
@@ -92,25 +92,28 @@ def hvplot_fc(data,roi_info_path, hm_cmap=hm_color_map, net_cmap=nw_color_map, c
         x_min_lim = 0
     # Create Heatmap
     if add_hm_labels & add_net_labels:
-        plot           = matrix_to_plot.hvplot.heatmap(aspect='square', frame_width=500 , cmap='RdBu_r',
+        plot           = matrix_to_plot.hvplot.heatmap(aspect='square', frame_width=500 , cmap=cmap,
                                                    clim=clim, xlim=(x_min_lim,Nrois-.5), ylim=(y_min_lim,Nrois-.5), 
                                                    yticks=y_ticks_info, xticks= x_ticks_info, fontsize={'ticks':12,'clabel':cbar_title_fontsize}).opts( colorbar_opts={'title':cbar_title})
     if add_hm_labels &  (not add_net_labels):
-        plot           = matrix_to_plot.hvplot.heatmap(aspect='square', frame_width=500 , cmap='RdBu_r',
+        plot           = matrix_to_plot.hvplot.heatmap(aspect='square', frame_width=500 , cmap=cmap,
                                                    clim=clim, xlim=(x_min_lim,Nrois-.5), ylim=(y_min_lim,Nrois-.5), yaxis=None,
                                                    xticks= x_ticks_info, fontsize={'ticks':12,'clabel':cbar_title_fontsize}).opts( colorbar_opts={'title':cbar_title})
     if (not add_hm_labels) &  add_net_labels:
-        plot           = matrix_to_plot.hvplot.heatmap(aspect='square', frame_width=500 , cmap='RdBu_r',
+        plot           = matrix_to_plot.hvplot.heatmap(aspect='square', frame_width=500 , cmap=cmap,
                                                    clim=clim, xlim=(x_min_lim,Nrois-.5), ylim=(y_min_lim,Nrois-.5), xaxis=None,
                                                    yticks= y_ticks_info, fontsize={'ticks':12,'clabel':cbar_title_fontsize}).opts( colorbar_opts={'title':cbar_title})
     if (not add_hm_labels) & (not add_net_labels):
-        plot           = matrix_to_plot.hvplot.heatmap(aspect='square', frame_width=500 , cmap='RdBu_r',
+        plot           = matrix_to_plot.hvplot.heatmap(aspect='square', frame_width=500 , cmap=cmap,
                                                    clim=clim, xlim=(x_min_lim,Nrois-.5), ylim=(y_min_lim,Nrois-.5), yaxis=None, xaxis=None,
                                                    fontsize={'ticks':12,'clabel':cbar_title_fontsize}).opts( colorbar_opts={'title':cbar_title})
     # Add Line Separation Annotations
     for x in hm_net_edges:
-        plot = plot * hv.HLine(x-.5).opts(line_color='k',line_dash='solid',line_width=1)
-        plot = plot * hv.VLine(x-.5).opts(line_color='k',line_dash='solid',line_width=1)
+        plot = plot * hv.HLine(x-.5).opts(line_color='k',line_dash=nw_sep_ld, line_width=nw_sep_lw)
+        plot = plot * hv.VLine(x-.5).opts(line_color='k',line_dash=nw_sep_ld, line_width=nw_sep_lw)
+    plot = plot * hv.HLine(x-.5).opts(line_color='k',line_dash='solid', line_width=2)
+    plot = plot * hv.VLine(x-.5).opts(line_color='k',line_dash='solid', line_width=2)
+
     # Add Side Colored Segments if instructed to do so
     if add_hm_colors:
         plot = plot * hm_segments_x
@@ -249,7 +252,7 @@ def hvplot_fc_nwlevel(data,mode='percent',clim_max=None,clim_min=0, cmap='viridi
 
 # CIRCOS PLOTS
 # ============
-def get_node_positions(roi_info,r=0.5,c_x=0.0,c_y=0.0):
+def get_node_positions(roi_info,r=0.5,c_x=0.0,c_y=0.0,hemi_gap=5):
     # Get list of networks
     # ====================
     networks    = list(roi_info['Network'].unique())
@@ -261,12 +264,11 @@ def get_node_positions(roi_info,r=0.5,c_x=0.0,c_y=0.0):
         aux = roi_info[roi_info['Network']==nw]
         max_num_nodes_per_network[nw] = np.max([aux[aux['Hemisphere']=='LH'].shape[0],aux[aux['Hemisphere']=='RH'].shape[0]])
     # 2. Number of locations to choose from in circle: 2 * (Max_PerNetwork + Pads on both ends)
-    pad_nodes   = 5
-    n_locations = 2 * (np.array([max_num_nodes_per_network[nw] for nw in max_num_nodes_per_network.keys()]).sum() + 2 * pad_nodes)
+    n_locations = 2 * (np.array([max_num_nodes_per_network[nw] for nw in max_num_nodes_per_network.keys()]).sum() + 2 * hemi_gap)
     
     # 3. Evently distributed angels (in radians) across the circle
     avail_angles = np.linspace(0,2*np.pi,n_locations)
-    avail_angles = np.roll(avail_angles,-58)
+    avail_angles = np.roll(avail_angles,-int(n_locations/4))
     
     # 4. Convert the angles to (x,y) locations
     positions = []
@@ -279,7 +281,7 @@ def get_node_positions(roi_info,r=0.5,c_x=0.0,c_y=0.0):
     # 5. Create Final Layout Object
     G_circos_layout = {}
     for hm in ['LH','RH']:
-        index = pad_nodes
+        index = hemi_gap
         for nw in networks:
             index_init = index 
             aux = roi_info[(roi_info['Network']==nw) & (roi_info['Hemisphere']==hm)]
@@ -288,8 +290,8 @@ def get_node_positions(roi_info,r=0.5,c_x=0.0,c_y=0.0):
                 index = index + 1
             index = index_init + max_num_nodes_per_network[nw]
     return G_circos_layout
-   
-def plot_as_circos(data,roi_info,figsize=(10,10),edge_weight=2,title=None):
+
+def plot_as_circos(data,roi_info,figsize=(10,10),edge_weight=2,title=None, hemi_gap=5, show_pos=True, show_neg=True):
     # Check inputs meet expectations
     assert isinstance(data,pd.DataFrame), "++ERROR [plot_as_circos]: input data expected to be a pandas dataframe"
     assert 'ROI_ID'     in data.index.names, "++ERROR [plot_as_circos]: roi_info expected to have one column named ROI_ID"
@@ -324,10 +326,12 @@ def plot_as_circos(data,roi_info,figsize=(10,10),edge_weight=2,title=None):
     G             = nx.from_pandas_adjacency(fdata+100) # Ensure we have a graph with all nodes
     # Add information about positive or negative edge
     model_attribs = {}
-    for edge in G_pos.edges:
-        model_attribs[edge] = 'pos'
-    for edge in G_neg.edges:
-        model_attribs[edge] = 'neg'
+    if G_pos is not None:
+        for edge in G_pos.edges:
+            model_attribs[edge] = 'pos'
+    if G_neg is not None:
+        for edge in G_neg.edges:
+            model_attribs[edge] = 'neg'
     nx.set_edge_attributes(G,model_attribs,'Model')
     # Add information about hemisphere and network
     hemi_attribs = {row['ROI_ID']:row['Hemisphere'] for r,row in roi_info.iterrows()}
@@ -335,7 +339,7 @@ def plot_as_circos(data,roi_info,figsize=(10,10),edge_weight=2,title=None):
     nx.set_node_attributes(G,hemi_attribs,'Hemi')
     nx.set_node_attributes(G,nw_attribs,'Network')
     # Obtain Node Positions
-    pos =  get_node_positions(roi_info)
+    pos =  get_node_positions(roi_info, hemi_gap=hemi_gap)
     # Node Styling
     nt  = node_table(G)
     node_color = roi_info.set_index('ROI_ID')['RGB']
@@ -358,11 +362,11 @@ def plot_as_circos(data,roi_info,figsize=(10,10),edge_weight=2,title=None):
     patches = nodes.node_glyphs( nt, pos, node_color=node_color, alpha=node_alpha, size=node_size, **{'edgecolor':None, 'linewidth':0})
     for patch in patches: 
         ax.add_patch(patch)
-    if G_pos is not None: 
+    if (G_pos is not None) & (show_pos is True): 
         patches = lines.circos( pos_et, pos, edge_color=pos_et_color, alpha=pos_alpha, lw=pos_lw, aes_kw={"fc": "none"} ) 
         for patch in patches: 
             ax.add_patch(patch)
-    if G_neg is not None:
+    if (G_neg is not None) & (show_neg is True):
         patches = lines.circos( neg_et, pos, edge_color=neg_et_color, alpha=neg_alpha, lw=neg_lw, aes_kw={"fc": "none"} ) 
         for patch in patches: 
             ax.add_patch(patch)
