@@ -134,7 +134,8 @@ def hvplot_fc(data, roi_info_input = None, by='Hemisphere',
               hm_cmap=hm_color_map, net_cmap=nw_color_map, cbar_title='',
               clim=(-.8,.8), cbar_title_fontsize=16, 
               add_labels=True,add_color_segments=True,
-              verbose=False, cmap=['blue','white','red'], nw_sep_lw=0.5, nw_sep_ld='dashed'):
+              verbose=False, cmap=['blue','white','red'], nw_sep_lw=0.5, nw_sep_ld='dashed',
+              major_label_overrides={-0.5:'F2 > F1',0:'',0.5:'F1 > F2'}):
     """
     INFO: This function will generate an annotated and interactive view of a given FC matrix.
     
@@ -219,7 +220,7 @@ def hvplot_fc(data, roi_info_input = None, by='Hemisphere',
                                                        clim=clim, xlim=(x_min_lim,Nrois-.5), ylim=(y_min_lim,Nrois-.5), 
                                                        yticks=y_ticks_info, xticks= x_ticks_info, 
                                                        fontsize={'ticks':12,'clabel':cbar_title_fontsize}).opts(xrotation=x_rotation, colorbar_opts={'title':cbar_title, 
-                                                                                                                               'major_label_overrides':{-0.5:'F2 > F1',0:'',0.5:'F1 > F2'}, 
+                                                                                                                               'major_label_overrides':major_label_overrides, 
                                                                                                                                'ticker': FixedTicker(ticks=[-1.5,-0.5,0.5,1.5])}, **dict_heatmapopts)
 
     else:
@@ -228,7 +229,7 @@ def hvplot_fc(data, roi_info_input = None, by='Hemisphere',
                                                        ylim=(y_min_lim,Nrois-.5), 
                                                        yaxis=None, xaxis=None,
                                                        fontsize={'ticks':12,'clabel':cbar_title_fontsize}).opts(xrotation=x_rotation, colorbar_opts={'title':cbar_title, 
-                                                                                                                               'major_label_overrides':{-0.5:'F2 > F1',0:'',0.5:'F1 > F2'}, 
+                                                                                                                               'major_label_overrides':major_label_overrides, 
                                                                                                                                'ticker': FixedTicker(ticks=[-1.5,-0.5,0.5,1.5])}, **dict_heatmapopts)
     
     # Add Line Separation Annotations
