@@ -7,23 +7,56 @@ from nilearn.plotting import plot_matrix
 from matplotlib import patches
 import matplotlib.pyplot as plt
 import networkx as nx
+from bokeh.models import FixedTicker
 from nxviz.utils import node_table, edge_table
 from nxviz import plots, nodes, edges, lines
-
-nw_color_map = {'LH-Vis':'purple',      'RH-Vis':'purple','Vis':'purple',
-                   'LH-SomMot':'lightblue'  ,'RH-SomMot':'lightblue','SomMot':'lightblue',
-                   'LH-DorsAttn':'green'    ,'RH-DorsAttn':'green','DorsAttn':'green',
-                   'LH-SalVentAttn':'violet','RH-SalVentAttn':'violet','SalVentAttn':'violet',
-                   'LH-Cont':'orange','RH-Cont':'orange','Cont':'orange',
-                   'LH-Default':'red','RH-Default':'red','Default':'red',
-                   'LH-Subcortical':'yellow',      'RH-Subcortical':'yellow','Subcortical':'yellow',
-                   'LH-Limbic':'lightgreen',      'RH-Limbic':'lightgreen','Limbic':'lightgreen'}
+import os.path as osp
+nw_color_map = {'LH-Vis':'#9e53a9',      'RH-Vis':'#9e53a9','Vis':'#9e53a9',
+                   'LH-SomMot':'#7c99be'  ,'RH-SomMot':'#7c99be','SomMot':'#7c99be',
+                   'LH-DorsAttn':'#439639'    ,'RH-DorsAttn':'#439639','DorsAttn':'#439639',
+                   'LH-SalVentAttn':'#da69f9','RH-SalVentAttn':'#da69f9','SalVentAttn':'#da69f9',
+                   'LH-Cont':'#eeba42','RH-Cont':'#eeba42','Cont':'#eeba42',
+                   'LH-Default':'#db707e','RH-Default':'#db707e','Default':'#db707e',
+                   'LH-Subcortical':'#bcbd22',      'RH-Subcortical':'#bcbd22','Subcortical':'#bcbd22',
+                   'LH-Limbic':'#f6fdcb',      'RH-Limbic':'#f6fdcb','Limbic':'#f6fdcb'}
 hm_color_map = {'LH':'grey','RH':'darkgrey'}
 
-def get_net_divisions(roi_info_path, verbose=False):
+# ========================================================
+#       Plotting of annotated FC matrix (full view)
+# ========================================================
+
+# This function is used to extract the location of labels and segments when showing the data
+# organized by hemispheric membership.
+def get_net_divisions_by_Hemisphere(roi_info_input, verbose=False):
+    """
+    INFO: This function takes as input ROI information and returns the label and location of network
+    ===== and hemisphere tickmarks. It also returns the start and end points of colored segments to 
+          annotate FC matrices with network and hemisphere information.
+          
+    INPUTS:
+    =======
+    roi_info_input: this can be either a string, a pandas dataframe or a pandas multiindex.
+       * If string, then assume it is the path to a pandas dataframe with ROI info.
+       * If pd.MultiIndex, assume it contains at least three levels labeled Hemisphere, Network and ROI_ID
+       * If pd.DataFrame, assume it contains at least three columns labeled Hemisphere, Network and ROI_ID
+    """
+  
     # Load ROI Info File
-    roi_info      = pd.read_csv(roi_info_path)
-    Nrois         = roi_info.shape[0]                                # Total number of ROIs
+    if isinstance(roi_info_input,str):
+        if osp.exists(roi_info_input):
+            if verbose:
+                print('++ INFO [get_net_divisions]: Loading ROI information from disk [%s]' % roi_info_input)
+            roi_info = pd.read_csv(roi_info_input)
+        else:
+            print('++ ERROR [get_net_divisions]: Provided path to ROI information not found [%s]' % roi_info_input)
+            return None
+    if isinstance(roi_info_input,pd.MultiIndex):
+        roi_info = pd.DataFrame()
+        roi_info['Hemisphere'] = list(roi_info_input.get_level_values('Hemisphere'))
+        roi_info['Network']    = list(roi_info_input.get_level_values('Network'))
+        roi_info['ROI_ID']     = list(roi_info_input.get_level_values('ROI_ID'))
+
+    Nrois         = roi_info.shape[0]                                # Total number of ROIs    
     Nrois_LH      = roi_info[roi_info['Hemisphere']=='LH'].shape[0]  # Number of ROIs in LH
     Nrois_RH      = roi_info[roi_info['Hemisphere']=='RH'].shape[0]  # Number of ROIs in RH
     Nnet_segments = len(list(set([row['Hemisphere']+'_'+row['Network'] for r,row in roi_info.iterrows()]))) # Number of NW segments (both hemispheres)
@@ -48,19 +81,82 @@ def get_net_divisions(roi_info_path, verbose=False):
         print('++ INFO: Network End      IDs: %s ' % str(hm_net_edges))
         print('++ INFO: Network Midpoint IDs: %s ' % str(net_meds))
     return Nrois, Nrois_LH, Nrois_RH, Nnet_segments, Nnetworks, net_names, hm_net_names, hm_net_edges, net_meds
-   
-def hvplot_fc(data,roi_info_path, hm_cmap=hm_color_map, net_cmap=nw_color_map, cbar_title='',
-                    clim=(-.8,.8), cbar_title_fontsize=16, 
-                    add_net_colors=True, add_net_labels=True,
-                    add_hm_colors=True, add_hm_labels=True, verbose=False, cmap=['blue','white','red'], nw_sep_lw=0.5, nw_sep_ld='dashed'):
-    
+
+# This function is used to extract the location of labels and segments when showing the data
+# organized by network membership.
+def get_net_divisions_by_Network(roi_info_input, verbose=False):
+    """
+    INFO: This function takes as input ROI information and returns the label and location of network
+    ===== and tickmarks. It also returns the start and end points of colored segments to 
+          annotate FC matrices with network information.
+          
+    INPUTS:
+    =======
+    roi_info_input: this can be either a string, a pandas dataframe or a pandas multiindex.
+       * If string, then assume it is the path to a pandas dataframe with ROI info.
+       * If pd.MultiIndex, assume it contains at least three levels labeled Hemisphere, Network and ROI_ID
+       * If pd.DataFrame, assume it contains at least three columns labeled Hemisphere, Network and ROI_ID
+    """
     # Load ROI Info File
-    Nrois, Nrois_LH, Nrois_RH, Nnet_segments, Nnetworks, net_names, hm_net_names, hm_net_edges, hm_net_meds = get_net_divisions(roi_info_path)
+    if isinstance(roi_info_input,str):
+        if osp.exists(roi_info_input):
+            if verbose:
+                print('++ INFO [get_net_divisions]: Loading ROI information from disk [%s]' % roi_info_input)
+            roi_info = pd.read_csv(roi_info_input)
+        else:
+            print('++ ERROR [get_net_divisions]: Provided path to ROI information not found [%s]' % roi_info_input)
+            return None
+    if isinstance(roi_info_input,pd.MultiIndex):
+        roi_info = pd.DataFrame()
+        roi_info['Hemisphere'] = list(roi_info_input.get_level_values('Hemisphere'))
+        roi_info['Network']    = list(roi_info_input.get_level_values('Network'))
+        roi_info['ROI_ID']     = np.arange(roi_info.shape[0])+1
+        
+    Nrois         = roi_info.shape[0]                                # Total number of ROIs
+    Nnetworks     = len(roi_info['Network'].unique())                # Number of unique networks (independent of hemisphere)
+    net_names     = list(roi_info['Network'].unique())               # Network names (no hm info attached)
+    if verbose:
+        print('++ INFO: Network Names %s' % str(net_names))
+        
+    # Get Positions of start and end of ROIs that belong to the different networks. We will use this info to set labels
+    # on matrix axes
+    net_edges = [0]
+    for network in net_names:
+        net_edges.append(roi_info[(roi_info['Network']==network)].iloc[-1]['ROI_ID'])
+    net_meds = [int(i) for i in net_edges[0:-1] + np.diff(net_edges)/2]
+    if verbose:
+        print('++ INFO: Network End      IDs: %s ' % str(net_edges))
+        print('++ INFO: Network Midpoint IDs: %s ' % str(net_meds))
+    return Nrois, Nnetworks, net_names, net_edges, net_meds
+
+
+def hvplot_fc(data, roi_info_input = None, by='Hemisphere', 
+              hm_cmap=hm_color_map, net_cmap=nw_color_map, cbar_title='',
+              clim=(-.8,.8), cbar_title_fontsize=16, 
+              add_labels=True,add_color_segments=True,
+              verbose=False, cmap=['blue','white','red'], nw_sep_lw=0.5, nw_sep_ld='dashed'):
+    """
+    INFO: This function will generate an annotated and interactive view of a given FC matrix.
+    
+    """
+    # If ROI information is not provided explicitly, it is assumed that it is included in the index and columns of the input data structure
+    # -------------------------------------------------------------------------------------------------------------------------------------
+    if roi_info_input is None:
+        roi_info_input = data.index
+    
+    # Get information needed for correct labeling of the matrix
+    # ---------------------------------------------------------
+    assert by in ['Hemisphere','Network']
+    if by == 'Hemisphere':
+        Nrois, Nrois_LH, Nrois_RH, Nnet_segments, Nnetworks, net_names, hm_net_names, hm_net_edges, hm_net_meds = get_net_divisions_by_Hemisphere(roi_info_input)
+    if by == 'Network':
+        Nrois, Nnetworks, net_names, net_edges, net_meds = get_net_divisions_by_Network(roi_info_input)
     
     # Remove axes from data
+    # ---------------------
     if isinstance(data,pd.DataFrame):
         if verbose:
-           print('++ INFO[hvplot_fc]: removing index and column names from inputted data structure')
+            print('++ INFO[hvplot_fc]: removing index and column names from inputted data structure')
         data = data.values
     matrix_to_plot              = pd.DataFrame(data)
     matrix_to_plot.index        = np.arange(matrix_to_plot.shape[0])
@@ -69,57 +165,95 @@ def hvplot_fc(data,roi_info_path, hm_cmap=hm_color_map, net_cmap=nw_color_map, c
     matrix_to_plot.columns.name = 'ROI1'
 
     # Create Y axis ticks and labels
-    y_ticks = hm_net_meds + list (np.array(hm_net_meds) + Nrois_LH)
-    y_tick_labels = net_names + net_names
-    y_ticks_info = list(tuple(zip(y_ticks, y_tick_labels)))
+    # ------------------------------
+    if by == 'Hemisphere':
+        y_ticks = hm_net_meds + list (np.array(hm_net_meds) + Nrois_LH)
+        y_tick_labels = net_names + net_names
+        y_ticks_info = list(tuple(zip(y_ticks, y_tick_labels)))
     
-    x_ticks       = [Nrois_LH/2, Nrois_LH + (Nrois_RH/2)]
-    x_tick_labels = ['Left Hemisphere','Right Hemisphere']
-    x_ticks_info  = list(tuple(zip(x_ticks, x_tick_labels)))
+        x_ticks       = [Nrois_LH/2, Nrois_LH + (Nrois_RH/2)]
+        x_tick_labels = ['Left Hemisphere','Right Hemisphere']
+        x_ticks_info  = list(tuple(zip(x_ticks, x_tick_labels)))
+        x_rotation    = 0
+    if by == 'Network':
+        y_ticks = net_meds 
+        y_tick_labels = net_names 
+        y_ticks_info = list(tuple(zip(y_ticks, y_tick_labels)))
+        x_ticks, x_ticks_info = y_ticks, y_ticks_info
+        x_rotation   = 90
     
-    # Create Hemisphere Colorbar
-    if add_hm_colors:
-        hm_segments_x  = hv.Segments(((-1,Nrois_LH),(-2.5,-2.5),(Nrois_LH,Nrois),(-2.5,-2.5),('LH','RH')), vdims='Hemispheres').opts(cmap=hm_color_map, color=dim('Hemispheres'), line_width=10,show_legend=False)
+    # Create X-axis color segment bar if needed
+    # -----------------------------------------
+    if add_color_segments & (by=='Hemisphere'):
+        color_segments_x = hv.Segments(((-1,Nrois_LH),(-2.5,-2.5),(Nrois_LH,Nrois),(-2.5,-2.5),('LH','RH')), vdims='Hemispheres').opts(cmap=hm_color_map, color=dim('Hemispheres'), line_width=10,show_legend=False,xrotation=x_rotation)
+        y_min_lim = -4
+    elif add_color_segments & (by == 'Network'):
+        color_segments_x = hv.Segments((tuple(np.array(net_edges[:-1])-0.5),
+                                        tuple(-2.5*np.ones(Nnetworks)),
+                                        tuple(np.array(net_edges[1:])-0.5),
+                                        tuple(-2.5*np.ones(Nnetworks)), net_names),vdims='Networks').opts(cmap=nw_color_map, color=dim('Networks'), line_width=10, show_legend=False, xrotation=x_rotation)
         y_min_lim = -4
     else:
+        color_segments_x = None
         y_min_lim = 0
-    # Create Network Colorbar
-    if add_net_colors:
-        net_segments_y = hv.Segments((tuple(-2.5*np.ones(Nnet_segments)),tuple(np.array(hm_net_edges[:-1])-0.5),
+        
+    # Create Y-axis color segment bar if needed
+    # -----------------------------------------
+    if add_color_segments & (by=='Hemisphere'):
+        color_segments_y = hv.Segments((tuple(-2.5*np.ones(Nnet_segments)),tuple(np.array(hm_net_edges[:-1])-0.5),
                               tuple(-2.5*np.ones(Nnet_segments)),tuple(np.array(hm_net_edges[1:])-0.5), hm_net_names),vdims='Networks').opts(cmap=nw_color_map, color=dim('Networks'), line_width=10,show_legend=False)
         x_min_lim = -4
+    elif add_color_segments & (by=='Network'):
+        color_segments_y = hv.Segments((tuple(-2.5*np.ones(Nnetworks)),tuple(np.array(net_edges[:-1])-0.5),
+                              tuple(-2.5*np.ones(Nnetworks)),tuple(np.array(net_edges[1:])-0.5), net_names),vdims='Networks').opts(cmap=nw_color_map, color=dim('Networks'), line_width=10,show_legend=False)
+        x_min_lim = -4
     else:
+        color_segments_y = None
         x_min_lim = 0
-    # Create Heatmap
-    if add_hm_labels & add_net_labels:
+        
+    # Create Heatmap with or without text labels
+    # ------------------------------------------
+    dict_heatmapopts = dict(color_levels=[-1,-0.10,0.10,1], cmap=cmap)
+    if add_labels:
         plot           = matrix_to_plot.hvplot.heatmap(aspect='square', frame_width=500 , cmap=cmap,
-                                                   clim=clim, xlim=(x_min_lim,Nrois-.5), ylim=(y_min_lim,Nrois-.5), 
-                                                   yticks=y_ticks_info, xticks= x_ticks_info, fontsize={'ticks':12,'clabel':cbar_title_fontsize}).opts( colorbar_opts={'title':cbar_title})
-    if add_hm_labels &  (not add_net_labels):
+                                                       clim=clim, xlim=(x_min_lim,Nrois-.5), ylim=(y_min_lim,Nrois-.5), 
+                                                       yticks=y_ticks_info, xticks= x_ticks_info, 
+                                                       fontsize={'ticks':12,'clabel':cbar_title_fontsize}).opts(xrotation=x_rotation, colorbar_opts={'title':cbar_title, 
+                                                                                                                               'major_label_overrides':{-0.5:'F2 > F1',0:'',0.5:'F1 > F2'}, 
+                                                                                                                               'ticker': FixedTicker(ticks=[-1.5,-0.5,0.5,1.5])}, **dict_heatmapopts)
+
+    else:
         plot           = matrix_to_plot.hvplot.heatmap(aspect='square', frame_width=500 , cmap=cmap,
-                                                   clim=clim, xlim=(x_min_lim,Nrois-.5), ylim=(y_min_lim,Nrois-.5), yaxis=None,
-                                                   xticks= x_ticks_info, fontsize={'ticks':12,'clabel':cbar_title_fontsize}).opts( colorbar_opts={'title':cbar_title})
-    if (not add_hm_labels) &  add_net_labels:
-        plot           = matrix_to_plot.hvplot.heatmap(aspect='square', frame_width=500 , cmap=cmap,
-                                                   clim=clim, xlim=(x_min_lim,Nrois-.5), ylim=(y_min_lim,Nrois-.5), xaxis=None,
-                                                   yticks= y_ticks_info, fontsize={'ticks':12,'clabel':cbar_title_fontsize}).opts( colorbar_opts={'title':cbar_title})
-    if (not add_hm_labels) & (not add_net_labels):
-        plot           = matrix_to_plot.hvplot.heatmap(aspect='square', frame_width=500 , cmap=cmap,
-                                                   clim=clim, xlim=(x_min_lim,Nrois-.5), ylim=(y_min_lim,Nrois-.5), yaxis=None, xaxis=None,
-                                                   fontsize={'ticks':12,'clabel':cbar_title_fontsize}).opts( colorbar_opts={'title':cbar_title})
+                                                       clim=clim, xlim=(x_min_lim,Nrois-.5), 
+                                                       ylim=(y_min_lim,Nrois-.5), 
+                                                       yaxis=None, xaxis=None,
+                                                       fontsize={'ticks':12,'clabel':cbar_title_fontsize}).opts(xrotation=x_rotation, colorbar_opts={'title':cbar_title, 
+                                                                                                                               'major_label_overrides':{-0.5:'F2 > F1',0:'',0.5:'F1 > F2'}, 
+                                                                                                                               'ticker': FixedTicker(ticks=[-1.5,-0.5,0.5,1.5])}, **dict_heatmapopts)
+    
     # Add Line Separation Annotations
-    for x in hm_net_edges:
-        plot = plot * hv.HLine(x-.5).opts(line_color='k',line_dash=nw_sep_ld, line_width=nw_sep_lw)
-        plot = plot * hv.VLine(x-.5).opts(line_color='k',line_dash=nw_sep_ld, line_width=nw_sep_lw)
+    # -------------------------------
+    if by == 'Hemisphere':
+        for x in hm_net_edges:
+            plot = plot * hv.HLine(x-.5).opts(line_color='k',line_dash=nw_sep_ld, line_width=nw_sep_lw)
+            plot = plot * hv.VLine(x-.5).opts(line_color='k',line_dash=nw_sep_ld, line_width=nw_sep_lw)
+    if by == 'Network':
+        for x in net_edges:
+            plot = plot * hv.HLine(x-.5).opts(line_color='k',line_dash=nw_sep_ld, line_width=nw_sep_lw)
+            plot = plot * hv.VLine(x-.5).opts(line_color='k',line_dash=nw_sep_ld, line_width=nw_sep_lw)
+    
+    # Add Side Colored Segments if instructed to do so
+    # ------------------------------------------------
+    plot = plot * hv.HLine(y_min_lim).opts(line_color='k',line_dash='solid', line_width=2)
+    plot = plot * hv.VLine(x_min_lim).opts(line_color='k',line_dash='solid', line_width=2)
     plot = plot * hv.HLine(x-.5).opts(line_color='k',line_dash='solid', line_width=2)
     plot = plot * hv.VLine(x-.5).opts(line_color='k',line_dash='solid', line_width=2)
-
-    # Add Side Colored Segments if instructed to do so
-    if add_hm_colors:
-        plot = plot * hm_segments_x
-    if add_net_colors:
-        plot = plot * net_segments_y
+    for segment in [color_segments_y, color_segments_x]:
+        if segment is not None:
+            plot = plot * segment
     return plot
+   
+
 
 def plot_fc(data,roi_info_path, hm_cmap=hm_color_map, net_cmap=nw_color_map, cbar_title='',title='',
                     clim=(-.8,.8), cbar_title_fontsize=16, 
