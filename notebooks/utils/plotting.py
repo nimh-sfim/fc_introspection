@@ -302,8 +302,11 @@ def plot_fc(data,roi_info_path, hm_cmap=hm_color_map, net_cmap=nw_color_map, cba
     
     plt.close()
     return fig
-   
-def hvplot_fc_nwlevel(data,mode='percent',clim_max=None,clim_min=0, cmap='viridis', title='', add_net_colors=False):
+
+# =====================================================================
+#      Network-level Summary Matrix
+# =====================================================================
+def hvplot_fc_nwlevel(data,mode='percent',clim_max=None,clim_min=0, cmap='viridis', title='', add_net_colors=False, add_net_labels=False):
     """
     This function plots a summary view of how many within- and between- network connections
     are significantly different in a given contrast.
@@ -345,48 +348,53 @@ def hvplot_fc_nwlevel(data,mode='percent',clim_max=None,clim_min=0, cmap='viridi
     num_sig_cons = num_sig_cons.infer_objects()
     pc_sig_cons  = pc_sig_cons.infer_objects()
     #Advance plotting mode with colored segments in the horizontal axis.
-    if add_net_colors:
+    if add_net_labels:
        # Create Y axis ticks and labels
-       y_ticks_info = list(tuple(zip(range(num_networks), networks))) 
-       # Create Network Colorbar
-       if add_net_colors:
-           net_segments_y = hv.Segments((tuple(np.arange(num_networks)+1),tuple(np.ones(num_networks)-1.5),
-                                      tuple(np.arange(num_networks)),tuple(np.ones(num_networks)-1.5), networks),vdims='Networks').opts(cmap=nw_color_map, color=dim('Networks'), line_width=10,show_legend=False)    
-    
-       # Remove axes from data
-       if mode=='percent':
-           matrix_to_plot              = pd.DataFrame(pc_sig_cons.values)
-           cbar_title = 'Percent of Connections:'
-       else:
-           matrix_to_plot              = pd.DataFrame(num_sig_cons.values)
-           cbar_title = 'Number of Connections:'
-       matrix_to_plot.index        = np.arange(matrix_to_plot.shape[0], dtype=int)
-       matrix_to_plot.columns      = np.arange(matrix_to_plot.shape[1], dtype=int)
-       #return matrix_to_plot 
-       if clim_max is None:
-          clim_max = matrix_to_plot.quantile(.95).max()
-       heatmap = matrix_to_plot.round(1).hvplot.heatmap(aspect='square', clim=(0,clim_max), cmap=cmap, 
-                                                        title=title, ylim=(-.5,num_networks-.5), yticks= y_ticks_info, xaxis=None).opts(xrotation=90,colorbar_opts={'title':cbar_title})
-       plot = heatmap * hv.Labels(heatmap).opts(opts.Labels(text_color='white'))
-       plot = plot * net_segments_y
-    
-    #Basic Plotting Mode
+       y_ticks_info = list(tuple(zip(range(num_networks), networks)))
+       x_ticks_info = y_ticks_info
     else:
-        if mode=='percent':
-            if clim_max is None:
-                clim_max = pc_sig_cons.quantile(.95).max()
-            heatmap = pc_sig_cons.round(1).hvplot.heatmap(aspect='square', clim=(0,clim_max), cmap=cmap, title=title).opts(xrotation=90, colorbar_opts={'title':'Percent of Connections:'})
-            plot = heatmap * hv.Labels(heatmap).opts(opts.Labels(text_color='white')) 
-        if mode=='count':
-            if clim_max is None:
-                clim_max = num_sig_cons.quantile(.95).max()
-            heatmap  = num_sig_cons.round(1).hvplot.heatmap(aspect='square', clim=(clim_min,clim_max), cmap=cmap, title=title ).opts(xrotation=90,colorbar_opts={'title':'Number of Connections:'})
-            plot = heatmap * hv.Labels(heatmap).opts(opts.Labels(text_color='white'))
-    #Return plot
+       y_ticks_info = list(tuple(zip([0,num_networks],['',''])))
+       x_ticks_info = y_ticks_info
+        
+    # Create Network Colorbar
+    if add_net_colors:
+        net_segments_y = hv.Segments((tuple(np.ones(num_networks)-1.5),tuple(np.arange(num_networks)-.5),
+                                      tuple(np.ones(num_networks)-1.5),tuple(np.arange(num_networks)+.5), networks),vdims='Networks').opts(cmap=nw_color_map, color=dim('Networks'), line_width=10,show_legend=False)
+        net_segments_x = hv.Segments((tuple(np.arange(num_networks)-.5),tuple(np.ones(num_networks)-1.5),
+                                      tuple(np.arange(num_networks)+.5),tuple(np.ones(num_networks)-1.5), networks),vdims='Networks').opts(cmap=nw_color_map, color=dim('Networks'), line_width=10,show_legend=False) 
+        x_min_lim = -4
+        y_min_lim = -4
+    else:
+        x_min_lim = 0
+        y_min_lim = 0
+    # Remove axes from data
+    if mode=='percent':
+        matrix_to_plot              = pd.DataFrame(pc_sig_cons.values)
+        cbar_title = 'Percent of Connections:'
+    else:
+        matrix_to_plot              = pd.DataFrame(num_sig_cons.values)
+        cbar_title = 'Number of Connections:'
+    matrix_to_plot.index        = np.arange(matrix_to_plot.shape[0], dtype=int)
+    matrix_to_plot.columns      = np.arange(matrix_to_plot.shape[1], dtype=int)
+    matrix_to_plot.index.name   = 'Network1'
+    matrix_to_plot.columns.name = 'Network2'
+    #return matrix_to_plot
+    if clim_max is None:
+        clim_max = matrix_to_plot.quantile(.95).max()
+    heatmap = matrix_to_plot.round(1).hvplot.heatmap(aspect='square', clim=(0,clim_max), frame_width=500,
+                                                     cmap=cmap, 
+                                                     title=title).opts(colorbar_opts={'title':cbar_title}, fontsize={'ticks':12,'clabel':12})
+
+    plot = heatmap * hv.Labels(heatmap).opts(opts.Labels(text_color='white'))
+    if add_net_colors:
+        plot = plot * net_segments_x * net_segments_y
+    plot.opts(xlim=(-.5,7.5), ylim=(-.5,7.5), xticks=x_ticks_info, xrotation=90, yticks=y_ticks_info)
     return plot   
 
-# CIRCOS PLOTS
-# ============
+
+# =====================================================================
+#                   CIRCOS PLOTS
+# =====================================================================
 def get_node_positions(roi_info,r=0.5,c_x=0.0,c_y=0.0,hemi_gap=5):
     # Get list of networks
     # ====================
