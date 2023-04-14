@@ -30,7 +30,7 @@ import panel as pn
 from wordcloud import WordCloud
 import hvplot.pandas
 from IPython.display import Markdown as md
-
+from IPython import display
 
 from matplotlib import rc
 font_dict = {'family' : 'arial',
@@ -138,11 +138,9 @@ C_plot_unsorted = C.reset_index(drop=True).hvplot.heatmap(cmap='Purples', width=
 f = pn.Row(W_plot_unsroted,C_plot_unsorted)
 f.save('./figures/W_and_C_unsorted.png')
 
-from IPython import display
-display.Image("./figures/W_and_C_unsorted.png")
+# Show static version (for Github purposes)
 
-from IPython import display
-display.Image("figures/W_and_C_unsorted.png")
+display.Image("./figures/W_and_C_unsorted.png")
 
 # Next, we will plot the Q matrix (with relationships between questions and low dimensional factors) and the Qc matrix (with information about how responses relate to demographics)
 
@@ -150,18 +148,20 @@ Q_plot_unsorted  = Q.hvplot.heatmap( cmap='Oranges', width=300, height=500, clim
 Qc_plot_unsorted = Qc.hvplot.heatmap(cmap='Reds', width=300, height=500, clim=(0,100), fontscale=1.2).opts( colorbar_opts={'title':'Qc Matrix'}, xrotation=90, toolbar=None)
 f = pn.Row(Q_plot_unsorted, Qc_plot_unsorted)
 f.save('./figures/Q_and_Qc_unsorted_same_scale.png')
-f
 
-Q_plot_unsorted  = Q.hvplot.heatmap( cmap='Oranges', width=300, height=500, clim=(0,100), fontscale=1.2).opts( colorbar_opts={'title':'Q Matrix'}, xrotation=90, toolbar=None)
-Qc_plot_unsorted = Qc.hvplot.heatmap(cmap='Reds', width=300, height=500, clim=(0,10), fontscale=1.2).opts( colorbar_opts={'title':'Qc Matrix'}, xrotation=90, toolbar=None)
-f = pn.Row(Q_plot_unsorted, Qc_plot_unsorted)
-f.save('./figures/Q_and_Qc_unsorted_diff_scale.png')
+display.Image("./figures/Q_and_Qc_unsorted_same_scale.png")
+
+# We also plot Q and Qc after sorting. This helps better understand what the different factors mean in relationship to the original questions
 
 sorted_q = Q.sort_values(by=['Factor 1','Factor 2'],ascending=False).index
 Q_plot_unsorted  = Q.loc[sorted_q].hvplot.heatmap( cmap='Oranges', width=300, height=500, clim=(0,100), fontscale=1.2).opts( colorbar_opts={'title':'Q Matrix'}, xrotation=90, toolbar=None)
-Qc_plot_unsorted = Qc.loc[sorted_q].hvplot.heatmap(cmap='Reds', width=300, height=500, clim=(0,10), fontscale=1.2).opts( colorbar_opts={'title':'Qc Matrix'}, xrotation=90, toolbar=None)
+Qc_plot_unsorted = Qc.loc[sorted_q].hvplot.heatmap(cmap='Reds', width=300, height=500, clim=(0,100), fontscale=1.2).opts( colorbar_opts={'title':'Qc Matrix'}, xrotation=90, toolbar=None)
 f = pn.Row(Q_plot_unsorted, Qc_plot_unsorted)
 f.save('./figures/Q_and_Qc_sorted_diff_scale.png')
+
+display.Image("./figures/Q_and_Qc_sorted_diff_scale.png")
+
+# # CONTINUE HERE
 
 sorted_q = Q.sort_values(by=['Factor 1','Factor 2'],ascending=False).index
 Q_plot_unsorted  = Q.loc[sorted_q].hvplot.heatmap( cmap='Oranges', width=300, height=500, clim=(0,100), fontscale=1.2).opts( colorbar_opts={'title':'Q Matrix'}, xrotation=90, toolbar=None)
