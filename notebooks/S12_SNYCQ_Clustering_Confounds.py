@@ -144,7 +144,7 @@ md("%s"%text)
 text="![](figures/W_and_C_unsorted.png)"
 md("%s"%text)
 
-f.show('png')
+# <div><img src="./figures/W_and_C_unsorted.png", width = 600, height = 500></div>
 
 # Next, we will plot the Q matrix (with relationships between questions and low dimensional factors) and the Qc matrix (with information about how responses relate to demographics)
 
