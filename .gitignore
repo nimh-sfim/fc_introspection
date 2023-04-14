@@ -11,3 +11,5 @@ resources/mtl_snycq/
 resources/nbs/
 resources/snycq/
 matlab/history.mat
+notebooks/cpm/.ipynb_checkpoints/
+notebooks/cpm/__pycache__/
