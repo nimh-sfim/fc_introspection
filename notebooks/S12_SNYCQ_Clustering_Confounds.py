@@ -146,6 +146,8 @@ md("%s"%text)
 
 # <div><img src="./figures/W_and_C_unsorted.png", width = 600, height = 500></div>
 
+# <div><img src="figures/W_and_C_unsorted.png", width = 600, height = 500></div>
+
 # Next, we will plot the Q matrix (with relationships between questions and low dimensional factors) and the Qc matrix (with information about how responses relate to demographics)
 
 Q_plot_unsorted  = Q.hvplot.heatmap( cmap='Oranges', width=300, height=500, clim=(0,100), fontscale=1.2).opts( colorbar_opts={'title':'Q Matrix'}, xrotation=90, toolbar=None)
