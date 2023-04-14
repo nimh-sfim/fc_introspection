@@ -1,8 +1,8 @@
 %% Transform results so that they can be loaded in BrianNet
 %  ========================================================
 clear all
-RESOURCES_DIR="/data/SFIMJGC_Introspec/2023_fc_introspection/code/fc_introspection/resources/mtl_snycq/no_confounds/nbs";
-atlases=["Schaefer2018_200Parcels_7Networks","Schaefer2018_200Parcels_7Networks_AAL2"];
+RESOURCES_DIR="/data/SFIMJGC_Introspec/2023_fc_introspection/code/fc_introspection/resources/nbs";
+atlases=["Schaefer2018_400Parcels_7Networks_AAL2","Schaefer2018_200Parcels_7Networks_AAL2"];
 scenarios=["CL02_0p005", "CL02_0p001"];
 contrasts=["F1gtF2","F2gtF1"];
 for atlas = atlases
