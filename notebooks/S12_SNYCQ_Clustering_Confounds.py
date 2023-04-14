@@ -137,8 +137,14 @@ W_plot_unsroted = W.reset_index(drop=True).hvplot.heatmap(cmap='Greens', width=3
 C_plot_unsorted = C.reset_index(drop=True).hvplot.heatmap(cmap='Purples', width=300, height=500, fontscale=1.2).opts( colorbar_opts={'title':'C Matrix'}, xrotation=90, toolbar=None)
 f = pn.Row(W_plot_unsroted,C_plot_unsorted)
 f.save('./figures/W_and_C_unsorted.png')
+
+text="![](./figures/W_and_C_unsorted.png)"
+md("%s"%text)
+
 text="![](figures/W_and_C_unsorted.png)"
 md("%s"%text)
+
+f.show('png')
 
 # Next, we will plot the Q matrix (with relationships between questions and low dimensional factors) and the Qc matrix (with information about how responses relate to demographics)
 
