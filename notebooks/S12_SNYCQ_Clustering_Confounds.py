@@ -133,12 +133,12 @@ Qc = Qc[['Intercept','Age (younger)','Age (elder)','Gender (M)','Gender (F)']] #
 #
 # First, we will plot the W matrix (low dimensional represenation of interest) and the Qc matrix (encoding of the demographic data)
 
-W_plot_unsroted = W.reset_index(drop=True).hvplot.heatmap(cmap='Bs', width=300, height=500, fontscale=1.2, clim=(0,1)).opts( colorbar_opts={'title':'W Matrix'}, xrotation=90, toolbar=None)
+W_plot_unsroted = W.reset_index(drop=True).hvplot.heatmap(cmap='Greens', width=300, height=500, fontscale=1.2, clim=(0,1)).opts( colorbar_opts={'title':'W Matrix'}, xrotation=90, toolbar=None)
 C_plot_unsorted = C.reset_index(drop=True).hvplot.heatmap(cmap='Purples', width=300, height=500, fontscale=1.2).opts( colorbar_opts={'title':'C Matrix'}, xrotation=90, toolbar=None)
 f = pn.Row(W_plot_unsroted,C_plot_unsorted)
 f.save('./figures/W_and_C_unsorted.png')
-
-# ![](figures/W_and_C_unsorted.png)
+text="![](figures/W_and_C_unsorted.png)"
+md("%s"%text)
 
 # Next, we will plot the Q matrix (with relationships between questions and low dimensional factors) and the Qc matrix (with information about how responses relate to demographics)
 
