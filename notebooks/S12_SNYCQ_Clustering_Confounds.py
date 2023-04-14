@@ -138,15 +138,9 @@ C_plot_unsorted = C.reset_index(drop=True).hvplot.heatmap(cmap='Purples', width=
 f = pn.Row(W_plot_unsroted,C_plot_unsorted)
 f.save('./figures/W_and_C_unsorted.png')
 
-text="![](./figures/W_and_C_unsorted.png)"
-md("%s"%text)
+# <div><img src="figures/W_and_C_unsorted.png" width = 600 height = 500></div>
 
-text="![](figures/W_and_C_unsorted.png)"
-md("%s"%text)
-
-# <div><img src="./figures/W_and_C_unsorted.png", width = 600, height = 500></div>
-
-# <div><img src="figures/W_and_C_unsorted.png", width = 600, height = 500></div>
+# <div><img src="./figures/W_and_C_unsorted.png" width = 600 height = 500></div>
 
 # Next, we will plot the Q matrix (with relationships between questions and low dimensional factors) and the Qc matrix (with information about how responses relate to demographics)
 
