@@ -228,7 +228,7 @@ def plot_W_scatter(W,figsize=(6,6), plot_hist=False, plot_kde=False, cluster_pal
         handles, labels  =  ax.get_legend_handles_labels()
         ax.legend(handles, [cl_id2label[c+1] for c in range(N_clusters)], loc='lower left')
     else:
-        sns.scatterplot(data=W, x='Factor 1', y='Factor 2', s=marker_size, color='k')
+        sns.scatterplot(data=W, x='Factor 1', y='Factor 2', s=marker_size, color='k', edgecolor='w', linewidth=1)
     ax.set_xlim(-0.005,1.005)
     ax.set_ylim(-0.005,1.005)
     plt.close()
@@ -273,17 +273,17 @@ def plot_P(P,figsize=(16,4),question_order=None, scan_order=None, clusters_info=
     plt.close()
     return fig
    
-def plot_W_heatmap(W,clusters_info=None,scan_order=None):
+def plot_W_heatmap(W,clusters_info=None,scan_order=None, cmap='Blues'):
     Nscans,Ndims = W.shape
     assert Ndims == 2
     fig, ax = plt.subplots(figsize=(16,0.5*Ndims))
     if clusters_info is None:
         if scan_order is None:
             xlabel = 'Unsorted Scans'
-            sns.heatmap(W.T, cmap='Blues', ax=ax, cbar=True)
+            sns.heatmap(W.T, cmap=cmap, ax=ax, cbar=True)
         else:
             xlabel = 'Sorted Scans'
-            sns.heatmap((W[scan_order,:]).T, cmap='Blues', ax=ax, cbar=True)
+            sns.heatmap((W[scan_order,:]).T, cmap=cmap, ax=ax, cbar=True)
     else:
         aux = pd.concat([W,clusters_info],axis=1)
         if not(scan_order is None):
@@ -295,7 +295,7 @@ def plot_W_heatmap(W,clusters_info=None,scan_order=None):
         center = np.append(jump,Nscans)
         diff   = (center[1:] - center[:-1])/2
         center = center - np.append(center[0]/2, diff)
-        sns.heatmap((aux[['Factor 1','Factor 2']]).T, cmap='Blues', ax=ax, cbar=True)
+        sns.heatmap((aux[['Factor 1','Factor 2']]).T, cmap=cmap, ax=ax, cbar=True)
         aux_cl_labels = list(aux_filtered['Cluster Label'].values)
         for (i, loc) in enumerate(jump):
             ax.vlines(loc+1,0-0.5,W.shape[1], color='r')
