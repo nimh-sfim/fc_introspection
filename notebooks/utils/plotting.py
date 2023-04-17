@@ -389,7 +389,7 @@ def hvplot_fc_nwlevel(data,mode='percent',clim_max=None,clim_min=0, cmap='viridi
     plot = heatmap * hv.Labels(heatmap).opts(opts.Labels(text_color='white'))
     if add_net_colors:
         plot = plot * net_segments_x * net_segments_y
-    plot.opts(xlim=(-.5,7.5), ylim=(-.5,7.5), xticks=x_ticks_info, xrotation=90, yticks=y_ticks_info)
+    plot.opts(xlim=(-.5,num_networks-.5), ylim=(-.5,num_networks-.5), xticks=x_ticks_info, xrotation=90, yticks=y_ticks_info)
     return plot   
 
 
