@@ -220,9 +220,10 @@ def hvplot_fc(data, roi_info_input = None, by='Hemisphere',
         plot           = matrix_to_plot.hvplot.heatmap(aspect='square', frame_width=500 , cmap=cmap,
                                                        clim=clim, xlim=(x_min_lim,Nrois-.5), ylim=(y_min_lim,Nrois-.5), 
                                                        yticks=y_ticks_info, xticks= x_ticks_info, 
-                                                       fontsize={'ticks':12,'clabel':cbar_title_fontsize}).opts(xrotation=x_rotation, colorbar_opts={'title':cbar_title, 
+                                                       fontsize={'ticks':12,'clabel':cbar_title_fontsize}).opts(xrotation=x_rotation, colorbar_opts={'title':cbar_title,  
                                                                                                                                'major_label_overrides':major_label_overrides, 
-                                                                                                                               'ticker': FixedTicker(ticks=[-1.5,-0.5,0.5,1.5])}, **dict_heatmapopts)
+                                                                                                                               'ticker': FixedTicker(ticks=[-1.5,-0.5,0.5,1.5]),
+                                                                                                                               }, **dict_heatmapopts)
 
     else:
         plot           = matrix_to_plot.hvplot.heatmap(aspect='square', frame_width=500 , cmap=cmap,
@@ -231,7 +232,8 @@ def hvplot_fc(data, roi_info_input = None, by='Hemisphere',
                                                        yaxis=None, xaxis=None,
                                                        fontsize={'ticks':12,'clabel':cbar_title_fontsize}).opts(xrotation=x_rotation, colorbar_opts={'title':cbar_title, 
                                                                                                                                'major_label_overrides':major_label_overrides, 
-                                                                                                                               'ticker': FixedTicker(ticks=[-1.5,-0.5,0.5,1.5])}, **dict_heatmapopts)
+                                                                                                                               'ticker': FixedTicker(ticks=[-1.5,-0.5,0.5,1.5]),
+                                                                                                                               }, **dict_heatmapopts)
     
     # Add Line Separation Annotations
     # -------------------------------
@@ -307,7 +309,7 @@ def plot_fc(data,roi_info_path, hm_cmap=hm_color_map, net_cmap=nw_color_map, cba
 # =====================================================================
 #      Network-level Summary Matrix
 # =====================================================================
-def hvplot_fc_nwlevel(data,mode='percent',clim_max=None,clim_min=0, cmap='viridis', title='', add_net_colors=False, add_net_labels=False):
+def hvplot_fc_nwlevel(data,mode='percent',clim_max=None,clim_min=0, cmap='viridis', title='', add_net_colors=False, add_net_labels=False, labels_text_color='lightgray'):
     """
     This function plots a summary view of how many within- and between- network connections
     are significantly different in a given contrast.
@@ -386,7 +388,7 @@ def hvplot_fc_nwlevel(data,mode='percent',clim_max=None,clim_min=0, cmap='viridi
                                                      cmap=cmap, 
                                                      title=title).opts(colorbar_opts={'title':cbar_title}, fontsize={'ticks':12,'clabel':12})
 
-    plot = heatmap * hv.Labels(heatmap).opts(opts.Labels(text_color='white'))
+    plot = heatmap * hv.Labels(heatmap).opts(opts.Labels(text_color=labels_text_color))
     if add_net_colors:
         plot = plot * net_segments_x * net_segments_y
     plot.opts(xlim=(-.5,num_networks-.5), ylim=(-.5,num_networks-.5), xticks=x_ticks_info, xrotation=90, yticks=y_ticks_info)
