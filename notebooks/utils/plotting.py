@@ -398,6 +398,76 @@ def hvplot_fc_nwlevel(data,mode='percent',clim_max=None,clim_min=0, cmap='viridi
 # =====================================================================
 #                   CIRCOS PLOTS
 # =====================================================================
+def create_graph_from_matrix(data):
+    assert isinstance(data,pd.DataFrame),    "++ERROR [plot_as_graph]:  input data expected to be a pandas dataframe"
+    assert 'ROI_ID'     in data.index.names, "++ERROR [plot_as_graph]:  input data expected to have one column named ROI_ID"
+    assert 'Hemisphere' in data.index.names, "++ERROR [plot_as_graph]:  input data expected to have one column named Hemisphere"
+    assert 'Network'    in data.index.names, "++ERROR [plot_as_graph]:  input data expected to have one column named Network"
+    assert 'RGB'    in data.index.names,     "++ERROR [plot_as_graph]: input data expected to have one column named RGB"
+    # Create empty graph structures 
+    G_pos, G_neg, G = None, None, None
+    # Extract ROI info from the dataframe index
+    roi_info = pd.DataFrame(index=data.index).reset_index()    
+    # Convert input to ints (this function only works for unweigthed graphs)
+    fdata          = data.copy().astype('int')
+    fdata.index    = fdata.index.get_level_values('ROI_ID')
+    fdata.columns  = fdata.index
+    
+    # Create basic Graph
+    # ==================
+    G = nx.from_pandas_adjacency(fdata.abs())
+    
+    # Add interesting information as graph attributes
+    # ===============================================
+    # Hemisphere Membership
+    hemi_attribs         = {row['ROI_ID']:row['Hemisphere'] for r,row in roi_info.iterrows()}
+    nx.set_node_attributes(G,hemi_attribs,'Hemisphere')
+    # Network Membership
+    nw_attribs           = {row['ROI_ID']:row['Network'] for r,row in roi_info.iterrows()}
+    nx.set_node_attributes(G,nw_attribs,'Network')
+    # ROI Label
+    lab_attribs          = {row['ROI_ID']:row['ROI_Name'] for r,row in roi_info.iterrows()}  
+    nx.set_node_attributes(G,lab_attribs,'ROI_Name')
+    # ROI Color
+    col_attribs          = {row['ROI_ID']:row['RGB'] for r,row in roi_info.iterrows()}    
+    nx.set_node_attributes(G,col_attribs,'RGB')
+    # Degree Centrality
+    nx.set_node_attributes(G,nx.degree_centrality(G),'Degree_Centrality')
+    # Degree
+    nx.set_node_attributes(G,dict(G.degree()),'Degree')
+    # Eigenvector Centrality
+    nx.set_node_attributes(G,nx.eigenvector_centrality(G),'Eigenvector_Centrality')
+    # Page Rank
+    nx.set_node_attributes(G,nx.pagerank(G),'Page_Rank')
+    
+    # Add edge attributes based on which model they represent
+    # =======================================================
+    # Count the input values
+    val_counts = pd.Series(fdata.values.flatten()).value_counts()
+    # Check for the presence of positive edges
+    if 1 in val_counts.index:
+        #fdata_pos will have 1s for edges in positive model, zero anywhere else
+        fdata_pos              = fdata.copy()
+        fdata_pos[fdata_pos<0] = 0 # Removing -1 from positive graph
+        G_pos = nx.from_pandas_adjacency(fdata_pos)
+    # Check for the present of negative edges
+    if -1 in val_counts.index:
+        #fdata_pos will have 1s for edges in negative model, zero anywhere else
+        fdata_neg              = fdata.copy() * -1
+        fdata_neg[fdata_neg<0] = 0    # Removing 1 from negative graph
+        G_neg = nx.from_pandas_adjacency(fdata_neg)
+    # Create Graph with all nodes (for positioning purposes - edges do not matter)
+    # Add information about positive or negative edge
+    model_attribs = {}
+    if G_pos is not None:
+        for edge in G_pos.edges:
+            model_attribs[edge] = 'pos'
+    if G_neg is not None:
+        for edge in G_neg.edges:
+            model_attribs[edge] = 'neg'
+    nx.set_edge_attributes(G,model_attribs,'Model')
+    return G, node_table(G).sort_index()
+
 def get_node_positions(roi_info,r=0.5,c_x=0.0,c_y=0.0,hemi_gap=5):
     # Get list of networks
     # ====================
@@ -482,7 +552,7 @@ def plot_as_circos(data,roi_info,figsize=(10,10),edge_weight=2,title=None, hemi_
     # Add information about hemisphere and network
     hemi_attribs = {row['ROI_ID']:row['Hemisphere'] for r,row in roi_info.iterrows()}
     nw_attribs   = {row['ROI_ID']:row['Network'] for r,row in roi_info.iterrows()}
-    nx.set_node_attributes(G,hemi_attribs,'Hemi')
+    nx.set_node_attributes(G,hemi_attribs,'Hemisphere')
     nx.set_node_attributes(G,nw_attribs,'Network')
     # Obtain Node Positions
     pos =  get_node_positions(roi_info, hemi_gap=hemi_gap)
@@ -556,7 +626,7 @@ def plot_as_graph(data,figsize=(10,10),edge_weight=2,title=None, hemi_gap=5, sho
     deg_attribs       = nx.degree_centrality(G)
     size_attribs      = {r:v for r,v in zip(list(deg_attribs.keys()), MinMaxScaler(feature_range=(0.001,0.01)).fit_transform(np.array(list(nx.degree_centrality(G).values())).reshape(-1,1)).flatten())}
     
-    nx.set_node_attributes(G,hemi_attribs,'Hemi')
+    nx.set_node_attributes(G,hemi_attribs,'Hemisphere')
     nx.set_node_attributes(G,nw_attribs,'Network')
     nx.set_node_attributes(G,lab_attribs,'ROI_Name')
     nx.set_node_attributes(G,col_attribs,'RGB')
