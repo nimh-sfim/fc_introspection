@@ -19,6 +19,7 @@
 #
 # This happens separately for each question in the SNYCQ
 
+# +
 import os.path as osp
 import os
 from datetime import datetime
@@ -27,16 +28,21 @@ from utils.basics import get_sbj_scan_list
 from utils.basics import PRJ_DIR, SCRIPTS_DIR, RESOURCES_CPM_DIR, DATA_DIR, FB_400ROI_ATLAS_NAME, FB_200ROI_ATLAS_NAME, ATLASES_DIR
 from cpm.cpm import read_fc_matrices
 
+import numpy as np
+import pandas as pd
+import hvplot.pandas
+# -
+
 CPM_NITERATIONS      = 100       # Number of iterations on real data (to evaluate robustness against fold generation)
 CPM_NULL_NITERATIONS = 10000     # Number of iterations used to build a null distribution
 CORR_TYPE            = 'pearson'      # Correlation type to use on the edge-selection step
 E_SUMMARY_METRIC     = 'sum'           # How to summarize across selected edges on the final model
 E_THR_P              = 0.01            # Threshold used on the edge-selection step
-E_THR_R              = #None
+E_THR_R              = None
 SPLIT_MODE           = 'subject_aware' # Split mode for cross validation
 MODEL_TYPE           = CORR_TYPE+'_'+E_SUMMARY_METRIC
 CONFOUNDS            = 'conf_residualized'
-ATLAS_NAME           = FB_200ROI_ATLAS_NAME
+ATLAS_NAME           = FB_400ROI_ATLAS_NAME
 
 username = getpass.getuser()
 print('++ INFO: user working now --> %s' % username)
@@ -57,23 +63,35 @@ if not osp.exists(RESOURCES_CPM_DIR):
 
 sbj_list, scan_list, snycq_df = get_sbj_scan_list(when='post_motion', return_snycq=True)
 
-targets = list(snycq_df.columns)
-print(targets)
+# 3. Add Factors
 
-# 3. Load FC data into memory
+factorization_path = './mlt/output/factorization/factorization_fulldata_confound.npz'
+factorization_results = np.load(factorization_path)
+W = pd.DataFrame(factorization_results['W'],index=snycq_df.index, columns=['Factor1', 'Factor2'])
+
+behav_df = pd.concat([snycq_df,W],axis=1)
+behav_df.head(5)
+
+# 4. Get list of all variables to predict
+
+targets = list(behav_df.columns)
+print(targets)
+print(len(targets))
+
+# 5. Load FC data into memory
 
 fc_data = read_fc_matrices(scan_list,DATA_DIR,ATLAS_NAME)
 
-# 4. Save FC data in vectorized form for all scans into a single file for easy access for batch jobs
+# 6. Save FC data in vectorized form for all scans into a single file for easy access for batch jobs
 
 out_path = osp.join(RESOURCES_CPM_DIR,f'fc_data_{ATLAS_NAME}.csv')
 fc_data.to_csv(out_path)
 print('++ INFO: FC data saved to disk [%s]' % out_path)
 
-# 5. Save SNYCQ in the cpm resources folder
+# 7. Save SNYCQ in the cpm resources folder
 
 out_path = osp.join(RESOURCES_CPM_DIR,'behav_data.csv')
-snycq_df.to_csv(out_path)
+behav_df.to_csv(out_path)
 print('++ INFO: Behavioral data saved to disk [%s]' % out_path)
 
 #
@@ -182,6 +200,13 @@ for TARGET in targets:
 # ## 1.4 Command Lines to load everything into a single dataframe
 
 # ```bash
+# # 
+# python /data/SFIMJGC_Introspec/2023_fc_introspection/code/fc_introspection/notebooks/S15b_GatherSwarmResults.py \
+#        -i /data/SFIMJGC_Introspec/2023_fc_introspection/code/fc_introspection/resources/cpm/swarm_outputs/real/Schaefer2018_400Parcels_7Networks_AAL2/subject_aware/conf_residualized/pearson_sum/ \
+#        -o /data/SFIMJGC_Introspec/2023_fc_introspection/code/fc_introspection/resources/cpm/real-Schaefer2018_400Parcels_7Networks_AAL2-subject_aware-conf_residualized-pearson_sum.pkl \
+#        -n 100
+#
+#
 # python ./S15b_GatherSwarmResults.py  -i /data/SFIMJGC_Introspec/2023_fc_introspection/code/fc_introspection/resources/cpm/swarm_outputs/real/Schaefer2018_400Parcels_7Networks_AAL2/subject_aware/conf_not_residualized/pearson_sum/ -o /data/SFIMJGC_Introspec/2023_fc_introspection/code/fc_introspection/resources/cpm/real-Schaefer2018_400Parcels_7Networks_AAL2-subject_aware-conf_not_residualized-pearson_sum.pkl -n 100 -c pearson
 #
 # python ./S15b_GatherSwarmResults.py  -i /data/SFIMJGC_Introspec/2023_fc_introspection/code/fc_introspection/resources/cpm/swarm_outputs/null/Schaefer2018_400Parcels_7Networks_AAL2/subject_aware/conf_not_residualized/pearson_sum/ -o /data/SFIMJGC_Introspec/2023_fc_introspection/code/fc_introspection/resources/cpm/null-Schaefer2018_400Parcels_7Networks_AAL2-subject_aware-conf_not_residualized-pearson_sum.pkl -n 10000 -c pearson

@@ -67,13 +67,21 @@ def main():
                     if opts.verbose:
                         print('++ WARNING [test]: Missing file [%s]' % path)
                     next_swarm_grep = next_swarm_grep + ' -e "NUM_ITER={r} "'.format(r=r+1)
-                continue
+                    continue
+                try:
+                    with open(path,'rb') as f:
+                        data = pickle.load(f)
+                except:
+                    num_missing[TARGET] = num_missing[TARGET] + 1
+                    next_swarm_grep = next_swarm_grep + ' -e "NUM_ITER={r} "'.format(r=r+1)
+                    print('++ WARNING [main]: Corrupted file [%s]' % path) 
+                    continue
             try:
                 with open(path,'rb') as f:
                     data = pickle.load(f)
             except:
                num_missing[TARGET] = num_missing[TARGET] + 1
-               print('++ WARNING [main]: Missing file [%s]' % path) 
+               print('++ WARNING [main]: Corrupted file [%s]' % path) 
                continue
             # Access the DataFrame with the observed and predicted values
             pred = data['behav_obs_pred']
