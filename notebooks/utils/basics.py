@@ -99,7 +99,6 @@ def rgb2hex(r,g,b):
     """
     return "#{:02x}{:02x}{:02x}".format(r,g,b)
  
- 
 def get_sbj_scan_list(when='orig', return_snycq=True):
     """
     Get list of scans, subjects and snycq table at different pre-processing stages as selected via the when input.
