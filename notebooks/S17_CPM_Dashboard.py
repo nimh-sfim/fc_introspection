@@ -22,79 +22,21 @@ import os.path as osp
 from utils.basics import RESOURCES_CPM_DIR
 import hvplot.pandas
 from tqdm import tqdm
-import holoviews as hv
-import xarray as xr
 import numpy as np
+import xarray as xr
 import pickle
-from utils.basics import get_sbj_scan_list, FB_400ROI_ATLAS_NAME, FB_200ROI_ATLAS_NAME, ATLASES_DIR
+from utils.basics import FB_400ROI_ATLAS_NAME, ATLASES_DIR
 from cpm.plotting import plot_predictions
 import seaborn as sns
 import panel as pn
 import matplotlib.pyplot as plt
 from scipy.stats import pearsonr, spearmanr
-from statannot import add_stat_annotation
 from scipy.spatial.distance import squareform
-from utils.plotting import plot_as_circos, hvplot_fc_nwlevel, plot_as_graph
-from nilearn.plotting import view_connectome, plot_connectome
+from utils.plotting import hvplot_fc_nwlevel, plot_as_graph, create_graph_from_matrix
+from nilearn.plotting import plot_connectome
 from nxviz.utils import node_table
-import networkx as nx
 from sklearn.preprocessing import MinMaxScaler
-
-
-def create_unimodal_graph_from_matrix(data):
-    assert isinstance(data,pd.DataFrame),    "++ERROR [plot_as_graph]:  input data expected to be a pandas dataframe"
-    assert 'ROI_ID'     in data.index.names, "++ERROR [plot_as_graph]:  input data expected to have one column named ROI_ID"
-    assert 'Hemisphere' in data.index.names, "++ERROR [plot_as_graph]:  input data expected to have one column named Hemisphere"
-    assert 'Network'    in data.index.names, "++ERROR [plot_as_graph]:  input data expected to have one column named Network"
-    assert 'RGB'    in data.index.names,     "++ERROR [plot_as_graph]: input data expected to have one column named RGB"
-    
-    # Convert input to ints (this function only works for unweigthed graphs)
-    fdata          = data.copy().astype('int')
-    fdata.index    = fdata.index.get_level_values('ROI_ID')
-    fdata.columns  = fdata.index
-    
-    # Create basic Graph
-    # ==================
-    G = nx.from_pandas_adjacency(fdata)
-    
-    # Add information about hemisphere and network
-    # ============================================
-    hemi_attribs      = {row['ROI_ID']:row['Hemisphere'] for r,row in roi_info.iterrows()}
-    nw_attribs        = {row['ROI_ID']:row['Network'] for r,row in roi_info.iterrows()}
-    lab_attribs       = {row['ROI_ID']:row['ROI_Name'] for r,row in roi_info.iterrows()}
-    col_attribs       = {row['ROI_ID']:row['RGB'] for r,row in roi_info.iterrows()}
-    id_attribs        = {row['ROI_ID']:row['ROI_ID'] for r,row in roi_info.iterrows()}
-    deg_attribs          = nx.degree_centrality(G)
-    degree_centr_attribs = {r:v for r,v in zip(list(deg_attribs.keys()), MinMaxScaler(feature_range=(0.001,0.01)).fit_transform(np.array(list(nx.degree_centrality(G).values())).reshape(-1,1)).flatten())}
-    degree_attribs       = dict(G.degree())
-    nx.set_node_attributes(G,hemi_attribs,'Hemisphere')
-    nx.set_node_attributes(G,nw_attribs,'Network')
-    nx.set_node_attributes(G,lab_attribs,'ROI_Name')
-    nx.set_node_attributes(G,id_attribs,'ROI_ID')
-    nx.set_node_attributes(G,col_attribs,'RGB')
-    nx.set_node_attributes(G,degree_centr_attribs,'Degree_Centrality')
-    nx.set_node_attributes(G,degree_attribs,'Degree')
-    nx.set_node_attributes(G,nx.eigenvector_centrality(G),'Eigenvector_Centrality')
-    nx.set_node_attributes(G,nx.pagerank(G),'Page_Rank')
-
-    # Add edge attributes based on which model they represent
-    # =======================================================
-    # Count the input values
-    val_counts = pd.Series(fdata.values.flatten()).value_counts()
-    # Check for the presence of positive edges
-    if 1 in val_counts.index:
-        #fdata_pos will have 1s for edges in positive model, zero anywhere else
-        fdata_pos              = fdata.copy()
-        fdata_pos[fdata_pos<0] = 0 # Removing -1 from positive graph
-        G_pos = nx.from_pandas_adjacency(fdata_pos)
-    model_attribs = {}
-    if G_pos is not None:
-        for edge in G_pos.edges:
-            model_attribs[edge] = 'pos'
-    nx.set_edge_attributes(G,model_attribs,'Model')
-    
-    return G
-
+from IPython import display
 
 import os
 port_tunnel = int(os.environ['PORT2'])
@@ -110,128 +52,30 @@ ATLAS                = FB_400ROI_ATLAS_NAME
 CPM_NITERATIONS      = 100
 CPM_NULL_NITERATIONS = 10000
 
-# ***
+# # 1. Load CPM Predictions
 #
-# # 1. CPM Predictions
+# Load summary of CPM results as created in ```S16_CPM_View_Prediction_Results```
 #
-# ## 1.1. Load the results from swarm jobs
-#
-# ### 1.1.1 Real data
-
-real_results_path = osp.join(RESOURCES_CPM_DIR,f'real-{ATLAS}-{SPLIT_MODE}-{CONFOUNDS}-{CORR_TYPE}_{E_SUMMARY_METRIC}.pkl')
-with open(real_results_path,'rb') as f:
-     real_predictions_xr = pickle.load(f)
-Nbehavs, Niters_real, Nscans, Nresults = real_predictions_xr.shape
-print(Nbehavs, Niters_real, Nscans, Nresults)
-
-# ### 1.1.2. Randomized data
 
 # +
-#null_results_path = osp.join(RESOURCES_CPM_DIR,f'null-{ATLAS}-{SPLIT_MODE}-{CONFOUNDS}-{CORR_TYPE}_{E_SUMMARY_METRIC}.pkl')
-null_results_path = osp.join(RESOURCES_CPM_DIR,f'null-{ATLAS}-{SPLIT_MODE}-{CONFOUNDS}-{CORR_TYPE}_{E_SUMMARY_METRIC}.pkl')
+results_path = osp.join(RESOURCES_CPM_DIR,'cpm_predictions_summary.pkl')
+with open(results_path ,'rb') as f:
+    cpm_results_dict = pickle.load(f)
+# Extract the different variables
+null_df       = cpm_results_dict['null_df']
+real_df       = cpm_results_dict['real_df']
+accuracy_null = cpm_results_dict['accuracy_null']
+accuracy_real = cpm_results_dict['accuracy_real']
+p_values      = cpm_results_dict['p_values']
+null_predictions_xr = cpm_results_dict['null_predictions_xr']
+real_predictions_xr = cpm_results_dict['real_predictions_xr']
 
-with open(null_results_path,'rb') as f:
-     null_predictions_xr = pickle.load(f)
-_, Niters_null, _, _ = null_predictions_xr.shape
-# -
-
-#
-# ## 1.2. Compute Accuracy
-#
-# ### 1.2.1. Real data
-
-# +
-# %%time
-accuracy_real = {BEHAVIOR:pd.DataFrame(index=range(Niters_real), columns=['Accuracy']) for BEHAVIOR in BEHAVIOR_LIST}
-
-p_values = pd.DataFrame(index=BEHAVIOR_LIST,columns=['Non Parametric','Parametric'])
-
-for BEHAVIOR in BEHAVIOR_LIST:
-    for niter in tqdm(range(Niters_real), desc=BEHAVIOR):
-        observed  = pd.Series(real_predictions_xr.loc[BEHAVIOR,niter,:,'observed'].values)
-        if E_SUMMARY_METRIC == 'ridge':
-            predicted = pd.Series(real_predictions_xr.loc[BEHAVIOR,niter,:,'predicted (ridge)'].values)
-        else:
-            predicted = pd.Series(real_predictions_xr.loc[BEHAVIOR,niter,:,'predicted (glm)'].values)
-        accuracy_real[BEHAVIOR].loc[niter]  = observed.corr(predicted, method=ACCURACY_METRIC)
-        if ACCURACY_METRIC == 'pearson':
-            _,p_values.loc[BEHAVIOR,'Parametric'] = pearsonr(observed,predicted)
-        if ACCURACY_METRIC == 'spearman':
-            _,p_values.loc[BEHAVIOR,'Parametric'] = spearmanr(observed,predicted)
-# -
-
-# ### 1.2.2. Randomized data
-
-# %%time
-accuracy_null = {BEHAVIOR:pd.DataFrame(index=range(Niters_null), columns=['Accuracy']) for BEHAVIOR in BEHAVIOR_LIST}
-for BEHAVIOR in BEHAVIOR_LIST:
-    for niter in tqdm(range(Niters_null), desc=BEHAVIOR):
-        observed  = pd.Series(null_predictions_xr.loc[BEHAVIOR,niter,:,'observed'].values)
-        if E_SUMMARY_METRIC == 'ridge':
-            predicted = pd.Series(null_predictions_xr.loc[BEHAVIOR,niter,:,'predicted (ridge)'].values)
-        else:
-            predicted = pd.Series(null_predictions_xr.loc[BEHAVIOR,niter,:,'predicted (glm)'].values)
-        accuracy_null[BEHAVIOR].loc[niter]  = observed.corr(predicted, method=ACCURACY_METRIC)
-
-# ## 1.3. Compute Non-parameter p-values
-#
-# For this, we rely on the null distribution generated via label randomization. 
-#
-# We use the formula on section 2.4.4 from Finn & Bandettini ["Movie-watching outperforms rest for functional connectivity-based prediction of behavior"](https://www.sciencedirect.com/science/article/pii/S1053811921002408) NeuroImage 2021
-
-p_values.columns.name = 'p-value'
-for BEHAVIOR in BEHAVIOR_LIST:
-    p_values.loc[BEHAVIOR,'Non Parametric'] = (((accuracy_null[BEHAVIOR] > accuracy_real[BEHAVIOR].median()).sum() + 1) / (Niters_null+1)).values[0]
-
-# ## 1.4. Generate Summary Figures with all prediction targets
-
-# %%time
-null_df = pd.DataFrame(columns=['Question','Iteration','R'])
-for BEHAVIOR in BEHAVIOR_LIST:
-    for i in tqdm(range(Niters_null), desc=BEHAVIOR):
-        null_df = null_df.append({'Question':BEHAVIOR,'Iteration':i,'R':accuracy_null[BEHAVIOR].loc[i].values[0]}, ignore_index=True)
-
-# %%time
-real_df = pd.DataFrame(columns=['Question','Iteration','R'])
-for BEHAVIOR in BEHAVIOR_LIST:
-    for i in tqdm(range(Niters_real), desc=BEHAVIOR):
-        real_df = real_df.append({'Question':BEHAVIOR,'Iteration':i,'R':accuracy_real[BEHAVIOR].loc[i].values[0]}, ignore_index=True)
-
-# +
-median_width = 0.4
-sns.set(style='whitegrid')
-fig,ax = plt.subplots(1,1,figsize=(15,5))
-sns.boxenplot(data=null_df,x='Question',y='R', color='lightgray', ax=ax) 
-sns.stripplot(data=real_df,x='Question', y='R', alpha=.5, ax=ax)
-plt.xticks(rotation=45);
-for tick, text in zip(ax.get_xticks(), ax.get_xticklabels()):
-    # Add Black Line Signaling Median
-    question   = text.get_text()
-    median_val = accuracy_real[question].median().values[0]
-    ax.plot([tick-median_width/2, tick+median_width/2],[median_val,median_val], lw=4, color='k')
-    # Statistical Significant Information
-    p = p_values.loc[question,'Non Parametric']
-    if 5.00e-02 < p <= 1.00e+00:
-        annot = '' 
-    elif 1.00e-02 < p <= 5.00e-02:
-        annot = '*'
-    elif 1.00e-03 < p <= 1.00e-02:
-        annot = '**'
-    elif 1.00e-04 < p <= 1.00e-03:
-        annot = '***'
-    elif p <= 1.00e-04:
-        annot = '****'
-    max_val = real_df.set_index('Question').max()['R']
-    ax.annotate(annot, xy=(tick, max_val+0.02), ha='center', fontsize=15)
-    
-ax.set_ylim(-.3,.4)
-ax.set_ylabel('R (Observed,Predicted)');
-ax.set_xlabel('SNYCQ Item')
+real_df.head()
 
 
 # -
 
-# ## 1.5. Dashboard CPM Prediction Functions
+# ## 1.1. Create Dashboard Functions for showing predictions as boxenplots
 
 def get_boxen_plot(behavior):
     median_width = 0.4
@@ -280,8 +124,7 @@ def get_obs_vs_pred(behavior):
     return fig
 
 
-# ***
-# # 2. CPM Network Models
+# # 2. Load CPM Network Models
 #
 # First, we just load one model as a reference to infer the number of edges. We need this to create empty datastructures that will subsequently populate
 
@@ -303,6 +146,10 @@ nw_list = list(roi_info['Network'].unique())
 print(nw_list)
 
 # ## 2.2. Load models for all prediction targets
+#
+# > **NOTE:** Run only one of the two cells in this subsection. See below
+#
+# If new results are available run the following cell, which takes time, but will load all results into memory. It will also save a pickle file with the new results. That way on successive runs of the notebook you won't have to wait for this cell to complete. Alternatively, you could run the cell below, which looks for the fila and loads it into memory
 
 # +
 # %%time
@@ -328,6 +175,8 @@ out_path     = '../resources/cpm/plot_tmp/models.pkl'
 with open(out_path,'wb') as f:
     pickle.dump(data_to_disk,f)
 # -
+
+# Alternative cell that loads previous results. Much faster, but will not take into account potential new results.
 
 out_path     = '../resources/cpm/plot_tmp/models.pkl'
 with open(out_path,'rb') as f:
@@ -416,71 +265,6 @@ nws_group_to   = pn.widgets.CheckBoxGroup(name='Networks', value=nw_list, option
 only_sel_nw    = pn.widgets.Checkbox(name='Show nodes for selected networks only', value=False)
 
 
-# + active=""
-# @pn.depends(behav_select,nws_group_from,nws_group_to,only_sel_nw)
-# def plot_brain_model(behavior,sel_nws_from,sel_nws_to,sel_nws_only):
-#     fig, ax = plt.subplots(1,1,figsize=(10,5))
-#     ax.grid(False)
-#     ax.axis(False)
-#     aux_roi_info = roi_info.copy()
-#     sel_nws = sel_nws_from #list(set(sel_nws_from+sel_nws_to))
-#     if sel_nws_only is True:
-#         aux2         = model_consensus_to_plot[behavior].copy()
-#         aux2.index   = aux2.index.get_level_values('Network')
-#         aux2.columns = aux2.index.get_level_values('Network')
-#         aux2         = aux2.loc[sel_nws, sel_nws]
-#         aux_roi_info = aux_roi_info.set_index('Network').loc[sel_nws]
-#     else:
-#         aux         = model_consensus_to_plot[behavior].copy()
-#         aux.index   = aux.index.get_level_values('Network')
-#         aux.columns = aux.index.get_level_values('Network')
-#         aux2        = pd.DataFrame(0, index=aux.index, columns=aux.columns)
-#         aux2.loc[sel_nws, sel_nws] = aux.loc[sel_nws, sel_nws]
-#         
-#     brain_view = plot_connectome(adjacency_matrix=aux2, 
-#                                      node_coords=aux_roi_info[['pos_R', 'pos_A','pos_S']],
-#                                      node_color=aux_roi_info['RGB'],
-#                                      node_size=10,
-#                                      edge_kwargs={'linewidth':0.5},
-#                                      figure=fig)
-#     plt.close()
-#     return pn.pane.Matplotlib(fig)
-
-# + active=""
-# @pn.depends(behav_select,nws_group_from,nws_group_to,only_sel_nw)
-# def plot_brain_model(behavior,sel_nws_from,sel_nws_to,sel_nws_only):
-#     fig, ax = plt.subplots(1,1,figsize=(20,10))
-#     ax.grid(False)
-#     ax.axis(False)
-#     sel_nws_union = list(set(sel_nws_from+sel_nws_to)) 
-#     sel_rois_info = roi_info.copy()
-#     full_model         = model_consensus_to_plot[behavior].copy()
-#     # ==============
-#     G = create_unimodal_graph_from_matrix(full_model.abs())
-#     Gnt = node_table(G)[::-1]
-#     # ==============
-#     #full_model.index   = full_model.index.get_level_values('Network')
-#     #full_model.columns = full_model.index.get_level_values('Network')
-#     plot_model        = pd.DataFrame(0, index=full_model.index, columns=full_model.columns)
-#     for nwf in sel_nws_from:
-#         for nwt in sel_nws_to:
-#             plot_model.loc[nwf,nwt] = full_model.loc[nwf,nwt]
-#             plot_model.loc[nwt,nwf] = full_model.loc[nwt,nwf]
-#     if sel_nws_only is True:
-#         plot_model = plot_model.loc[sel_nws_union,sel_nws_union]
-#         sel_rois_info = sel_rois_info.set_index('Network').loc[sel_nws_union]
-#
-#     brain_view = plot_connectome(adjacency_matrix=plot_model, 
-#                                      node_coords=sel_rois_info[['pos_R', 'pos_A','pos_S']],
-#                                      node_color=sel_rois_info['RGB'],node_size=5*Gnt['Degree'],
-#                                      edge_kwargs={'linewidth':0.5},
-#                                      node_kwargs={'edgecolor':'k', 'linewidth':0.5},
-#                                      figure=fig)
-#     plt.close()
-#     return Gnt
-#     return pn.pane.Matplotlib(fig)
-# -
-
 @pn.depends(behav_select,nws_group_from,nws_group_to,only_sel_nw)
 def plot_brain_model(behavior,sel_nws_from,sel_nws_to,sel_nws_only):
     fig, ax = plt.subplots(1,1,figsize=(20,10))
@@ -505,8 +289,9 @@ def plot_brain_model(behavior,sel_nws_from,sel_nws_to,sel_nws_only):
         
         
     # ==============
-    G = create_unimodal_graph_from_matrix(plot_model.abs())
-    Gnt = node_table(G)[::-1]
+    G,Gnt = create_graph_from_matrix(plot_model)
+    #print(G)
+    #Gnt = node_table(G).sort_index() #[::-1]
     # ==============
     brain_view = plot_connectome(adjacency_matrix=plot_model, 
                                      node_coords=sel_rois_info[['pos_R', 'pos_A','pos_S']],
@@ -517,39 +302,6 @@ def plot_brain_model(behavior,sel_nws_from,sel_nws_to,sel_nws_only):
     plt.close()
     return pn.pane.Matplotlib(fig)
 
-plot_brain_model('Images',['Vis'],nws_group_to.values,True)
-
-# + active=""
-# sel_nws_from  = ['Vis','Subcortical']
-# sel_nws_to    = ['Vis','Cont']
-# behavior      = 'Images'
-# sel_nws_only  = True
-#
-# fig, ax = plt.subplots(1,1,figsize=(10,5))
-# ax.grid(False)
-# ax.axis(False)
-# sel_nws_union = list(set(sel_nws_from+sel_nws_to)) 
-# sel_rois_info = roi_info.copy()
-# full_model         = model_consensus_to_plot[behavior].copy()
-# full_model.index   = full_model.index.get_level_values('Network')
-# full_model.columns = full_model.index.get_level_values('Network')
-# plot_model        = pd.DataFrame(0, index=full_model.index, columns=full_model.columns)
-# for nwf in sel_nws_from:
-#     for nwt in sel_nws_to:
-#         plot_model.loc[nwf,nwt] = full_model.loc[nwf,nwt]
-#         plot_model.loc[nwt,nwf] = full_model.loc[nwt,nwf]
-# if sel_nws_only is True:
-#     plot_model = plot_model.loc[sel_nws_union,sel_nws_union]
-#     sel_rois_info = sel_rois_info.set_index('Network').loc[sel_nws_union]
-# brain_view = plot_connectome(adjacency_matrix=plot_model, 
-#                                      node_coords=sel_rois_info[['pos_R', 'pos_A','pos_S']],
-#                                      node_color=sel_rois_info['RGB'],
-#                                      node_size=20,
-#                                      edge_kwargs={'linewidth':0.5},
-#                                      node_kwargs={'edgecolor':'k', 'linewidth':0.5},
-#                                      figure=fig)
-# -
-
 brain_view_tab=pn.Column(pn.Row('From:',nws_group_from, background='whitesmoke'),pn.Row('To. :',nws_group_to, background='whitesmoke'),only_sel_nw,plot_brain_model)
 
 # 4. Create the dashboard
@@ -558,6 +310,8 @@ dashboard = pn.Row(pn.Column(behav_select, get_pred_plots, pn.Tabs(('Circos Plot
                    pn.Column(gather_nw_matrix))
 
 dashboard_server = dashboard.show(port=port_tunnel,open=False)
+
+display.Image('./figures/S17_CPM_Dashboard_screenshot.png')
 
 # Once you are done looking at matrices, you can stop the server running this cell
 dashboard_server.stop()
