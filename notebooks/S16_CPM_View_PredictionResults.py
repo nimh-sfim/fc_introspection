@@ -125,6 +125,14 @@ for BEHAVIOR in BEHAVIOR_LIST:
     for i in tqdm(range(Niters_real), desc=BEHAVIOR):
         real_df = real_df.append({'Question':BEHAVIOR,'Iteration':i,'R':accuracy_real[BEHAVIOR].loc[i].values[0]}, ignore_index=True)
 
+# We will now save these summary views to disk, as we will need them on the next notebook that creates a dashboard that allows a comprehensive exploration of the CPM results.
+
+output_path = osp.join(RESOURCES_CPM_DIR,'cpm_predictions_summary.pkl')
+outputs     = {'real_df':real_df,'null_df':null_df, 'accuracy_real': accuracy_real, 'accuracy_null':accuracy_null, 'p_values':p_values, 'real_predictions_xr':real_predictions_xr, 'null_predictions_xr':null_predictions_xr}
+with open(output_path ,'wb') as f:
+    pickle.dump(outputs,f)
+print('++ INFO: Data written to disk [%s]' % output_path)
+
 # ## 4.1. Without statistical annotations
 
 median_width = 0.4
