@@ -33,6 +33,8 @@ import hvplot.pandas
 from IPython.display import Markdown as md
 from IPython import display
 from PIL import Image
+import matplotlib.pyplot as plt
+from textwrap import wrap
 
 from matplotlib import rc
 font_dict = {'family' : 'arial',
@@ -138,20 +140,20 @@ Qc = Qc[['Intercept','Age (younger)','Age (elder)','Gender (M)','Gender (F)']] #
 W_plot_unsroted = W.reset_index(drop=True).hvplot.heatmap(cmap='Greens', width=200, height=500, fontscale=1.2, clim=(0,1), shared_axes=False).opts( colorbar_opts={'title':'W Matrix'}, xrotation=90, toolbar=None)
 C_plot_unsorted = C.reset_index(drop=True).hvplot.heatmap(cmap='Purples', width=250, height=500, fontscale=1.2).opts( colorbar_opts={'title':'C Matrix'}, xrotation=90, toolbar=None)
 f = pn.Row(W_plot_unsroted,C_plot_unsorted)
-f.save('./figures/W_and_C_unsorted.png')
+f.save('./figures/S12_W_and_C_unsorted.png')
 
 # Show static version (for Github purposes)
 
-display.Image("./figures/W_and_C_unsorted.png")
+display.Image("./figures/S12_W_and_C_unsorted.png")
 
 # Next, we will plot the Q matrix (with relationships between questions and low dimensional factors) and the Qc matrix (with information about how responses relate to demographics)
 
 Q_plot_unsorted  = Q.hvplot.heatmap( cmap='Oranges', width=240, height=500, clim=(0,100), fontscale=1.2, shared_axes=False).opts( colorbar_opts={'title':'Q Matrix'}, xrotation=90, toolbar=None)
 Qc_plot_unsorted = Qc.hvplot.heatmap(cmap='Reds', width=300, height=500, clim=(0,100), fontscale=1.2).opts( colorbar_opts={'title':'Qc Matrix'}, xrotation=90, toolbar=None)
 f = pn.Row(Q_plot_unsorted, Qc_plot_unsorted)
-f.save('./figures/Q_and_Qc_unsorted_same_scale.png')
+f.save('./figures/S12_Q_and_Qc_unsorted_same_scale.png')
 
-display.Image("./figures/Q_and_Qc_unsorted_same_scale.png")
+display.Image("./figures/S12_Q_and_Qc_unsorted_same_scale.png")
 
 # We also plot Q and Qc after sorting. This helps better understand what the different factors mean in relationship to the original questions
 
@@ -159,9 +161,29 @@ sorted_q = Q.sort_values(by=['Factor 1','Factor 2'],ascending=False).index
 Q_plot_sorted  = Q.loc[sorted_q].hvplot.heatmap( cmap='Oranges', width=240, height=500, clim=(0,100), fontscale=1.2, shared_axes=False).opts( colorbar_opts={'title':'Q Matrix'}, xrotation=90, toolbar=None)
 Qc_plot_sorted = Qc.loc[sorted_q].hvplot.heatmap(cmap='Reds', width=300, height=500, clim=(0,100), fontscale=1.2).opts( colorbar_opts={'title':'Qc Matrix'}, xrotation=90, toolbar=None)
 f = pn.Row(Q_plot_sorted, Qc_plot_sorted)
-f.save('./figures/Q_and_Qc_sorted_diff_scale.png')
+f.save('./figures/S12_Q_and_Qc_sorted_diff_scale.png')
 
-display.Image("./figures/Q_and_Qc_sorted_diff_scale.png")
+display.Image("./figures/S12_Q_and_Qc_sorted_diff_scale.png")
+
+# We will also plot each Q column separately, this will help us convey the meaning of Factor 1 and Factor 2 in the scatter plot
+
+f = Q.sort_values(by='Factor 1', ascending=False)['Factor 1'].hvplot.heatmap(cmap='Oranges', 
+                                                                         clim=(0,100), width=110, 
+                                                                         colorbar=False, xaxis=None).opts(toolbar=None, line_color='k', line_width=1)
+pn.Row(f).save('./figures/S12_Q_Factor1_sorted.png')
+
+display.Image('./figures/S12_Q_Factor1_sorted.png')
+
+f = Q.sort_values(by='Factor 2', ascending=True)['Factor 2'].hvplot.heatmap(cmap='Oranges', 
+                                                                         clim=(0,100), width=110, 
+                                                                         colorbar=False, xaxis=None).opts(toolbar=None, line_color='k', line_width=1)
+pn.Row(f).save('./figures/S12_Q_Factor2_sorted.png')
+
+display.Image('./figures/S12_Q_Factor2_sorted.png')
+
+Q.sort_values(by='Factor 2', ascending=True)['Factor 2'].hvplot.heatmap(cmap='Oranges', 
+                                                                         clim=(0,100), width=160, 
+                                                                         colorbar=True, xaxis=None).opts(toolbar=None, line_color='k', line_width=1)
 
 # # 4. Create Wordclouds that represent the two factors
 #
@@ -200,7 +222,7 @@ wc = WordCloud(max_font_size=50, min_font_size=5,
                color_func=my_tf_color_func(Q['Factor 1'].to_dict())).generate_from_frequencies(Q['Factor 1'].to_dict())
 plt.imshow(wc, interpolation='bilinear')
 plt.axis("off")
-wc.to_file('./figures/Factor1_WC.png')
+wc.to_file('./figures/S12_Factor1_WC.png')
 
 wc = WordCloud(max_font_size=50, min_font_size=5, 
                width=200, height=200,contour_color='gray', contour_width=3, colormap='bone',
@@ -210,7 +232,7 @@ wc = WordCloud(max_font_size=50, min_font_size=5,
                color_func=my_tf_color_func(Q['Factor 2'].to_dict())).generate_from_frequencies(Q['Factor 2'].to_dict())
 plt.imshow(wc, interpolation='bilinear')
 plt.axis("off")
-wc.to_file('./figures/Factor2_WC.png')
+wc.to_file('./figures/S12_Factor2_WC.png')
 
 # # 5. Show Original and Reconstructed Matrix
 #
@@ -225,9 +247,9 @@ Morig = pd.DataFrame(M,index=SNYCQ.index,columns=SNYCQ.columns)
 
 f = (Morig.reset_index(drop=True).T.hvplot.heatmap(cmap='viridis', width=1500, height=300, fontscale=1.2, clim=(0,100), shared_axes=False).opts( colorbar_opts={'title':'M Matrix'}, xrotation=90, toolbar=None, xticks=None) + \
 Mrecon.reset_index(drop=True).T.hvplot.heatmap(cmap='viridis', width=1500, height=300, fontscale=1.2, clim=(0,100), shared_axes=False).opts( colorbar_opts={'title':'M_recon Matrix'}, xrotation=90, toolbar=None, xticks=None)).cols(1)
-pn.Row(f).save('./figures/M_Mrecon.png')
+pn.Row(f).save('./figures/S12_M_Mrecon.png')
 
-display.Image("./figures/M_Mrecon.png")
+display.Image("./figures/S12_M_Mrecon.png")
 
 question = 'People'
 aux = pd.concat([Morig[question],Mrecon[question]],axis=1)
@@ -250,10 +272,10 @@ plot_W(W)
 
 # ## 6.3. W as a scatter plot
 
-f = plot_W_scatter(W, plot_hist=True, plot_kde=True, figsize=(5,5), marker_size=20)
-f.savefig('./figures/bcm_embedding.png')
+f = plot_W_scatter(W, plot_hist=False, plot_kde=False, figsize=(5,5), marker_size=40, marker_alpha=0.5)
+f.savefig('./figures/S12_W_scatter_noClusters.png')
 
-display.Image('./figures/bcm_embedding.png')
+display.Image('./figures/S12_W_scatter_noClusters.png')
 
 # ## 6.4. Plot a few representative subjects on the extremes
 
@@ -261,22 +283,22 @@ top_left_scans = W[(W['Factor 1']<0.4) & (W['Factor 2']>0.9)].index
 a = SNYCQ.loc[top_left_scans].reset_index(drop=True)
 a.index = a.index.astype(str)
 f = a[sorted_q].hvplot.heatmap(width=250, height=250, clim=(0,100), cmap='Viridis', ylabel='Scan', xlabel='Question', fontscale=1.2).opts(colorbar=False, xrotation=90, toolbar=None)
-pn.Row(f).save('./figures/bcm_embedding_rep_highF1.png')
+pn.Row(f).save('./figures/S12_bcm_embedding_rep_highF1.png')
 
-display.Image('./figures/bcm_embedding_rep_highF1.png')
+display.Image('./figures/S12_bcm_embedding_rep_highF1.png')
 
 top_left_scans = W[(W['Factor 1']>0.75) & (W['Factor 1']<0.94) & (W['Factor 2']<0.2)].index
 a = SNYCQ.loc[top_left_scans].reset_index(drop=True)
 a.index = a.index.astype(str)
-f = a[sorted_q].hvplot.heatmap(width=250, height=250, clim=(0,100), cmap='Viridis', ylabel='Scan', xlabel='Question', fontscale=1.2).opts(colorbar=False, xrotation=90)
-pn.Row(f).save('./figures/bcm_embedding_rep_highF2.png')
+f = a[sorted_q].hvplot.heatmap(width=250, height=250, clim=(0,100), cmap='Viridis', ylabel='Scan', xlabel='Question', fontscale=1.2).opts(colorbar=False, xrotation=90, toolbar=None)
+pn.Row(f).save('./figures/S12_bcm_embedding_rep_highF2.png')
 
-display.Image('./figures/bcm_embedding_rep_highF2.png')
+display.Image('./figures/S12_bcm_embedding_rep_highF2.png')
 
 # ***
 # # 7. Clustering: looking for extremes
 #
-# Even though we do not see clear clusters in the data, we will rely on agglomerative clustering to find scans sitting on the extremes of reported experience. A k=3 should provide the scans on the extremes and then a "separating" middle group.
+# Even though we do not see clear clusters in the data, we will rely on agglomerative clustering to find scans sitting on the extremes of reported experience. A k=3 should provide the scans on the extremes and then a "separating" Intermediate group.
 #
 # The inputs to the clustering algorithm are: 1) matrix ```W``` and 2) ```N_CLUSTERS=3```
 
@@ -290,18 +312,18 @@ print('++ INFO: Number of clusters = %d' % int(cluster_ids.max()+1))
 clusters_info = pd.DataFrame(index=W.index, columns=['Cluster ID','Cluster Label'])
 clusters_info['Cluster ID'] = cluster_ids
 
-# For creating the figures it is convenient to transform randomly assigned cluster labels into labels that describe the relationship of the clusters to the underlying factors. We will use these three labels: ```Large F1```, ```Large F2``` and ```Middle```. We use the mean F1 and F2 values to translate original numeric labels into these more meaningful categories.
+# For creating the figures it is convenient to transform randomly assigned cluster labels into labels that describe the relationship of the clusters to the underlying factors. We will use these three labels: ```Image-Pos-Others```, ```Surr-Neg-Self``` and ```Intermediate```. We use the mean F1 and F2 values to translate original numeric labels into these more meaningful categories.
 
-cluster_labels_translate = {x:'Middle' for x in np.unique(cluster_ids)}
+cluster_labels_translate = {x:'Intermediate' for x in np.unique(cluster_ids)}
 Waux = W.copy()
 Waux['Cluster ID']    = cluster_ids
-cluster_labels_translate[float(Waux.groupby('Cluster ID').mean().sort_values(by='Factor 1', ascending=False).iloc[0].name)] = 'Large F1'
-cluster_labels_translate[float(Waux.groupby('Cluster ID').mean().sort_values(by='Factor 2', ascending=False).iloc[0].name)] = 'Large F2'
+cluster_labels_translate[float(Waux.groupby('Cluster ID').mean().sort_values(by='Factor 1', ascending=False).iloc[0].name)] = 'Image-Pos-Others'
+cluster_labels_translate[float(Waux.groupby('Cluster ID').mean().sort_values(by='Factor 2', ascending=False).iloc[0].name)] = 'Surr-Neg-Self'
 clusters_info['Cluster Label'] = [cluster_labels_translate[c] for c in Waux['Cluster ID']]
 clusters_info['Cluster ID'] = 0
-clusters_info.loc[clusters_info['Cluster Label']=='Large F1','Cluster ID'] = 1
-clusters_info.loc[clusters_info['Cluster Label']=='Large F2','Cluster ID'] = 2
-clusters_info.loc[clusters_info['Cluster Label']=='Middle'  ,'Cluster ID'] = 3
+clusters_info.loc[clusters_info['Cluster Label']=='Image-Pos-Others','Cluster ID'] = 1
+clusters_info.loc[clusters_info['Cluster Label']=='Surr-Neg-Self','Cluster ID'] = 2
+clusters_info.loc[clusters_info['Cluster Label']=='Intermediate'  ,'Cluster ID'] = 3
 del Waux, cluster_ids, cluster_labels_translate
 
 # We print the number of scans per group, to ensure the extreme groups have similar sizes.
@@ -309,22 +331,24 @@ del Waux, cluster_ids, cluster_labels_translate
 clusters_info.value_counts('Cluster Label')
 
 sbjs = clusters_info.index.get_level_values('Subject').unique()
-df = pd.DataFrame(index=sbjs, columns=['Num Scans','Large F1','Large F2','Middle'])
+df = pd.DataFrame(index=sbjs, columns=['Num Scans','Image-Pos-Others','Surr-Neg-Self','Intermediate'])
 for sbj in sbjs:
     aux = clusters_info.loc[sbj,:]
     df.loc[sbj,'Num Scans'] = aux.shape[0]
     aux_counts = aux['Cluster Label'].value_counts()
-    for cl in ['Large F1','Large F2','Middle']:
+    for cl in ['Image-Pos-Others','Surr-Neg-Self','Intermediate']:
         if cl in aux_counts:
             df.loc[sbj,cl] = aux_counts[cl]
         else:
             df.loc[sbj,cl] = 0
 
-f = plot_W_scatter(W, clusters_info=clusters_info, plot_kde=False, plot_hist=True, marker_size=20,figsize=(5,5), cluster_palette=[(1.0, 0.4980392156862745, 0.054901960784313725),
-                                                                                                                                  (0.12156862745098039, 0.4666666666666667, 0.7058823529411765),(0.17254901960784313, 0.6274509803921569, 0.17254901960784313),])
-f
+f = plot_W_scatter(W, clusters_info=clusters_info, plot_kde=False, plot_hist=False, marker_size=20,figsize=(5,5), cluster_palette=[(1.0, 0.4980392156862745, 0.054901960784313725),
+                                                                                                                                  (0.12156862745098039, 0.4666666666666667, 0.7058823529411765),
+                                                                                                                                   (0.17254901960784313, 0.6274509803921569, 0.17254901960784313),])
+f.get_axes()[0].grid('on')
+f.savefig('./figures/S12_W_scatter_withClusters.png')
 
-f.savefig('./figures/bcm_embedding_withclusters.png')
+display.Image('./figures/S12_W_scatter_withClusters.png')
 
 clusters_info.to_csv(SNYCQ_CLUSTERS_INFO_PATH)
 print('++ INFO: Clustering Membership Info saved to [%s]' % SNYCQ_CLUSTERS_INFO_PATH)
@@ -336,14 +360,14 @@ print('++ INFO: Clustering Membership Info saved to [%s]' % SNYCQ_CLUSTERS_INFO_
 # We will generate two potential clusters depending on whether we sort scans within each cluster using Factor 1 or Factor 2
 
 sort_clf1f2_list = []
-for cl_label in ['Large F1','Large F2','Middle']:
+for cl_label in ['Image-Pos-Others','Surr-Neg-Self','Intermediate']:
     aux = pd.concat([W,clusters_info],axis=1)
     aux = aux.reset_index().set_index('Cluster Label').loc[cl_label]
     sort_clf1f2_list = sort_clf1f2_list + list(aux.sort_values(by=['Factor 1','Factor 2']).set_index(['Subject','Run']).index)
 sort_clf1f2_idx = pd.Index(sort_clf1f2_list)
 
 sort_clf2f1_list = []
-for cl_label in ['Large F1','Large F2','Middle']:
+for cl_label in ['Image-Pos-Others','Surr-Neg-Self','Intermediate']:
     aux = pd.concat([W,clusters_info],axis=1)
     aux = aux.reset_index().set_index('Cluster Label').loc[cl_label]
     sort_clf2f1_list = sort_clf2f1_list + list(aux.sort_values(by=['Factor 2','Factor 1']).set_index(['Subject','Run']).index)
@@ -354,9 +378,9 @@ sort_clf2f1_idx = pd.Index(sort_clf2f1_list)
 plot_W_heatmap(W, clusters_info=clusters_info, scan_order=sort_clf1f2_idx, cmap='Greens')
 
 f=pn.Row(W.loc[sort_clf1f2_idx].reset_index(drop=True).hvplot.heatmap(cmap='Greens', ylabel='Scans', width=250, height=600, fontscale=1.2, clim=(0,1)).opts( colorbar_opts={'title':'W Matrix'}, xrotation=90, toolbar=None))
-f.save('./figures/W_sorted.png')
+f.save('./figures/S12_W_sorted.png')
 
-display.Image('./figures/W_sorted.png')
+display.Image('./figures/S12_W_sorted.png')
 
 # ## 7.2. Plot M sorted by clusters
 #
@@ -365,18 +389,73 @@ display.Image('./figures/W_sorted.png')
 q_order = ['Future', 'Specific', 'Past', 'Positive', 'People', 'Images', 'Words', 'Negative', 'Surroundings', 'Myself', 'Intrusive']
 
 f = plot_P(Morig, question_order=q_order, scan_order=sort_clf1f2_idx, clusters_info=clusters_info)
-f.savefig('./figures/M_by_clusters.png')
+f.savefig('./figures/S12_M_by_clusters.png')
 
-display.Image('./figures/M_by_clusters.png')
+display.Image('./figures/S12_M_by_clusters.png')
 
 f = plot_P(Mrecon, question_order=q_order, scan_order=sort_clf1f2_idx, clusters_info=clusters_info)
-f.savefig('./figures/Mrecon_by_clusters.png')
+f.savefig('./figures/S12_Mrecon_by_clusters.png')
 
 display.Image('./figures/Mrecon_by_clusters.png')
 
 # ***
+# # 8. How often scans fall in the same cluster
 #
-# # 8. Significant Differences in things of interest across extreme clusters
+# First, we count how many scans we have per subject and keep that information on a pandas Series object
+
+scans_per_subject = pd.Series(index=sbjs, dtype=int)
+for sbj in scans_per_subject.index:
+    aux = SNYCQ.loc[sbj,:]
+    scans_per_subject[sbj] = aux.shape[0]
+sbjs_3plus_scans = list(scans_per_subject[scans_per_subject > 2].index)
+assert scans_per_subject.sum() == len(SCANs)
+
+Nsbjs_total       = len(SNYCQ.index.get_level_values('Subject').unique())
+Nsbjs_3plus_scans = len(sbjs_3plus_scans)
+print('++ INFO: Initial number of subjects              : %d subjects' % Nsbjs_total)
+print('++ INFO: Number of subjects with 3 or more scans : %d subjects' % Nsbjs_3plus_scans)
+
+selected_scans = clusters_info.loc[sbjs_3plus_scans,:]
+print('++ INFO: Number of scans in this analysis: %s scans' % len(selected_scans))
+
+# Now, for each participant with 3 or more scans, we check for three possible configurations:
+#
+# 1. All scans in the same set
+# 2. All scans, except 1, in the same set.
+# 3. Any other combination across the three sets
+
+df = pd.DataFrame(0, index=sbjs_3plus_scans, columns=['All scans in same set','All except one scan in same set','Other configurations'], dtype=int)
+for sbj in sbjs_3plus_scans:
+    aux = selected_scans.loc[sbj,:]
+    aux_value_counts = aux.value_counts()
+    scans_for_this_subject = aux.shape[0]
+    # All scans in same cluster
+    if aux_value_counts.shape[0] == 1:
+        df.loc[sbj,'All scans in same set'] = 1
+    # Scans across 2 clusters
+    elif aux_value_counts.shape[0] == 2:
+        count_on_larger_set = aux_value_counts.sort_values(ascending=False).iloc[0]
+        if count_on_larger_set == scans_for_this_subject - 1:
+            df.loc[sbj,'All except one scan in same set'] = 1
+        else:
+            df.loc[sbj,'Other configurations'] = 1
+    # Scans across 3 clusters --> automatically "Other scenario"
+    else:
+        df.loc[sbj,'Other configurations'] = 1
+
+# Finally, we obtain the subject count for each of the three scenarios
+
+final_counts = df.sum()
+
+labels=final_counts.index
+labels = [ '\n'.join(wrap(l, 15)) for l in labels ]
+f = plt.pie(final_counts, colors=sns.color_palette("ch:start=.2,rot=-.3"), labels=labels,autopct='%.0f%%');
+plt.tight_layout()
+plt.savefig('./figures/S12_Pie_Scans_per_Subject.png',bbox_inches='tight')
+
+# ***
+#
+# # 9. Significant Differences in things of interest across extreme clusters
 #
 # Our next analysis is looking to whether or not there are significant differences in FC across the two extreme groups. Before doing that, we will do a couple of sanity checks to ensure any differences we find we can interpret them with some degree of confidence to being due to the differerences in reported in-scanner experience.
 #
@@ -388,15 +467,15 @@ display.Image('./figures/Mrecon_by_clusters.png')
 #
 # 3) Check for significant differneces in head motion in terms of mean motion.
 #
-# First, we get the list of scans not part of the middle group.
+# First, we get the list of scans not part of the Intermediate group.
 
-scans_of_interest = clusters_info[clusters_info['Cluster Label']!='Middle'].index
+scans_of_interest = clusters_info[clusters_info['Cluster Label']!='Intermediate'].index
 
 # Second, we create an empty dataset that we will later populate with information about motion and wakefulness
 
-df = pd.DataFrame(index = scans_of_interest,columns=['Cluster Label','Rel. Motion (mean)','Rel. Motion (max)','Vigilance','Age','Gender'])
+df = pd.DataFrame(index = scans_of_interest,columns=['Scan Sets:','Mean Framewise Displacement','Max. Framewise Displacement','Wakefulness'])
 
-# ## 8.1. Significant differences in wakefulness levels?
+# ## 9.1. Significant differences in wakefulness levels?
 #
 # Load again the original SNYCQ data. The reason for this is that earlier on the notebook we removed the answers to the wakefulness question, which is the one we need now.
 
@@ -405,20 +484,22 @@ _,_,aux_snycq = get_sbj_scan_list(when='post_motion')
 # Add the wakefulness answer to the temporary dataframe df
 
 for scan in df.index:
-    df.loc[scan,'Vigilance'] = aux_snycq.loc[scan,'Vigilance']
-    df.loc[scan,'Cluster Label'] = clusters_info.loc[scan,'Cluster Label']
+    df.loc[scan,'Wakefulness'] = aux_snycq.loc[scan,'Vigilance']
+    df.loc[scan,'Scan Sets:'] = clusters_info.loc[scan,'Cluster Label']
 df = df.infer_objects()
+df.head(5)
 
-f = df.hvplot.kde(y='Vigilance',by='Cluster Label', alpha=.5, title='Vigilance', color=['#4472C4','#ED7D31'], width=500).opts(legend_position='top_left', toolbar=None)
-pn.Row(f).save('./figures/bcm_clustering_wakefulness_diffs.png')
+f = df.hvplot.kde(y='Wakefulness',by='Scan Sets:', alpha=.5, title='Wakefulness Score', color=['#4472C4','#ED7D31'], width=400, 
+                  fontsize={'xticks':15,'yticks':15,'xlabel':15,'ylabel':15,'legend':12}).opts(legend_position='bottom_right', toolbar=None)
+pn.Row(f).save('./figures/S12_bcm_clustering_wakefulness_diffs.png')
 
-display.Image('./figures/bcm_clustering_wakefulness_diffs.png')
+display.Image('./figures/S12_bcm_clustering_wakefulness_diffs.png')
 
-ttest_ind(df.set_index('Cluster Label').loc['Large F1','Vigilance'],df.set_index('Cluster Label').loc['Large F2','Vigilance'],alternative='two-sided')
+ttest_ind(df.set_index('Scan Sets:').loc['Image-Pos-Others','Wakefulness'],df.set_index('Scan Sets:').loc['Surr-Neg-Self','Wakefulness'],alternative='two-sided')
 
-mannwhitneyu(df.set_index('Cluster Label').loc['Large F1','Vigilance'],df.set_index('Cluster Label').loc['Large F2','Vigilance'],alternative='two-sided')
+mannwhitneyu(df.set_index('Scan Sets:').loc['Image-Pos-Others','Wakefulness'],df.set_index('Scan Sets:').loc['Surr-Neg-Self','Wakefulness'],alternative='two-sided')
 
-# ## 8.2. Significance differnces in head motion?
+# ## 9.2. Significance differnces in head motion?
 #
 # We now add the information about motion
 
@@ -427,18 +508,20 @@ for scan in df.index:
     _,_,_,_,run_num,_,run_acq = run.split('-')
     path = osp.join(DATA_DIR,'PrcsData',sbj,'preprocessed','func','pb01_moco','_scan_id_ses-02_task-rest_acq-{run_acq}_run-{run_num}_bold'.format(run_num=run_num,run_acq=run_acq),'rest_realigned_rel.rms')
     mot  = np.loadtxt(path)
-    df.loc[scan,'Rel. Motion (mean)'] = mot.mean()
-    df.loc[scan,'Rel. Motion (max)']  = mot.max()
+    df.loc[scan,'Mean Framewise Displacement'] = mot.mean()
+    df.loc[scan,'Max. Framewise Displacement']  = mot.max()
 df = df.infer_objects()
+df.head(5)
 
-f = (df.hvplot.kde(y='Rel. Motion (mean)',by='Cluster Label', alpha=.5, title='Rel. Motion (mean)',color=['#4472C4','#ED7D31'], width=500).opts(legend_position='top_left', toolbar=None) + \
-df.hvplot.kde(y='Rel. Motion (max)',by='Cluster Label', alpha=.5, title='Rel. Motion (max)',color=['#4472C4','#ED7D31'], width=500).opts(legend_position='top_right', toolbar=None)).cols(1).opts(toolbar=None)
-pn.Row(f).save('./figures/bcm_clustering_motion_diffs.png')
+f_mean_mot = df.hvplot.kde(y='Mean Framewise Displacement',by='Scan Sets:', alpha=.5, 
+                   title='Head Motion',color=['#4472C4','#ED7D31'], width=400, 
+                  fontsize={'xticks':15,'yticks':15,'xlabel':15,'ylabel':15,'legend':12}).opts(legend_position='bottom_right', toolbar=None)
+f_max_mot = df.hvplot.kde(y='Max. Framewise Displacement',by='Scan Sets:', alpha=.5, title='Head Motion',color=['#4472C4','#ED7D31'], width=400,
+                  fontsize={'xticks':15,'yticks':15,'xlabel':15,'ylabel':15,'legend':12}).opts(legend_position='bottom_right', toolbar=None)
+pn.Row(f_mean_mot).save('./figures/S12_bcm_clustering_motion_diffs.png')
 
-display.Image('./figures/bcm_clustering_motion_diffs.png')
+display.Image('./figures/S12_bcm_clustering_motion_diffs.png')
 
-ttest_ind(df.set_index('Cluster Label').loc['Large F1','Rel. Motion (mean)'],df.set_index('Cluster Label').loc['Large F2','Rel. Motion (mean)'],alternative='two-sided')
+ttest_ind(df.set_index('Scan Sets:').loc['Image-Pos-Others','Mean Framewise Displacement'],df.set_index('Scan Sets:').loc['Surr-Neg-Self','Mean Framewise Displacement'],alternative='two-sided')
 
-ttest_ind(df.set_index('Cluster Label').loc['Large F1','Rel. Motion (max)'],df.set_index('Cluster Label').loc['Large F2','Rel. Motion (max)'],alternative='two-sided')
-
-
+mannwhitneyu(df.set_index('Scan Sets:').loc['Image-Pos-Others','Mean Framewise Displacement'],df.set_index('Scan Sets:').loc['Surr-Neg-Self','Mean Framewise Displacement'],alternative='two-sided')
