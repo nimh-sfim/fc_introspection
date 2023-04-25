@@ -2,9 +2,9 @@
 %  ========================================================
 clear all
 RESOURCES_DIR="/data/SFIMJGC_Introspec/2023_fc_introspection/code/fc_introspection/resources/nbs";
-atlases=["Schaefer2018_400Parcels_7Networks_AAL2","Schaefer2018_200Parcels_7Networks_AAL2"];
-scenarios=["CL02_0p005", "CL02_0p001"];
-contrasts=["F1gtF2","F2gtF1"];
+atlases=["Schaefer2018_400Parcels_7Networks_AAL2"];
+scenarios=["CL02"];
+contrasts=["Image-Pos-Others_gt_Surr-Neg-Self","Surr-Neg-Self_gt_Image-Pos-Others"];
 for atlas = atlases
     for scenario = scenarios
         for contrast = contrasts
