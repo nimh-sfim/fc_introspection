@@ -25,6 +25,7 @@ import xarray as xr
 from sfim_lib.io.afni import load_netcc
 from shutil import rmtree
 from tqdm import tqdm
+from IPython import display
 
 from utils.basics import RESOURCES_NBS_DIR, ATLASES_DIR, DATA_DIR, SNYCQ_CLUSTERS_INFO_PATH
 from utils.basics import FB_400ROI_ATLAS_NAME, FB_400ROI_ATLAS_PATH, FB_400ROI_BRAINNET_NODES_PATH
@@ -100,7 +101,7 @@ print("++ INFO: Number of Clusters = %d clusters" % N_clusters)
 
 # Third, we create a dictionary that will contain the scan_IDs for each of the three clusters
 
-scans_per_cluster={cl_label:clusters_info[clusters_info['Cluster Label']==cl_label].index for cl_label in ['Large F1','Large F2','Middle']}
+scans_per_cluster={cl_label:clusters_info[clusters_info['Cluster Label']==cl_label].index for cl_label in ['Image-Pos-Others','Surr-Neg-Self','Intermediate']}
 
 # Forth, we print again the number of scans per cluster, as a sanity check
 
@@ -108,12 +109,12 @@ scans_per_cluster={cl_label:clusters_info[clusters_info['Cluster Label']==cl_lab
 
 # Fifth, we generate the design matrix taking into accoun only the scans that we use in this part of the analysis (namely those in clusters ```Large F1``` and ```Large F2```)
 
-DESIGN_MATRIX = np.vstack([np.tile(np.array([1,0]),(len(scans_per_cluster['Large F1']),1)),
-                           np.tile(np.array([0,1]),(len(scans_per_cluster['Large F2']),1))])
+DESIGN_MATRIX = np.vstack([np.tile(np.array([1,0]),(len(scans_per_cluster['Image-Pos-Others']),1)),
+                           np.tile(np.array([0,1]),(len(scans_per_cluster['Surr-Neg-Self']),1))])
 DESIGN_MATRIX_PATH = osp.join(RESOURCES_NBS_DIR,'NBS_CL02_DesingMatrix.txt')
 np.savetxt(DESIGN_MATRIX_PATH,DESIGN_MATRIX,delimiter=' ',fmt='%d')
-print('++ INFO: Design Matrix for 3 Cluster solution saved in [%s]' % DESIGN_MATRIX_PATH)
-print('++ INFO: Design Matrix for 3 Cluster solution has shape [%s]' % str(DESIGN_MATRIX.shape))
+print('++ INFO: Design Matrix for 2 Cluster solution saved in [%s]' % DESIGN_MATRIX_PATH)
+print('++ INFO: Design Matrix for 2 Cluster solution has shape [%s]' % str(DESIGN_MATRIX.shape))
 
 # ***
 # # 3. Create Copies of Scan-wise FC Matrices in NBS folders
@@ -121,7 +122,8 @@ print('++ INFO: Design Matrix for 3 Cluster solution has shape [%s]' % str(DESIG
 # Count how many scans we have in total across the two clusters of interest
 
 #_,scans_list = get_sbj_scan_list(when='post_motion', return_snycq=False)
-Nscans       = clusters_info.set_index('Cluster Label').loc[['Large F1','Large F2']].shape[0]
+Nscans       = clusters_info.set_index('Cluster Label').loc[['Image-Pos-Others','Surr-Neg-Self']].shape[0]
+print(Nscans)
 
 # ## 3.1. Load all FC matrices into a XR.DataArray 
 
@@ -135,7 +137,7 @@ for ATLAS_NAME in [FB_400ROI_ATLAS_NAME]:
     scan_name_idx = []
     # For all clusters of interest
     # ============================
-    for cluster_id in ['Large F1', 'Large F2']:
+    for cluster_id in ['Image-Pos-Others','Surr-Neg-Self']:
         # For each scan in a given cluster
         # ================================
         for sbj,run in scans_per_cluster[cluster_id]:
@@ -183,3 +185,40 @@ for ATLAS_NAME in tqdm([FB_400ROI_ATLAS_NAME], desc='Atlas'):
     for i,item in enumerate(list(sfc_Z_xr[ATLAS_NAME].indexes['scan'])):
         dest_path = osp.join(NBS_CL02_matrices_folder,'subject{id}.txt'.format(id=str(i+1).zfill(3)))
         np.savetxt(dest_path,sfc_Z_xr[ATLAS_NAME].loc[item,:,:],delimiter=' ',fmt='%f')
+
+NBS_CL02_matrices_folder
+
+# # 4. Run NBS Analysis in Matlab
+#
+# 1. Open Matlab
+#
+# 2. Load the Path to NBS
+#
+# 3. Configure NBS appropriately for each of the contrasts
+#
+#     a. Image-Pos-Others
+#     
+#     * ```Design Matrix = /data/SFIMJGC_Introspec/2023_fc_introspection/code/fc_introspection/resources/nbs/NBS_CL02_DesingMatrix.txt```
+#     * ```Contrast = [1,-1]```
+#     * ```Statistical Test = T-test```
+#     * ```Threshold = 3.1``` equivalent to p<0.001
+#     * ```Connectivity Matrices = /data/SFIMJGC_Introspec/2023_fc_introspection/code/fc_introspection/resources/nbs/Schaefer2018_400Parcels_7Networks_AAL2/NBS_CL02_Data/subject0001.txt```
+#     * ```Node Coordinates = /data/SFIMJGC_Introspec/2023_fc_introspection/code/fc_introspection/resources/nbs/Schaefer2018_400Parcels_7Networks_AAL2/Schaefer2018_400Parcels_7Networks_AAL2_NBS_Node_Coordinates.txt```
+#     * ```Node Labels = /data/SFIMJGC_Introspec/2023_fc_introspection/code/fc_introspection/resources/nbs/Schaefer2018_400Parcels_7Networks_AAL2/Schaefer2018_400Parcels_7Networks_AAL2_NBS_Node_Labels.txt```
+#     * ```Permutations = 5000```
+#     * ```Significance = 0.05```
+#     * ```Method = Network-Based Statistics (NBS)```
+#     * ```Component Size = Extent```
+#     
+#     Once the program finish, please save the results as: ```/data/SFIMJGC_Introspec/2023_fc_introspection/code/fc_introspection/resources/nbs/Schaefer2018_400Parcels_7Networks_AAL2/NBS_CL02_Results/NBS_CL02_Image-Pos-Others_gt_Surr-Neg-Self.mat```
+#
+#     b. Surr-Neg-Self
+#     
+#     Same as above, except for contast, please use ```Contrast = [-1,1]```
+#     
+#     And save results as ```/data/SFIMJGC_Introspec/2023_fc_introspection/code/fc_introspection/resources/nbs/Schaefer2018_400Parcels_7Networks_AAL2/NBS_CL02_Results/NBS_CL02_Surr-Neg-Self_gt_Image-Pos-Others.mat```
+#
+
+display.Image('./figures/S13_NBS_Configuration.png', width=1200)
+
+
