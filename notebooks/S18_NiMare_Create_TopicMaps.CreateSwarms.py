@@ -22,41 +22,55 @@ from nimare.io import convert_neurosynth_to_dataset
 from glob import glob
 import numpy as np
 import pickle
+from utils.basics import PRJ_DIR
 
 print(nimare.__version__)
 
 # # 1. Folder Setup
 
-PRJDIR = "/data/SFIMJGC_Introspec/2023_fc_introspection"
-vocab = 'LDA400'
+vocab = 'LDA50'
 
 # +
-RESOURCE_NIMARE_DIR  = osp.join(PRJDIR,'nimare')
+RESOURCE_NIMARE_DIR  = osp.join(PRJ_DIR,'nimare')
 VOCAB_DIR            = osp.join(RESOURCE_NIMARE_DIR,vocab)
 METAMAPS_ORIG_DIR    = osp.join(VOCAB_DIR,"meta-analyses-orig")  # where to save meta-analysis maps
 METAMAPS_RPI_DIR     = osp.join(VOCAB_DIR,"meta-analyses-RPI")  # where to save meta-analysis maps
 
-ns_dset_path         = os.path.join(VOCAB_DIR, f"neurosynth_dataset_{vocab}.pkl.gz")
-print(ns_dset_path)
+ns_dset_path         = osp.join(VOCAB_DIR, f"neurosynth_dataset_{vocab}.pkl.gz")
+lda_model_path       = osp.join(VOCAB_DIR, f'lda_model.pkl.gz')
+
+print('++ INFO: Resource Folder for NiMare Analyses                              : %s' % RESOURCE_NIMARE_DIR)
+print('++ INFO: Folder for this vocabulary                                       : %s' % VOCAB_DIR)
+print('++ INFO: Folder for meta-maps in original orientation as written by NiMare: %s' % METAMAPS_ORIG_DIR)
+print('++ INFO: Folder for meta-maps in RPI orientation (the one our data has)   : %s' % METAMAPS_RPI_DIR)
+print('++ ------------------------------------------------------------------------')
+print('++ INFO: Path for NeuroSynth Dataset in NiMare format                     : %s' % ns_dset_path)
+print('++ INFO: Path for locally trained LDA model.                              : %s' % lda_model_path)
 # -
 
 # Create Empty Output Folders
 # ===========================
 print("++ INFO: Setting up all necessary folders")
-for folder_path in [VOCAB_DIR, METAMAPS_ORIG_DIR]:
+for folder_path in [VOCAB_DIR, METAMAPS_ORIG_DIR, METAMAPS_RPI_DIR]:
     if osp.exists(folder_path):
         print(" + WARNING: Removing folder [%s]" % folder_path)
         shutil.rmtree(folder_path)
     print(" + INFO: Generating/Regenerating output folder [%s]" % folder_path)
     os.mkdir(folder_path)
 
+# + [markdown] tags=[]
 # # 2. Download Neurosynth 7 database
+#
+# First, we need to download the Neurosynth database (version 7) for the 400 Topic Vocabulary
+# -
 
 # Download NeuroSynth database
 print("++ INFO: Fetching neurosynth dataset for this vocabulary...")
 files = fetch_neurosynth(data_dir=VOCAB_DIR, version="7", overwrite=False, vocab=vocab, source="abstract")
 
 # # 3. Convert Neurosynth Database to NiMare Dataset
+#
+# Next, we need to convert it into a format NiMare can understand
 
 # %%time
 # Convert to NiMare Dataset
@@ -67,22 +81,68 @@ neurosynth_dset = convert_neurosynth_to_dataset(
         annotations_files=neurosynth_db['features'],
         )
 
+# To avoid having to do these two steps continously, we will save the NiMare version of the NeuroSynth Database to disk. If we need it again, we just have to load this file.
+
 # Save the dataset as a pickle file to the Resources directory
-print (" + Saving dataset to %s" % ns_dset_path)
+print ("++ INFO: Saving NeuroSynth Dataset to disk: %s" % ns_dset_path)
 neurosynth_dset.save(ns_dset_path)
+
+# As a sanity check, we print the labels for the first 10 topics and count how many topics in total are in the database.
 
 # Extract Topic Names
 topics_ORIG = neurosynth_dset.get_labels()
-print(topics_ORIG[0:10])
-print(len(topics_ORIG))
-
-# ***
+print('++ INFO: First few topics      : %s' % str(topics_ORIG[0:10]))
+print('++ INFO: Total number of topics: %d' % len(topics_ORIG))
 
 # # 4. Train LDA Model
 #
-# > Call S20s for 50 and 400 topics. This takes days to run and about 100GB of memory. Can be run on spersist node with 24 cpus using the NUMEXPR_MAX_THREADS environment variable.
+# The topic model downloaded from NeuroSynth does not include the weigths associated with how each term relates to the topic. If we want these (which can be quite useful for generating wordclouds), then we would have to train our own Latent Dirichlet allocation (LDA) topic model using NiMare.
+#
+# This is a very computing and memory intensive process. I was able to run it using spersist nodes with 100GB of memory and setting ```NUMEXPR_MAX_THREADS=24```. For the 50 topic model it takes several hours, for the 400 topic model it takes a few days.
+#
+# Here is what to do to run the models
+#
+# ```bash
+# # Once you are on a tmux/no machine terminal in an spersist node with the suggested configuration, do the following:
+#
+# # Enter the notebook directory
+# # cd /data/SFIMJGC_Introspec/2023_fc_introspection/code/fc_introspection/notebooks/
+# # Set NUMEXPR_MAX_THREADS to use 24 cpus
+# export NUMEXPR_MAX_THREADS=24
+# # Active the correct conda environment
+# source /data/SFIMJGC_HCP7T/Apps/miniconda38/etc/profile.d/conda.sh && conda activate fc_introspection
+# # Run the LDA model for the 50 topics
+# python ./S18_NiMare_Compute_LDA50_Models.py
+# # Run the LDA model for the 400 topics
+# python ./S18_NiMare_Compute_LDA400_Models.py
+# ```
+#
+# By then end, you should have two new files:
+#
+# * ```/data/SFIMJGC_Introspec/2023_fc_introspection/nimare/LDA50/lda_model_LDA50.pkl.gz```
+# * ```/data/SFIMJGC_Introspec/2023_fc_introspection/nimare/LDA400/lda_model_LDA400.pkl.gz```
+#
+# Execution time for LDA50
+#
+# ```
+# real 341m48.019s
+# user 1061m37.913s
+# sys 26m45.867s
+# ```
+#
+# Execution time for LDA400
+#
+# ```
+#
+# ```
 
-lda_model_path = f'/data/SFIMJGC_Introspec/prj2021_dyneusr/Resources_NiMare/{vocab}/lda_model.pkl.gz'
+# ## 4.1. Add new topic definitions to the NeuroSynth Database object
+#
+# Next, we will add the new topic models to the NeuroSynth dataset. What this means is that we will have a second version of the NeuroSynth Database object that contains not only the original topics (those available in the Neurosynth website) but also a novel version of the topics generated locally by running NiMare implementation of the LDA algorithm. 
+#
+# Later in the code, we will be able to work with one or the other.
+
+lda_model_path = osp.join(VOCAB_DIR,f'lda_model_{vocab}.pkl.gz')
 with open(lda_model_path,'rb') as f:
     model_results = pickle.load(f)
 
