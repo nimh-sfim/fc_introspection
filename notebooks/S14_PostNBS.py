@@ -66,8 +66,8 @@ data_f2GTf1 = pd.DataFrame(data_f2GTf1,
 # ## 2.1. Plot results as regular FC matrices
 # Plot the NBS results in matrix form in three different ways: 
 # 1) connections for both contrasts
-# 2) Connections for $Large F1 > Large F2$ only
-# 3) Connections for $Large F2 > Large F1$ only
+# 2) Connections for ```Image-Pos-Others > Surr-Neg-Self``` only
+# 3) Connections for ```Surr-Neg-Self > Image-Pos-Others``` only
 
 data = data_f1GTf2 - data_f2GTf1
 
@@ -184,14 +184,14 @@ f
 
 f.savefig('./figures/S14_NBS_Circos_FullModel.png')
 
-# ### 2.5.2. Large F1 > Large F2 
+# ### 2.5.2. Image-Pos-Others > Surr-Neg-Self
 
 f = plot_as_graph(data_f1GTf2,layout='circos',edge_weight=.2, show_degree=True)
 f
 
 f.savefig('./figures/S14_NBS_Circos_f1GTf2.png')
 
-# ### 2.5.2. Large F2 > Large F1
+# ### 2.5.2. Surr-Neg-Self > Image-Pos-Others
 
 f = plot_as_graph(-data_f2GTf1,layout='circos',edge_weight=.2, show_degree=True)
 f
