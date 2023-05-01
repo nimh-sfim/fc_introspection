@@ -21,7 +21,7 @@ import pandas as pd
 import numpy as np
 import os.path as osp
 import hvplot.pandas
-from utils.basics import FB_400ROI_ATLAS_NAME, ATLASES_DIR
+from utils.basics import FB_400ROI_ATLAS_NAME, ATLASES_DIR, RESOURCES_NIMARE_DIR
 from utils.plotting import hvplot_fc, hvplot_fc_nwlevel, create_graph_from_matrix, plot_as_graph
 import holoviews as hv
 from holoviews import opts
@@ -31,8 +31,10 @@ import matplotlib.pyplot as plt
 from nilearn.plotting import plot_connectome
 from matplotlib.colors import LinearSegmentedColormap
 from sklearn.preprocessing import MinMaxScaler
+from nilearn.image import load_img
+from nilearn import masking
 
-SOLUTION   = 'CL02_0p001'
+SOLUTION   = 'CL02'
 ATLAS_NAME = FB_400ROI_ATLAS_NAME
 
 # # 2. Load information about the Atlas and ROI needed for plotting
@@ -47,16 +49,16 @@ roi_info       = pd.read_csv(ATLASINFO_PATH)
 networks = list(roi_info['Network'].unique())
 print(networks, len(networks))
 
-# Load the connections that are significantly stronger for the contrast: $$Large F1 > Large F2$$
+# Load the connections that are significantly stronger for the contrast: $$Image-Pos-Others > Surr-Neg-Self$$
 
-data_f1GTf2 = np.loadtxt(f'/data/SFIMJGC_Introspec/2023_fc_introspection/code/fc_introspection/resources/nbs/{ATLAS_NAME}/NBS_{SOLUTION}_Results/NBS_{SOLUTION}_F1gtF2.edge')
+data_f1GTf2 = np.loadtxt(f'/data/SFIMJGC_Introspec/2023_fc_introspection/code/fc_introspection/resources/nbs/{ATLAS_NAME}/NBS_{SOLUTION}_Results/NBS_{SOLUTION}_Image-Pos-Others_gt_Surr-Neg-Self.edge')
 data_f1GTf2 = pd.DataFrame(data_f1GTf2,
                            index   = roi_info.set_index(['Hemisphere','Network','ROI_Name','ROI_ID','RGB']).index, 
                            columns = roi_info.set_index(['Hemisphere','Network','ROI_Name','ROI_ID','RGB']).index)
 
-# Load the connections that are significantly stronger for the contrast: $$Large F2 > Large F1$$
+# Load the connections that are significantly stronger for the contrast: $$Surr-Neg-Self > Image-Pos-Others$$
 
-data_f2GTf1 = np.loadtxt(f'/data/SFIMJGC_Introspec/2023_fc_introspection/code/fc_introspection/resources/nbs/{ATLAS_NAME}/NBS_{SOLUTION}_Results/NBS_{SOLUTION}_F2gtF1.edge')
+data_f2GTf1 = np.loadtxt(f'/data/SFIMJGC_Introspec/2023_fc_introspection/code/fc_introspection/resources/nbs/{ATLAS_NAME}/NBS_{SOLUTION}_Results/NBS_{SOLUTION}_Surr-Neg-Self_gt_Image-Pos-Others.edge')
 data_f2GTf1 = pd.DataFrame(data_f2GTf1,
                            index   = roi_info.set_index(['Hemisphere','Network','ROI_Name','ROI_ID','RGB']).index, 
                            columns = roi_info.set_index(['Hemisphere','Network','ROI_Name','ROI_ID','RGB']).index)
@@ -69,32 +71,44 @@ data_f2GTf1 = pd.DataFrame(data_f2GTf1,
 
 data = data_f1GTf2 - data_f2GTf1
 
-f = (hvplot_fc(data.loc[:,networks,:].T.loc[:,networks,:].T, by='Network', add_color_segments=True, add_labels=True, cmap=['#4472C4','#ffffff','#ED7D31'], major_label_overrides={-0.5:'Large F2 > Large F1',0:'',0.5:'Large F1 > Large F2'}) + \
-hvplot_fc(data_f1GTf2.loc[:,networks,:].T.loc[:,networks,:].T, by='Network', add_color_segments=True, add_labels=True, cmap=['#4472C4','#ffffff','#ED7D31'], major_label_overrides={-0.5:'Large F2 > Large F1',0:'',0.5:'Large F1 > Large F2'}) + \
-hvplot_fc(-data_f2GTf1.loc[:,networks,:].T.loc[:,networks,:].T, by='Network', add_color_segments=True, add_labels=True, cmap=['#4472C4','#ffffff','#ED7D31'], major_label_overrides={-0.5:'Large F2 > Large F1',0:'',0.5:'Large F1 > Large F2'})).opts(toolbar=None)
-pn.Row(f).save('./figures/S14_NBS_asFCmatrices.png')
+f_fullmodel_matrix = hvplot_fc(data.loc[:,networks,:].T.loc[:,networks,:].T, by='Network', add_color_segments=True, add_labels=True, cmap=['#4472C4','#ffffff','#ED7D31'], major_label_overrides={-0.5:'Surr-Neg-Self > Images-Pos-Others',0:'',0.5:'Images-Pos-Others > Surr-Neg-Self'}, colorbar_position='top').opts(toolbar=None)
+pn.Row(f_fullmodel_matrix).save('./figures/S14_NBS_FullModel_MatrixView.png')
 
-display.Image('./figures/S14_NBS_asFCmatrices.png')
+display.Image('./figures/S14_NBS_FullModel_MatrixView.png')
+
+# We can also explore the two contrast separately in this form of representing the results
+
+f = (hvplot_fc(data_f1GTf2.loc[:,networks,:].T.loc[:,networks,:].T, by='Network', add_color_segments=True, add_labels=True, cmap=['#4472C4','#ffffff','#ED7D31'], major_label_overrides={-0.5:'Surr-Neg-Self > Images-Pos-Others',0:'',0.5:'Images-Pos-Others > Surr-Neg-Self'}) + \
+hvplot_fc(-data_f2GTf1.loc[:,networks,:].T.loc[:,networks,:].T, by='Network', add_color_segments=True, add_labels=True, cmap=['#4472C4','#ffffff','#ED7D31'], major_label_overrides={-0.5:'Surr-Neg-Self > Images-Pos-Others',0:'',0.5:'Images-Pos-Others > Surr-Neg-Self'})).opts(toolbar=None)
+pn.Row(f).save('./figures/S14_NBS_TwoSeparateModels_MatrixView.png')
+
+display.Image('./figures/S14_NBS_TwoSeparateModels_MatrixView.png')
 
 # ## 2.2. Plot results as counts of inter- and between- network connections
 #
 # To get a better feeling of what networks have more/less significant connections, we will plot a summary view of the results with counts of significant connections per contrast at the network level (instead of ROI level)
 
-f=(hvplot_fc_nwlevel(data_f1GTf2, title='Large F1 > Large F2', add_net_colors=True, add_net_labels=True, mode='count', cmap='viridis', clim_max=50, labels_text_color='steelblue') + \
-hvplot_fc_nwlevel(data_f2GTf1, title='Large F2 > Large F1', add_net_colors=True, add_net_labels=True, mode='count', cmap='viridis', clim_max=50, labels_text_color='steelblue')).opts(toolbar=None)
-pn.Row(f).save('./figures/S14_NBS_net_counts.png')
+f_F1gtF2 = hvplot_fc_nwlevel(data_f1GTf2, title='', add_net_colors=True, add_net_labels=True, mode='count', cmap='oranges', clim_max=50, labels_text_color='black').opts(toolbar=None)
+f_F2gtF1 = hvplot_fc_nwlevel(data_f2GTf1, title='', add_net_colors=True, add_net_labels=True, mode='count', cmap='blues', clim_max=50, labels_text_color='gray').opts(toolbar=None)
+pn.Row(f_F1gtF2).save('./figures/S14_NBS_F1gtF2_nw_counts.png')
+pn.Row(f_F2gtF1).save('./figures/S14_NBS_F2gtF1_nw_counts.png')
 
-display.Image('./figures/S14_NBS_net_counts.png')
+display.Image('./figures/S14_NBS_F1gtF2_nw_counts.png')
+
+display.Image('./figures/S14_NBS_F2gtF1_nw_counts.png')
 
 # ## 2.3. Plot results as percentage of inter- and intra-network connections
 #
 # Similar view to the one above, but this time instead of reporting the number of significant connecitons, we report the percentage of those relative to the total number of inter- or intra-connections for a particular cell on the matrix
 
-f=(hvplot_fc_nwlevel(data_f1GTf2, title='Large F1 > Large F2', add_net_colors=True, add_net_labels=True, mode='percent', cmap='viridis', clim_max=5, labels_text_color='steelblue') + \
-hvplot_fc_nwlevel(data_f2GTf1, title='Large F2 > Large F1', add_net_colors=True, add_net_labels=True, mode='percent', cmap='viridis', clim_max=5, labels_text_color='steelblue')).opts(toolbar=None)
-pn.Row(f).save('./figures/S14_NBS_net_percent.png')
+f_F1gtF2 = hvplot_fc_nwlevel(data_f1GTf2, title='', add_net_colors=True, add_net_labels=True, mode='percent', cmap='oranges', clim_max=5, labels_text_color='black').opts(toolbar=None)
+f_F2gtF1 = hvplot_fc_nwlevel(data_f2GTf1, title='', add_net_colors=True, add_net_labels=True, mode='percent', cmap='blues', clim_max=5, labels_text_color='gray').opts(toolbar=None)
+pn.Row(f_F1gtF2).save('./figures/S14_NBS_F1gtF2_nw_percent.png')
+pn.Row(f_F2gtF1).save('./figures/S14_NBS_F2gtF1_nw_percent.png')
 
-display.Image('./figures/S14_NBS_net_percent.png')
+display.Image('./figures/S14_NBS_F1gtF2_nw_percent.png')
+
+display.Image('./figures/S14_NBS_F2gtF1_nw_percent.png')
 
 # ## 2.4. Plot results in glass brains
 #
@@ -165,12 +179,53 @@ display.Image('./figures/S14_NBS_HighDegree_f2GTf1.png')
 #
 # ### 2.5.1. Full Model
 
-plot_as_graph(data,layout='circos',edge_weight=.2, show_degree=True)
+f = plot_as_graph(data,layout='circos',edge_weight=.2, show_degree=True)
+f
+
+f.savefig('./figures/S14_NBS_Circos_FullModel.png')
 
 # ### 2.5.2. Large F1 > Large F2 
 
-plot_as_graph(data_f1GTf2,layout='circos',edge_weight=.2, show_degree=True)
+f = plot_as_graph(data_f1GTf2,layout='circos',edge_weight=.2, show_degree=True)
+f
+
+f.savefig('./figures/S14_NBS_Circos_f1GTf2.png')
 
 # ### 2.5.2. Large F2 > Large F1
 
-plot_as_graph(-data_f2GTf1,layout='circos',edge_weight=.2, show_degree=True)
+f = plot_as_graph(-data_f2GTf1,layout='circos',edge_weight=.2, show_degree=True)
+f
+
+f.savefig('./figures/S14_NBS_Circos_f2GTf1.png')
+
+# # 10. Laterality Index for each contrast
+#
+# First, we compute the fcLI for the ```Images-Pos-Others > Surr-Neg-Self``` contrast
+
+aux = (data_f1GTf2).copy()
+aux.index = data_f1GTf2.index.get_level_values('Hemisphere')
+aux.columns = data_f1GTf2.columns.get_level_values('Hemisphere')
+f1GTf2_LL = (aux.loc['LH','LH'].sum().sum() / 2)
+f1GTf2_RR = (aux.loc['RH','RH'].sum().sum() / 2)
+f1GTf2_LR = aux.loc['LH','RH'].sum().sum()
+print('++ INFO [Image-Pos-Others > Surr-Neg-Self] L-L Conns: %d' % f1GTf2_LL)
+print('++ INFO [Image-Pos-Others > Surr-Neg-Self] R-R Conns: %d' % f1GTf2_RR)
+print('++ INFO [Image-Pos-Others > Surr-Neg-Self] R-L Conns: %d' % f1GTf2_LR)
+print('++ --------------------------------------------------------')
+f1GTf2_fcLI  = (f1GTf2_LL - f1GTf2_RR) / (f1GTf2_LL + f1GTf2_RR)
+print('++ INFO [Image-Pos-Others > Surr-Neg-Self] fcLI:      %.2f' % f1GTf2_fcLI)
+
+# Next, we do the same for the ```Surr-Neg-Self > Images-Pos-Others``` contrast
+
+aux = (data_f2GTf1).copy()
+aux.index = data_f2GTf1.index.get_level_values('Hemisphere')
+aux.columns = data_f2GTf1.columns.get_level_values('Hemisphere')
+f2GTf1_LL = (aux.loc['LH','LH'].sum().sum() / 2)
+f2GTf1_RR = (aux.loc['RH','RH'].sum().sum() / 2)
+f2GTf1_LR = aux.loc['LH','RH'].sum().sum()
+print('++ INFO [Image-Pos-Others > Surr-Neg-Self] L-L Conns: %d' % f2GTf1_LL)
+print('++ INFO [Image-Pos-Others > Surr-Neg-Self] R-R Conns: %d' % f2GTf1_RR)
+print('++ INFO [Image-Pos-Others > Surr-Neg-Self] R-L Conns: %d' % f2GTf1_LR)
+print('++ --------------------------------------------------------')
+f2GTf1_fcLI  = (f2GTf1_LL - f2GTf1_RR) / (f2GTf1_LL + f2GTf1_RR)
+print('++ INFO [Image-Pos-Others > Surr-Neg-Self] fcLI:      %.2f' % f2GTf1_fcLI)
