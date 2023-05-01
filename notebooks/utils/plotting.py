@@ -130,13 +130,13 @@ def get_net_divisions_by_Network(roi_info_input, verbose=False):
         print('++ INFO: Network Midpoint IDs: %s ' % str(net_meds))
     return Nrois, Nnetworks, net_names, net_edges, net_meds
 
-
+   
 def hvplot_fc(data, roi_info_input = None, by='Hemisphere', 
               hm_cmap=hm_color_map, net_cmap=nw_color_map, cbar_title='',
               clim=(-.8,.8), cbar_title_fontsize=16, 
               add_labels=True,add_color_segments=True,
               verbose=False, cmap=['blue','white','red'], nw_sep_lw=0.5, nw_sep_ld='dashed',
-              major_label_overrides={-0.5:'F2 > F1',0:'',0.5:'F1 > F2'}):
+              major_label_overrides={-0.5:'F2 > F1',0:'',0.5:'F1 > F2'}, colorbar_position='top'):
     """
     INFO: This function will generate an annotated and interactive view of a given FC matrix.
     
@@ -220,7 +220,7 @@ def hvplot_fc(data, roi_info_input = None, by='Hemisphere',
         plot           = matrix_to_plot.hvplot.heatmap(aspect='square', frame_width=500 , cmap=cmap,
                                                        clim=clim, xlim=(x_min_lim,Nrois-.5), ylim=(y_min_lim,Nrois-.5), 
                                                        yticks=y_ticks_info, xticks= x_ticks_info, 
-                                                       fontsize={'ticks':12,'clabel':cbar_title_fontsize}).opts(xrotation=x_rotation, colorbar_opts={'title':cbar_title,  
+                                                       fontsize={'ticks':12,'clabel':cbar_title_fontsize}).opts(colorbar_position=colorbar_position,xrotation=x_rotation, colorbar_opts={'title':cbar_title,  
                                                                                                                                'major_label_overrides':major_label_overrides, 
                                                                                                                                'ticker': FixedTicker(ticks=[-1.5,-0.5,0.5,1.5]),
                                                                                                                                }, **dict_heatmapopts)
@@ -230,7 +230,7 @@ def hvplot_fc(data, roi_info_input = None, by='Hemisphere',
                                                        clim=clim, xlim=(x_min_lim,Nrois-.5), 
                                                        ylim=(y_min_lim,Nrois-.5), 
                                                        yaxis=None, xaxis=None,
-                                                       fontsize={'ticks':12,'clabel':cbar_title_fontsize}).opts(xrotation=x_rotation, colorbar_opts={'title':cbar_title, 
+                                                       fontsize={'ticks':12,'clabel':cbar_title_fontsize}).opts(colorbar_position=colorbar_position,xrotation=x_rotation, colorbar_opts={'title':cbar_title, 
                                                                                                                                'major_label_overrides':major_label_overrides, 
                                                                                                                                'ticker': FixedTicker(ticks=[-1.5,-0.5,0.5,1.5]),
                                                                                                                                }, **dict_heatmapopts)
@@ -257,8 +257,6 @@ def hvplot_fc(data, roi_info_input = None, by='Hemisphere',
             plot = plot * segment
     return plot
    
-
-
 def plot_fc(data,roi_info_path, hm_cmap=hm_color_map, net_cmap=nw_color_map, cbar_title='',title='',
                     clim=(-.8,.8), cbar_title_fontsize=16, 
                     add_net_colors=True, add_net_labels=True,
@@ -419,6 +417,9 @@ def create_graph_from_matrix(data):
     
     # Add interesting information as graph attributes
     # ===============================================
+    # ROI ID
+    id_attribs        = {row['ROI_ID']:row['ROI_ID'] for r,row in roi_info.iterrows()}
+    nx.set_node_attributes(G,id_attribs,'ROI_ID')
     # Hemisphere Membership
     hemi_attribs         = {row['ROI_ID']:row['Hemisphere'] for r,row in roi_info.iterrows()}
     nx.set_node_attributes(G,hemi_attribs,'Hemisphere')
