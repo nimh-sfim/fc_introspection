@@ -22,6 +22,8 @@ import hvplot.pandas
 from utils.basics import PRJ_DIR
 import holoviews as hv
 
+print(PRJ_DIR)
+
 result_list = glob.glob('{PRJ_DIR}/data/snycq/results/*.npy'.format(PRJ_DIR=PRJ_DIR))
 print('++ Number of files available: %d' % len(result_list))
 
