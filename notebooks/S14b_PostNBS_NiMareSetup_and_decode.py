@@ -35,6 +35,9 @@ import seaborn as sns
 from sklearn.preprocessing import MinMaxScaler
 from matplotlib.colors import LinearSegmentedColormap
 
+import wordcloud
+print(wordcloud.__version__)
+
 
 def my_orange_color_func(dictionary):
     def my_orange_color_func_inner(word, font_size, position, orientation, random_state=None, **kwargs):
