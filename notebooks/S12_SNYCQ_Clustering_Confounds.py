@@ -8,9 +8,9 @@
 #       format_version: '1.5'
 #       jupytext_version: 1.14.4
 #   kernelspec:
-#     display_name: FC Introspection (Jan 2023)
+#     display_name: FC Instrospection (2023 | 3.10)
 #     language: python
-#     name: fc_introspection
+#     name: fc_introspection_2023_py310
 # ---
 
 # # Description
@@ -26,7 +26,7 @@ import seaborn as sns
 import os.path as osp
 import holoviews as hv
 from holoviews import opts
-from scipy.stats import ttest_ind, mannwhitneyu
+from scipy.stats import ttest_ind, mannwhitneyu, ttest_rel, wilcoxon
 import panel as pn
 from wordcloud import WordCloud
 import hvplot.pandas
@@ -35,6 +35,8 @@ from IPython import display
 from PIL import Image
 import matplotlib.pyplot as plt
 from textwrap import wrap
+
+print(pd.__version__)
 
 from matplotlib import rc
 font_dict = {'family' : 'arial',
@@ -167,14 +169,16 @@ display.Image("./figures/S12_Q_and_Qc_sorted_diff_scale.png")
 
 # We will also plot each Q column separately, this will help us convey the meaning of Factor 1 and Factor 2 in the scatter plot
 
-f = Q.sort_values(by='Factor 1', ascending=False)['Factor 1'].hvplot.heatmap(cmap='Oranges', 
+Q
+
+f = Q.sort_values(by='Factor 1', ascending=False)['Factor 1'].hvplot.heatmap(cmap='Gray', 
                                                                          clim=(0,100), width=110, 
                                                                          colorbar=False, xaxis=None).opts(toolbar=None, line_color='k', line_width=1)
 pn.Row(f).save('./figures/S12_Q_Factor1_sorted.png')
 
 display.Image('./figures/S12_Q_Factor1_sorted.png')
 
-f = Q.sort_values(by='Factor 2', ascending=True)['Factor 2'].hvplot.heatmap(cmap='Oranges', 
+f = Q.sort_values(by='Factor 2', ascending=True)['Factor 2'].hvplot.heatmap(cmap='Gray', 
                                                                          clim=(0,100), width=110, 
                                                                          colorbar=False, xaxis=None).opts(toolbar=None, line_color='k', line_width=1)
 pn.Row(f).save('./figures/S12_Q_Factor2_sorted.png')
@@ -201,7 +205,7 @@ circle_mask = 255 * circle_mask.astype(int)
 def my_tf_color_func(dictionary):
     def my_tf_color_func_inner(word, font_size, position, orientation, random_state=None, **kwargs):
         freq_as_int = int(dictionary[word])
-        color_list = sns.color_palette('Oranges',100).as_hex()
+        color_list = sns.color_palette('dark:#5A9_r',100).as_hex()
         return color_list[freq_as_int]
     return my_tf_color_func_inner
 
@@ -489,11 +493,17 @@ for scan in df.index:
 df = df.infer_objects()
 df.head(5)
 
-f = df.hvplot.kde(y='Wakefulness',by='Scan Sets:', alpha=.5, title='Wakefulness Score', color=['#4472C4','#ED7D31'], width=400, 
-                  fontsize={'xticks':15,'yticks':15,'xlabel':15,'ylabel':15,'legend':12}).opts(legend_position='bottom_right', toolbar=None)
-pn.Row(f).save('./figures/S12_bcm_clustering_wakefulness_diffs.png')
+f = df.hvplot.kde(y='Wakefulness',by='Scan Sets:', alpha=.5, title='Wakefulness', color=['#4472C4','#ED7D31'], width=400, height=200,
+                  fontsize={'xticks':15,'yticks':15,'xlabel':15,'ylabel':15,'legend':10, 'title':20}).opts(legend_position='bottom_right', toolbar=None, show_legend=True, show_title=False)
+pn.Row(f).save('./figures/S12_Clusters_Wakefulness_KDEs.png')
 
-display.Image('./figures/S12_bcm_clustering_wakefulness_diffs.png')
+display.Image('./figures/S12_Clusters_Wakefulness_KDEs.png')
+
+f = df.hvplot.hist(y='Wakefulness',by='Scan Sets:', alpha=.5, title='Wakefulness', color=['#ED7D31','#4472C4'], width=400, height=200, ylabel='# Scans',
+                  fontsize={'xticks':15,'yticks':15,'xlabel':15,'ylabel':15,'legend':10, 'title':20}).opts(legend_position='top_left', toolbar=None, show_legend=True, show_title=False, legend_cols=2, legend_padding=1)
+pn.Row(f).save('./figures/S12_Clusters_Wakefulness_HISTs.png')
+
+display.Image('./figures/S12_Clusters_Wakefulness_HISTs.png')
 
 ttest_ind(df.set_index('Scan Sets:').loc['Image-Pos-Others','Wakefulness'],df.set_index('Scan Sets:').loc['Surr-Neg-Self','Wakefulness'],alternative='two-sided')
 
@@ -514,14 +524,99 @@ df = df.infer_objects()
 df.head(5)
 
 f_mean_mot = df.hvplot.kde(y='Mean Framewise Displacement',by='Scan Sets:', alpha=.5, 
-                   title='Head Motion',color=['#4472C4','#ED7D31'], width=400, 
-                  fontsize={'xticks':15,'yticks':15,'xlabel':15,'ylabel':15,'legend':12}).opts(legend_position='bottom_right', toolbar=None)
+                   title='Head Motion',color=['#4472C4','#ED7D31'], width=400, height=200,
+                  fontsize={'xticks':15,'yticks':15,'xlabel':15,'ylabel':15,'legend':8}).opts(legend_position='bottom_right', toolbar=None, show_title=False, show_legend=True)
 f_max_mot = df.hvplot.kde(y='Max. Framewise Displacement',by='Scan Sets:', alpha=.5, title='Head Motion',color=['#4472C4','#ED7D31'], width=400,
                   fontsize={'xticks':15,'yticks':15,'xlabel':15,'ylabel':15,'legend':12}).opts(legend_position='bottom_right', toolbar=None)
-pn.Row(f_mean_mot).save('./figures/S12_bcm_clustering_motion_diffs.png')
+pn.Row(f_mean_mot).save('./figures/S12_Clusters_Motion_KDEs.png')
 
-display.Image('./figures/S12_bcm_clustering_motion_diffs.png')
+display.Image('./figures/S12_Clusters_Motion_KDEs.png')
+
+f_mean_mot = df.hvplot.hist(y='Mean Framewise Displacement',by='Scan Sets:', alpha=.5, 
+                   title='Head Motion',color=['#ED7D31','#4472C4'], width=400, height=200, ylabel='# Scans', ylim=(0,18),
+                  fontsize={'xticks':15,'yticks':15,'xlabel':15,'ylabel':15,'legend':12}).opts(legend_position='top_left', toolbar=None, show_legend=True, show_title=False, legend_cols=1, legend_padding=1)
+f_max_mot = df.hvplot.hist(y='Max. Framewise Displacement',by='Scan Sets:', alpha=.5, title='Head Motion',color=['#4472C4','#ED7D31'], width=400,
+                  fontsize={'xticks':15,'yticks':15,'xlabel':15,'ylabel':15,'legend':12}).opts(legend_position='bottom_right', toolbar=None)
+pn.Row(f_mean_mot).save('./figures/S12_Clusters_Motion_HISTs.png')
+
+display.Image('./figures/S12_Clusters_Motion_HISTs.png')
 
 ttest_ind(df.set_index('Scan Sets:').loc['Image-Pos-Others','Mean Framewise Displacement'],df.set_index('Scan Sets:').loc['Surr-Neg-Self','Mean Framewise Displacement'],alternative='two-sided')
 
 mannwhitneyu(df.set_index('Scan Sets:').loc['Image-Pos-Others','Mean Framewise Displacement'],df.set_index('Scan Sets:').loc['Surr-Neg-Self','Mean Framewise Displacement'],alternative='two-sided')
+
+# ## 9.3. Gender distribution by scan set
+
+assert np.all(C.index == clusters_info.index), "++ ERROR: Can't proceed as the two indexes are not equal."
+
+demo_gender = C.copy()
+demo_gender['Cluster Label'] = clusters_info['Cluster Label']
+demo_gender = demo_gender.reset_index().set_index(['Subject','Run','Cluster Label'])
+
+demo_gender.drop(['Intercept','Age (younger)','Age (elder)'], axis=1, inplace=True)
+demo_gender = demo_gender.loc[:,:,['Surr-Neg-Self','Image-Pos-Others']]
+
+demo_gender.columns = ['Male','Female']
+
+demo_gender.index.names = ['Subject','Run','Scan Set']
+
+demo_gender.reset_index(inplace=True)
+demo_gender.drop(['Subject','Run'],inplace=True,axis=1)
+
+demo_gender = demo_gender.groupby('Scan Set').sum().reset_index()
+
+demo_gender = demo_gender.sort_values(by='Scan Set', ascending=False)
+
+demo_gender
+
+f_gender = demo_gender.hvplot(x='Scan Set', kind='bar', stacked=True, color=['white','lightgray'], ylabel='# Scans', width=400, height=200,fontsize={'xticks':15,'yticks':15,'xlabel':15,'ylabel':15,'legend':12}, xlabel='').opts(toolbar=None, legend_position='bottom_right', legend_cols=2)
+pn.Row(f_gender).save('./figures/S12_Clusters_Gender.png')
+
+display.Image('./figures/S12_Clusters_Gender.png')
+
+# ## 9.4. Age distribution
+
+demo_age = pd.read_csv('./mlt/data/participants_post_motion_QA.csv', index_col=['Subject'])
+demo_age.head(5)
+
+img_pos_others_SBJs = list(selected_scans[selected_scans['Cluster Label']=='Image-Pos-Others'].index.get_level_values('Subject').unique())
+sur_neg_self_SBJs   = list(selected_scans[selected_scans['Cluster Label']=='Surr-Neg-Self'].index.get_level_values('Subject').unique())
+
+demo_age['Cluster Label'] = 'Unknown'
+for sbj in img_pos_others_SBJs:
+    demo_age.loc[sbj,'Cluster Label'] = 'Image-Pos-Others'
+for sbj in sur_neg_self_SBJs:
+    demo_age.loc[sbj,'Cluster Label'] = 'Surr-Neg-Self'
+demo_age = demo_age.infer_objects()
+
+demo_age = demo_age.drop('gender',axis=1)
+demo_age.reset_index(drop=True,inplace=True)
+demo_age = demo_age[demo_age['Cluster Label']!='Unknown']
+
+age_distributions = demo_age.groupby('Cluster Label').value_counts()
+
+age_distributions = pd.DataFrame(age_distributions)
+
+age_distributions = age_distributions.sort_index(level=0, ascending=False)
+
+f_age = age_distributions.hvplot.kde(by='Cluster Label',alpha=.5, 
+                   title='Head Motion',color=['#4472C4','#ED7D31'], width=400, 
+                  fontsize={'xticks':15,'yticks':15,'xlabel':15,'ylabel':15,'legend':12}, xlabel='Age Range').opts(legend_position='top_right', toolbar=None)
+pn.Row(f_age).save('./figures/S12_Clusters_age_KDEs.png')
+
+display.Image('./figures/S12_Clusters_age_KDEs.png')
+
+ttest_rel(age_distributions.loc['Image-Pos-Others',:],age_distributions.loc['Surr-Neg-Self',:], alternative='two-sided')
+
+wilcoxon(age_distributions.loc['Image-Pos-Others',:],age_distributions.loc['Surr-Neg-Self',:], alternative='two-sided', method='exact')
+
+age_distributions = age_distributions.reset_index()
+age_distributions.columns = ['Scan Set','Age Range','# Scans']
+age_distributions
+
+f_age = age_distributions.hvplot(kind='bar',x='Scan Set',by='Age Range',c='gray',fontsize={'xticks':12,'yticks':15,'xlabel':12,'ylabel':15,'legend':12},width=400, height=200, xlabel='').opts(xrotation=90, toolbar=None)
+pn.Row(f_age).save('./figures/S12_Clusters_Age.png')
+
+display.Image('./figures/S12_Clusters_Age.png')
+
+
