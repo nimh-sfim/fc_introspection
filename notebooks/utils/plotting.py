@@ -611,7 +611,7 @@ def plot_as_graph(data,figsize=(10,10),edge_weight=2,title=None, hemi_gap=5, sho
         ax.set_xlim(x_min,x_max)
         ax.set_ylim(y_min,y_max)
     if show_hemi_labels & (layout == 'circos'):
-        ax.annotate(text='LH',xy=(x_min,y_min),size=20, ha='left')
-        ax.annotate(text='RH',xy=(x_max,y_min),size=20, ha='right')
+        ax.annotate(text='LH',xy=(x_min,y_min),size=30, ha='left')
+        ax.annotate(text='RH',xy=(x_max,y_min),size=30, ha='right')
 
     return fig
