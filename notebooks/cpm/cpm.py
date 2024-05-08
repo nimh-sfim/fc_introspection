@@ -92,7 +92,7 @@ def mk_kfold_indices(subj_list, k = 10):
     return np.array(indices)
 
 # First step of the modeling: assign a k-fold to each entry in the FC matrix
-def mk_kfold_indices_subject_aware(scan_list, k = 10):
+def mk_kfold_indices_subject_aware(scan_list, random_seed=43, k = 10):
     """
     Splits scans into k folds taking into account subject identity
     
@@ -110,7 +110,7 @@ def mk_kfold_indices_subject_aware(scan_list, k = 10):
     # Shuffle scans to randomize the folds across iterations
     groups    = [sbj for (sbj,scan) in  scan_list]
     # Create GroupKFold object for k splits
-    grp_cv  = GroupShuffleSplit(n_splits=k)
+    grp_cv  = GroupShuffleSplit(n_splits=k, random_state=random_seed)
     indices = np.zeros(n_scans)
     for fold, (_,ix_test) in enumerate(grp_cv.split(scan_list,groups=groups)):
         indices[ix_test]=fold
