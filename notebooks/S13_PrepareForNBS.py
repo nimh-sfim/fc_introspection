@@ -194,6 +194,8 @@ NBS_CL02_matrices_folder
 #
 # 2. Load the Path to NBS
 #
+# ```addpath(genpath('/data/SFIMJGC_HCP7T/hcp7t_fv_sleep_extraSW/NBS1.2/'))```
+#
 # 3. Configure NBS appropriately for each of the contrasts
 #
 #     a. Image-Pos-Others
