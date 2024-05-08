@@ -6,7 +6,7 @@
 #       extension: .py
 #       format_name: light
 #       format_version: '1.5'
-#       jupytext_version: 1.14.4
+#       jupytext_version: 1.15.2
 #   kernelspec:
 #     display_name: FC Instrospection (2023 | 3.10)
 #     language: python
@@ -88,11 +88,9 @@ for folder_path in [VOCAB_DIR, METAMAPS_ORIG_DIR, METAMAPS_RPI_DIR]:
     print(" + INFO: Generating/Regenerating output folder [%s]" % folder_path)
     os.mkdir(folder_path)
 
-# + [markdown] tags=[]
 # ## 1.2. Download Neurosynth 7 database
 #
 # First, we need to download the Neurosynth database (version 7) for the 400 Topic Vocabulary
-# -
 
 # Download NeuroSynth database
 print("++ INFO: Fetching neurosynth dataset for this vocabulary...")
