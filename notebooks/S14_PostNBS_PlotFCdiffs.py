@@ -8,9 +8,9 @@
 #       format_version: '1.5'
 #       jupytext_version: 1.14.4
 #   kernelspec:
-#     display_name: FC Instrospection (2023 | 3.10)
+#     display_name: FC Introspection (Jan 2023)
 #     language: python
-#     name: fc_introspection_2023_py310
+#     name: fc_introspection
 # ---
 
 # # Description - Exploration of NBS Results
@@ -21,7 +21,7 @@ import pandas as pd
 import numpy as np
 import os.path as osp
 import hvplot.pandas
-from utils.basics import FB_400ROI_ATLAS_NAME, ATLASES_DIR, RESOURCES_NIMARE_DIR
+from utils.basics import FB_400ROI_ATLAS_NAME, ATLASES_DIR, RESOURCES_NIMARE_DIR, RESOURCES_CONN_DIR, FB_200ROI_ATLAS_NAME
 from utils.plotting import hvplot_fc, hvplot_fc_nwlevel, create_graph_from_matrix, plot_as_graph
 import holoviews as hv
 from holoviews import opts
@@ -35,6 +35,8 @@ from nilearn.image import load_img
 from nilearn import masking
 
 SOLUTION   = 'CL02'
+SCENARIO   = 'All_Scans'
+THRESHOLD  = 'NBS_3p1'
 ATLAS_NAME = FB_400ROI_ATLAS_NAME
 
 # # 2. Load information about the Atlas and ROI needed for plotting
@@ -51,17 +53,24 @@ print(networks, len(networks))
 
 # Load the connections that are significantly stronger for the contrast: $$Image-Pos-Others > Surr-Neg-Self$$
 
-data_f1GTf2 = np.loadtxt(f'/data/SFIMJGC_Introspec/2023_fc_introspection/code/fc_introspection/resources/nbs/{ATLAS_NAME}/NBS_{SOLUTION}_Results/NBS_{SOLUTION}_Image-Pos-Others_gt_Surr-Neg-Self.edge')
+#data_f1GTf2 = np.loadtxt(f'/data/SFIMJGC_Introspec/2023_fc_introspection/code/fc_introspection/resources/nbs/{ATLAS_NAME}/NBS_{SOLUTION}_Results/NBS_{SOLUTION}_Image-Pos-Others_gt_Surr-Neg-Self.edge')
+data_f1GTf2 = np.loadtxt(f'/data/SFIMJGC_Introspec/2023_fc_introspection/code/fc_introspection/resources/nbs/{ATLAS_NAME}/{SCENARIO}/NBS_{SOLUTION}_Results/{THRESHOLD}/NBS_{SOLUTION}_Image-Pos-Others_gt_Surr-Neg-Self.edge')
 data_f1GTf2 = pd.DataFrame(data_f1GTf2,
                            index   = roi_info.set_index(['Hemisphere','Network','ROI_Name','ROI_ID','RGB']).index, 
                            columns = roi_info.set_index(['Hemisphere','Network','ROI_Name','ROI_ID','RGB']).index)
 
 # Load the connections that are significantly stronger for the contrast: $$Surr-Neg-Self > Image-Pos-Others$$
 
-data_f2GTf1 = np.loadtxt(f'/data/SFIMJGC_Introspec/2023_fc_introspection/code/fc_introspection/resources/nbs/{ATLAS_NAME}/NBS_{SOLUTION}_Results/NBS_{SOLUTION}_Surr-Neg-Self_gt_Image-Pos-Others.edge')
+data_f2GTf1 = np.loadtxt(f'/data/SFIMJGC_Introspec/2023_fc_introspection/code/fc_introspection/resources/nbs/{ATLAS_NAME}/{SCENARIO}/NBS_{SOLUTION}_Results/{THRESHOLD}/NBS_{SOLUTION}_Surr-Neg-Self_gt_Image-Pos-Others.edge')
 data_f2GTf1 = pd.DataFrame(data_f2GTf1,
                            index   = roi_info.set_index(['Hemisphere','Network','ROI_Name','ROI_ID','RGB']).index, 
                            columns = roi_info.set_index(['Hemisphere','Network','ROI_Name','ROI_ID','RGB']).index)
+
+# We will also write the results of NBS into text format that we can load into CONN to generate the brain views of the results
+
+np.savetxt(osp.join(RESOURCES_CONN_DIR,f'GroupDiffs_f1GTf2_{SCENARIO}_{THRESHOLD}_matrix.txt'),data_f1GTf2.values)
+np.savetxt(osp.join(RESOURCES_CONN_DIR,f'GroupDiffs_f2GTf1_{SCENARIO}_{THRESHOLD}_matrix.txt'),data_f2GTf1.values)
+np.savetxt(osp.join(RESOURCES_CONN_DIR,f'GroupDiffs_Both_{SCENARIO}_{THRESHOLD}_matrix.txt'),data_f1GTf2.values-data_f2GTf1.values)
 
 # ## 2.1. Plot results as regular FC matrices
 # Plot the NBS results in matrix form in three different ways: 
@@ -71,8 +80,12 @@ data_f2GTf1 = pd.DataFrame(data_f2GTf1,
 
 data = data_f1GTf2 - data_f2GTf1
 
+((data_f2GTf1).sum() > 0).sum()
+
+((data_f1GTf2).sum() > 0).sum()
+
 f_fullmodel_matrix = hvplot_fc(data.loc[:,networks,:].T.loc[:,networks,:].T, by='Network', add_color_segments=True, add_labels=True, cmap=['#4472C4','#ffffff','#ED7D31'], major_label_overrides={-0.5:'Surr-Neg-Self > Images-Pos-Others',0:'',0.5:'Images-Pos-Others > Surr-Neg-Self'}, colorbar_position='top').opts(toolbar=None)
-pn.Row(f_fullmodel_matrix).save('./figures/S14_NBS_FullModel_MatrixView.png')
+f_fullmodel_matrix #pn.Row(f_fullmodel_matrix).save('./figures/S14_NBS_FullModel_MatrixView.png')
 
 display.Image('./figures/S14_NBS_FullModel_MatrixView.png')
 
@@ -80,7 +93,7 @@ display.Image('./figures/S14_NBS_FullModel_MatrixView.png')
 
 f = (hvplot_fc(data_f1GTf2.loc[:,networks,:].T.loc[:,networks,:].T, by='Network', add_color_segments=True, add_labels=True, cmap=['#4472C4','#ffffff','#ED7D31'], major_label_overrides={-0.5:'Surr-Neg-Self > Images-Pos-Others',0:'',0.5:'Images-Pos-Others > Surr-Neg-Self'}) + \
 hvplot_fc(-data_f2GTf1.loc[:,networks,:].T.loc[:,networks,:].T, by='Network', add_color_segments=True, add_labels=True, cmap=['#4472C4','#ffffff','#ED7D31'], major_label_overrides={-0.5:'Surr-Neg-Self > Images-Pos-Others',0:'',0.5:'Images-Pos-Others > Surr-Neg-Self'})).opts(toolbar=None)
-pn.Row(f).save('./figures/S14_NBS_TwoSeparateModels_MatrixView.png')
+f #pn.Row(f).save('./figures/S14_NBS_TwoSeparateModels_MatrixView.png')
 
 display.Image('./figures/S14_NBS_TwoSeparateModels_MatrixView.png')
 
@@ -90,12 +103,71 @@ display.Image('./figures/S14_NBS_TwoSeparateModels_MatrixView.png')
 
 f_F1gtF2 = hvplot_fc_nwlevel(data_f1GTf2, title='', add_net_colors=True, add_net_labels=True, mode='count', cmap='oranges', clim_max=50, labels_text_color='black').opts(toolbar=None)
 f_F2gtF1 = hvplot_fc_nwlevel(data_f2GTf1, title='', add_net_colors=True, add_net_labels=True, mode='count', cmap='blues', clim_max=50, labels_text_color='gray').opts(toolbar=None)
-pn.Row(f_F1gtF2).save('./figures/S14_NBS_F1gtF2_nw_counts.png')
-pn.Row(f_F2gtF1).save('./figures/S14_NBS_F2gtF1_nw_counts.png')
+#pn.Row(f_F1gtF2).save('./figures/S14_NBS_F1gtF2_nw_counts.png')
+#pn.Row(f_F2gtF1).save('./figures/S14_NBS_F2gtF1_nw_counts.png')
+
+hvplot_fc_nwlevel(data_f1GTf2, title='')
+
+f_F1gtF2
+
+f_F2gtF1
 
 display.Image('./figures/S14_NBS_F1gtF2_nw_counts.png')
 
 display.Image('./figures/S14_NBS_F2gtF1_nw_counts.png')
+
+f_both = hvplot_fc_nwlevel(data_f1GTf2.abs()+data_f2GTf1.abs(), title='', add_net_colors=True, add_net_labels=True, mode='count', cmap='greys', clim_max=250, labels_text_color='black').opts(toolbar=None)
+pn.Row(f_both).save('./figures/S14_NBS_BOTH_nw_counts.png')
+
+display.Image('./figures/S14_NBS_BOTH_nw_counts.png')
+
+data = (data_f1GTf2.abs()+data_f2GTf1.abs()).copy()
+networks     = list(data.index.get_level_values('Network').unique())
+num_networks = len(networks)
+num_sig_cons = pd.DataFrame(index=networks, columns=networks)
+pc_sig_cons  = pd.DataFrame(index=networks, columns=networks)
+ncons_df     = pd.DataFrame(index=networks, columns=networks)
+for n1 in networks:
+    for n2 in networks:
+        aux = data.loc[data.index.get_level_values('Network')==n1,data.columns.get_level_values('Network')==n2]
+        if n1 == n2:
+            # Within Network Scenario
+            assert np.diagonal(aux).sum() == 0., "WARNING --> Diagonal is not zero for intra-network FC"
+            ncons                   = aux.shape[0] * (aux.shape[0] -1 ) / 2
+            ncons_df.loc[n1,n2]     = int(ncons)
+            num_sig_cons.loc[n1,n2] = int(aux.sum().sum()/2) 
+            assert aux.sum().sum()/2 == np.floor(aux.sum().sum()/2), "WARNING --> Matrix was not symmetric"
+            pc_sig_cons.loc[n1,n2]  = 100 * num_sig_cons.loc[n1,n2] / ncons
+        else:
+            # Across Network Scenario
+            #assert np.diagonal(aux).sum() == 0., "WARNING --> Diagonal is not zero for intra-network FC"
+            ncons = aux.shape[0] * aux.shape[1]
+            ncons_df.loc[n1,n2] = int(ncons)
+            num_sig_cons.loc[n1,n2] = int(aux.sum().sum())
+            pc_sig_cons.loc[n1,n2]  = 100 * num_sig_cons.loc[n1,n2] / ncons
+num_sig_cons = num_sig_cons.infer_objects()
+pc_sig_cons  = pc_sig_cons.infer_objects()
+
+a = ncons_df.hvplot.heatmap(clim=(0,10000)).opts(toolbar=None)
+a*hv.Labels(a)
+
+a = pd.DataFrame(num_sig_cons.sum(axis=1), columns=['Total']).hvplot.heatmap(width=120, cmap='greys', clim=(0,1000)).opts(colorbar=False, toolbar=None)
+b = a*hv.Labels(a)
+pn.Row(b).save('./figures/S14_NBS_BOTH_nw_total_counts.png')
+
+display.Image('./figures/S14_NBS_BOTH_nw_total_counts.png')
+
+(100*num_sig_cons / ncons_df)
+
+pc_sig_cons.sum(axis=1).sort_values()
+
+
+
+a = pd.DataFrame(pc_sig_cons.sum(axis=1), columns=['%']).round(1).hvplot.heatmap(width=120, cmap='greys', clim=(0,30)).opts(colorbar=False, toolbar=None)
+b = a*hv.Labels(a)
+pn.Row(b).save('./figures/S14_NBS_BOTH_nw_total_pc.png')
+
+display.Image('./figures/S14_NBS_BOTH_nw_total_pc.png')
 
 # ## 2.3. Plot results as percentage of inter- and intra-network connections
 #
