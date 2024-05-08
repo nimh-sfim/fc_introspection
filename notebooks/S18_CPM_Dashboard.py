@@ -6,7 +6,7 @@
 #       extension: .py
 #       format_name: light
 #       format_version: '1.5'
-#       jupytext_version: 1.14.4
+#       jupytext_version: 1.15.2
 #   kernelspec:
 #     display_name: FC Introspection (Jan 2023)
 #     language: python
@@ -19,7 +19,7 @@
 
 import pandas as pd
 import os.path as osp
-from utils.basics import RESOURCES_CPM_DIR
+from utils.basics import RESOURCES_CPM_DIR, RESOURCES_CONN_DIR
 import hvplot.pandas
 from tqdm import tqdm
 import numpy as np
@@ -37,6 +37,8 @@ from nilearn.plotting import plot_connectome
 from nxviz.utils import node_table
 from sklearn.preprocessing import MinMaxScaler
 from IPython import display
+
+from nxviz.utils import node_table
 
 import os
 port_tunnel = int(os.environ['PORT2'])
@@ -151,7 +153,6 @@ print(nw_list)
 #
 # If new results are available run the following cell, which takes time, but will load all results into memory. It will also save a pickle file with the new results. That way on successive runs of the notebook you won't have to wait for this cell to complete. Alternatively, you could run the cell below, which looks for the fila and loads it into memory
 
-# +
 # %%time
 models = {}
 models_to_vis = {}
@@ -174,7 +175,6 @@ data_to_disk = {'models':models, 'models_to_vis':models_to_vis}
 out_path     = '../resources/cpm/plot_tmp/models.pkl'
 with open(out_path,'wb') as f:
     pickle.dump(data_to_disk,f)
-# -
 
 # Alternative cell that loads previous results. Much faster, but will not take into account potential new results.
 
@@ -199,6 +199,12 @@ for BEHAVIOR in BEHAVIOR_LIST:
                           index = roi_info.set_index(['ROI_ID','ROI_Name','Hemisphere','Network','RGB']).index,
                           columns= roi_info.set_index(['ROI_ID','ROI_Name','Hemisphere','Network','RGB']).index)
 
+# We also write the models to disk in a form that we can later load in CONN
+
+for BEHAVIOR in tqdm(BEHAVIOR_LIST, desc='Behaviors'):
+    aux_fc = model_consensus_to_plot[BEHAVIOR]
+    np.savetxt(osp.join(RESOURCES_CONN_DIR,f'CPM_{BEHAVIOR}_matrix.txt'),aux_fc.values)
+
 # ***
 # # 3. Create Dashboard
 #
@@ -215,7 +221,20 @@ nw_count_max = int(np.quantile(max_counts,.9))
 
 # 2. Create a drop box with all Questions
 
-behav_select = pn.widgets.Select(name='Questions',options=BEHAVIOR_LIST,value='Images')
+behav_select     = pn.widgets.Select(name='Questions',options=BEHAVIOR_LIST,value='Images')
+cmap_pos_select  = pn.widgets.Select(name='Colormap for Positive Matrix', options=['Greys', 'Purples', 'Blues', 'Greens', 'Oranges', 'Reds',
+                      'YlOrBr', 'YlOrRd', 'OrRd', 'PuRd', 'RdPu', 'BuPu',
+                      'GnBu', 'PuBu', 'YlGnBu', 'PuBuGn', 'BuGn', 'YlGn','viridis', 'plasma', 'inferno', 'magma', 'cividis',
+                      'binary', 'gist_yarg', 'gist_gray', 'gray', 'bone',
+                      'pink', 'spring', 'summer', 'autumn', 'winter', 'cool',
+                      'Wistia', 'hot', 'afmhot', 'gist_heat', 'copper'], value='Reds') 
+cmap_neg_select  = pn.widgets.Select(name='Colormap for Negative Matrix', options=['Greys', 'Purples', 'Blues', 'Greens', 'Oranges', 'Reds',
+                      'YlOrBr', 'YlOrRd', 'OrRd', 'PuRd', 'RdPu', 'BuPu',
+                      'GnBu', 'PuBu', 'YlGnBu', 'PuBuGn', 'BuGn', 'YlGn','viridis', 'plasma', 'inferno', 'magma', 'cividis',
+                      'binary', 'gist_yarg', 'gist_gray', 'gray', 'bone',
+                      'pink', 'spring', 'summer', 'autumn', 'winter', 'cool',
+                      'Wistia', 'hot', 'afmhot', 'gist_heat', 'copper'], value='Blues') 
+menu_tab         = pn.Row(behav_select,cmap_pos_select,cmap_neg_select)
 
 # 3. Create all elements of the dashboard
 
@@ -226,7 +245,8 @@ circos_layout        = pn.widgets.Select(name='Layout', options=['circos','sprin
 @pn.depends(behav_select,circos_show_pos_cb,circos_show_neg_cb,circos_layout,circos_show_degree)
 def gather_circos_plot(behavior, show_pos, show_neg, layout,show_degree):
     #return plot_as_circos(model_consensus_to_plot[behavior],roi_info,figsize=(8,8),edge_weight=1, title=behavior, show_pos=show_pos, show_neg=show_neg)
-    return plot_as_graph(model_consensus_to_plot[behavior],figsize=(20,20),edge_weight=1, title=behavior, show_pos=show_pos, show_neg=show_neg, layout=layout, show_degree=show_degree)
+    return plot_as_graph(model_consensus_to_plot[behavior],figsize=(20,20),edge_weight=1, title=behavior, show_pos=show_pos, show_neg=show_neg, 
+                         pos_edges_color='#640900', neg_edges_color='#090064', layout=layout, show_degree=show_degree)
 circos_tab = pn.Column(circos_show_pos_cb,circos_show_neg_cb,gather_circos_plot, circos_show_degree,circos_layout)
 
 
@@ -239,15 +259,15 @@ def gather_interactive_brain_view(behavior):
     return plot
 
 
-@pn.depends(behav_select)
-def gather_nw_matrix(behavior):
-    pos_count = hvplot_fc_nwlevel(model_consensus_to_plot[behavior]>0,title='Positive Correlation',mode='count', add_net_colors=True, add_net_labels=True, cmap='Reds').opts(toolbar=None)
-    neg_count = hvplot_fc_nwlevel(model_consensus_to_plot[behavior]<0,title='Negative Correlation',mode='count', add_net_colors=True, add_net_labels=True, cmap='Blues').opts(toolbar=None)
+@pn.depends(behav_select, cmap_pos_select, cmap_neg_select)
+def gather_nw_matrix(behavior, pos_cmap, neg_cmap):
+    pos_count = hvplot_fc_nwlevel(model_consensus_to_plot[behavior]>0,title='Positive Correlation',mode='count', add_net_colors=True, add_net_labels=True, cmap=pos_cmap, labels_text_color='red').opts(toolbar=None) #cmap='Reds'
+    neg_count = hvplot_fc_nwlevel(model_consensus_to_plot[behavior]<0,title='Negative Correlation',mode='count', add_net_colors=True, add_net_labels=True, cmap=neg_cmap, labels_text_color='blue').opts(toolbar=None)
     all_count = hvplot_fc_nwlevel(model_consensus_to_plot[behavior].abs(),title='Full Model',mode='count', add_net_colors=True).opts(toolbar=None)
     count_card = pn.Card(pn.Row(pos_count,neg_count,all_count), title='Number of Edges', width=1500)
     
-    pos_pcent = hvplot_fc_nwlevel(model_consensus_to_plot[behavior]>0,title='Positive Correlation',add_net_colors=True, cmap='Reds', add_net_labels=True, clim_max=15).opts(toolbar=None)
-    neg_pcent = hvplot_fc_nwlevel(model_consensus_to_plot[behavior]<0,title='Negative Correlation',add_net_colors=True, cmap='Blues', add_net_labels=True, clim_max=15).opts(toolbar=None)
+    pos_pcent = hvplot_fc_nwlevel(model_consensus_to_plot[behavior]>0,title='Positive Correlation',add_net_colors=True, cmap=pos_cmap, add_net_labels=True, clim_max=15, labels_text_color='red').opts(toolbar=None)
+    neg_pcent = hvplot_fc_nwlevel(model_consensus_to_plot[behavior]<0,title='Negative Correlation',add_net_colors=True, cmap=neg_cmap, add_net_labels=True, clim_max=15, labels_text_color='blue').opts(toolbar=None)
     all_pcent = hvplot_fc_nwlevel(model_consensus_to_plot[behavior].abs(),title='Full Model',add_net_colors=True, clim_max=15).opts(toolbar=None)
     pcent_card = pn.Card(pn.Row(pos_pcent,neg_pcent,all_pcent), title='Percentage of Edges', width=1500)
     return pn.Column(count_card, pcent_card)
@@ -302,16 +322,238 @@ def plot_brain_model(behavior,sel_nws_from,sel_nws_to,sel_nws_only):
     plt.close()
     return pn.pane.Matplotlib(fig)
 
+
+@pn.depends(behav_select)
+def get_conn_counts(behavior):
+    posconns = (model_consensus_to_plot[behavior]>0).groupby('Network').sum().T.groupby('Network').sum().loc[['Vis','SomMot','DorsAttn','SalVentAttn','Limbic','Cont','Default','Subcortical'],['Vis','SomMot','DorsAttn','SalVentAttn','Limbic','Cont','Default','Subcortical']]
+    for nw in nw_list:
+        posconns.loc[nw,nw] = posconns.loc[nw,nw] / 2
+    posconns_final = posconns.sum()
+    posconns_final.name = '# Conns'
+    posconns_final['Total'] = int((model_consensus_to_plot[behavior]>0).sum().sum()/2)
+    negconns = (model_consensus_to_plot[behavior]<0).groupby('Network').sum().T.groupby('Network').sum().loc[['Vis','SomMot','DorsAttn','SalVentAttn','Limbic','Cont','Default','Subcortical'],['Vis','SomMot','DorsAttn','SalVentAttn','Limbic','Cont','Default','Subcortical']]
+    for nw in nw_list:
+        negconns.loc[nw,nw] = negconns.loc[nw,nw] / 2
+    negconns_final = negconns.sum()
+    negconns_final.name = '# Conns'
+    negconns_final['Total'] = int((model_consensus_to_plot[behavior]<0).sum().sum()/2)
+    return pn.Card(pn.Row(pn.Column(pn.pane.Markdown('### Positive Connections'),pn.pane.DataFrame(posconns_final)),
+       pn.Column(pn.pane.Markdown('### Negative Connections'),pn.pane.DataFrame(negconns_final))),title='CPM Model | Connection Counts')
+
+
+@pn.depends(behav_select)
+def get_top10degree_counts(behavior):
+    aux_pos      = (model_consensus_to_plot[behavior]>0).sum().sort_values(ascending=False)[0:10]
+    aux_pos.name = 'Degree'
+    aux_pos      = pd.DataFrame(aux_pos).reset_index()
+    nodes_pos    = aux_pos['ROI_ID'].values.astype(int)
+    aux_pos      = aux_pos.drop(['RGB','ROI_ID'],axis=1)
+    aux_pos.index = aux_pos.index + 1
+    aux_pos.index.name = 'Ranking'
+
+    aux_neg      = (model_consensus_to_plot[behavior]<0).sum().sort_values(ascending=False)[0:10]
+    aux_neg.name = 'Degree'
+    aux_neg      = pd.DataFrame(aux_neg).reset_index()
+    nodes_neg    = aux_neg['ROI_ID'].values.astype(int)
+    aux_neg      = aux_neg.drop(['RGB','ROI_ID'],axis=1)
+    aux_neg.index = aux_neg.index + 1
+    aux_neg.index.name = 'Ranking'
+    common_nodes = list(np.intersect1d(nodes_pos,nodes_neg))
+    print(len(common_nodes))
+    if len(common_nodes) > 0:
+        output = pn.Card(pn.Row(pn.Column(pn.pane.Markdown('### Positive Connections'),pn.pane.DataFrame(aux_pos, width=550)),
+                                pn.Column(pn.pane.Markdown('### Negative Connections'),pn.pane.DataFrame(aux_neg, width=550)), pn.pane.Markdown('> **NOTE: Overlaping nodes %s' % common_nodes)),title='CPM Model | Top 10 Degree Nodes')
+    else:
+        output = pn.Card(pn.Row(pn.Column(pn.pane.Markdown('### Positive Connections'),pn.pane.DataFrame(aux_pos, width=550)),
+       pn.Column(pn.pane.Markdown('### Negative Connections'),pn.pane.DataFrame(aux_neg, width=550))),title='CPM Model | Top 10 Degree Nodes')
+    return output
+
+
 brain_view_tab=pn.Column(pn.Row('From:',nws_group_from, background='whitesmoke'),pn.Row('To. :',nws_group_to, background='whitesmoke'),only_sel_nw,plot_brain_model)
 
 # 4. Create the dashboard
 
-dashboard = pn.Row(pn.Column(behav_select, get_pred_plots, pn.Tabs(('Circos Plot',circos_tab),('Brain View',brain_view_tab))), 
+dashboard = pn.Row(pn.Column(menu_tab, pn.Row(get_pred_plots, 
+                                              pn.Tabs(('Connection Counts',get_conn_counts),('Top 10 Degree ROIs',get_top10degree_counts))), pn.Tabs(('Circos Plot',circos_tab),('Brain View',brain_view_tab))), 
+                   pn.Column(gather_nw_matrix))
+
+dashboard = pn.Row(pn.Column(behav_select, get_pred_plots), 
                    pn.Column(gather_nw_matrix))
 
 dashboard_server = dashboard.show(port=port_tunnel,open=False)
 
-display.Image('./figures/S17_CPM_Dashboard_screenshot.png')
-
 # Once you are done looking at matrices, you can stop the server running this cell
 dashboard_server.stop()
+
+display.Image('./figures/S17_CPM_Dashboard_screenshot.png')
+
+(model_consensus_to_plot['Vigilance'] > 0).sum(axis=1).sort_values(ascending=False)
+
+RESOURCES_CONN_DIR = '/data/SFIMJGC_Introspec/2023_fc_introspection/code/fc_introspection/resources/conn'
+
+for bh in ['Factor1','Factor2']:
+    aux      = squareform(model_consensus[(bh,'pos')].values-model_consensus[(bh,'neg')].values)
+    out_file = osp.join(RESOURCES_CONN_DIR,f'{bh}_matrix.txt')
+    np.savetxt(out_file,aux)
+    print('++ INFO: Saved matrix for item [%s] in %s' %(bh,out_file))
+
+# Create extra files that are ATLAS specific so that we can plot results in CONN
+
+roi_info['ROI_Name'].to_csv('roi_labels.txt',header=None, index=None)
+
+roi_info[['pos_R','pos_A','pos_S']].to_csv('roi_coords.txt',header=None, index=None)
+
+(roi_info[['color_R','color_G','color_B']]/256).round(2).to_csv('roi_colors.txt',header=None, index=None)
+
+int((model_consensus_to_plot['Vigilance']>0).sum().sum()/2)
+
+supp_tables_top10_degree = {}
+for behavior in ['Factor1','Factor2','Vigilance','Surroundings','Past','Images']:
+    aux_pos      = (model_consensus_to_plot[behavior]>0).sum().sort_values(ascending=False)[0:10]
+    aux_pos.name = 'Degree'
+    aux_pos      = pd.DataFrame(aux_pos).reset_index()
+    nodes_pos    = aux_pos['ROI_ID'].values.astype(int)
+    supp_tables_top10_degree[behavior,'pos']      = aux_pos.drop(['RGB','ROI_ID'],axis=1)
+
+    aux_neg      = (model_consensus_to_plot[behavior]<0).sum().sort_values(ascending=False)[0:10]
+    aux_neg.name = 'Degree'
+    aux_neg      = pd.DataFrame(aux_neg).reset_index()
+    nodes_neg    = aux_neg['ROI_ID'].values.astype(int)
+    supp_tables_top10_degree[behavior,'neg']      = aux_neg.drop(['RGB','ROI_ID'],axis=1)
+    print('++ [%s] Regions in top 10 degree for both positivie and negative models: %s' % (behavior,np.intersect1d(nodes_pos,nodes_neg)))
+
+import subprocess
+for behavior in ['Factor1','Factor2','Vigilance','Surroundings','Past','Images']:
+    # Extract list of top 10 degree nodes for the positive model
+    aux_pos      = (model_consensus_to_plot[behavior]>0).sum().sort_values(ascending=False)[0:10]
+    aux_pos.name = 'Degree'
+    aux_pos      = pd.DataFrame(aux_pos).reset_index()
+    nodes_pos    = aux_pos['ROI_ID'].values.astype(int)
+    # Extract list of top 10 degree nodes for the negative model
+    aux_neg      = (model_consensus_to_plot[behavior]<0).sum().sort_values(ascending=False)[0:10]
+    aux_neg.name = 'Degree'
+    aux_neg      = pd.DataFrame(aux_neg).reset_index()
+    nodes_neg    = aux_neg['ROI_ID'].values.astype(int)
+    
+    for model,nodes in zip(['pos','neg'],[nodes_pos, nodes_neg]):
+        expr_str = ''
+        for node in nodes:
+            if expr_str == '':
+                if model == 'pos':
+                    expr_str = 'equals(a,%d)*b' % node
+                else:
+                    expr_str = '-equals(a,%d)*b' % node
+            else:
+                if model == 'pos':
+                    expr_str = expr_str + '+' + 'equals(a,%d)*b' % node
+                else:
+                    expr_str = expr_str + '-' + 'equals(a,%d)*b' % node
+        command = f"""module load afni; \
+                 cd /data/SFIMJGC_Introspec/2023_fc_introspection/code/fc_introspection/resources/nimare;
+                 pwd; \
+                 3dcalc -a Schaefer2018_400Parcels_7Networks_AAL2_NiMareGrid.nii.gz -b {behavior}-{model}_Degree.nii -prefix {behavior}-{model}-Top10DegreeNodes.nii -overwrite -expr \'{expr_str}\';"""
+        output  = subprocess.check_output(command, shell=True, stderr=subprocess.STDOUT)
+        print(output.strip().decode())
+
+
+# # Info Needed for Degree Figure (Factor 1)
+
+a = (model_consensus_to_plot['Factor1']>0).sum().sort_values(ascending=False)[0:10]
+a.name = 'Degree'
+a = pd.DataFrame(a).reset_index()
+print(a['ROI_ID'].values)
+a = a.drop(['RGB','ROI_ID'],axis=1)
+a
+
+a = (model_consensus_to_plot['Factor1']<0).sum().sort_values(ascending=False)[0:10]
+a.name = 'Degree'
+a = pd.DataFrame(a).reset_index()
+print(a['ROI_ID'].values)
+a = a.drop(['RGB','ROI_ID'],axis=1)
+a
+
+# # Info Needed for Degree Figure (Factor 2)
+
+a = (model_consensus_to_plot['Factor2']>0).sum().sort_values(ascending=False)[0:10]
+a.name = 'Degree'
+a = pd.DataFrame(a).reset_index()
+print(a['ROI_ID'].values)
+a = a.drop(['RGB','ROI_ID'],axis=1)
+a
+
+a = (model_consensus_to_plot['Factor2']<0).sum().sort_values(ascending=False)[0:10]
+a.name = 'Degree'
+a = pd.DataFrame(a).reset_index()
+print(a['ROI_ID'].values)
+a = a.drop(['RGB','ROI_ID'],axis=1)
+a
+
+# # Info Needed for Degree Figure (Wakfulness)
+
+a = (model_consensus_to_plot['Vigilance']>0).sum().sort_values(ascending=False)[0:10]
+a.name = 'Degree'
+a = pd.DataFrame(a).reset_index()
+print(a['ROI_ID'].values)
+a = a.drop(['RGB','ROI_ID'],axis=1)
+a
+
+a = (model_consensus_to_plot['Vigilance']<0).sum().sort_values(ascending=False)[0:10]
+a.name = 'Degree'
+a = pd.DataFrame(a).reset_index()
+print(a['ROI_ID'].values)
+a = a.drop(['RGB','ROI_ID'],axis=1)
+a
+
+# # Info Needed for Degree Figure (Images)
+
+a = (model_consensus_to_plot['Images']>0).sum().sort_values(ascending=False)[0:10]
+a.name = 'Degree'
+a = pd.DataFrame(a).reset_index()
+print(a['ROI_ID'].values)
+a = a.drop(['RGB','ROI_ID'],axis=1)
+a
+
+a = (model_consensus_to_plot['Images']<0).sum().sort_values(ascending=False)[0:10]
+a.name = 'Degree'
+a = pd.DataFrame(a).reset_index()
+print(a['ROI_ID'].values)
+a = a.drop(['RGB','ROI_ID'],axis=1)
+a
+
+# # Info Needed for Degree Figure (Surroundings)
+
+a = (model_consensus_to_plot['Surroundings']>0).sum().sort_values(ascending=False)[0:10]
+a.name = 'Degree'
+a = pd.DataFrame(a).reset_index()
+print(a['ROI_ID'].values)
+a = a.drop(['RGB','ROI_ID'],axis=1)
+a
+
+a = (model_consensus_to_plot['Surroundings']<0).sum().sort_values(ascending=False)[0:10]
+a.name = 'Degree'
+a = pd.DataFrame(a).reset_index()
+print(a['ROI_ID'].values)
+a = a.drop(['RGB','ROI_ID'],axis=1)
+a
+
+# # Info Needed for Degree Figure (Past)
+
+a = (model_consensus_to_plot['Past']>0).sum().sort_values(ascending=False)[0:10]
+a.name = 'Degree'
+a = pd.DataFrame(a).reset_index()
+print(a['ROI_ID'].values)
+a = a.drop(['RGB','ROI_ID'],axis=1)
+a
+
+a = (model_consensus_to_plot['Past']<0).sum().sort_values(ascending=False)[0:10]
+a.name = 'Degree'
+a = pd.DataFrame(a).reset_index()
+print(a['ROI_ID'].values)
+a = a.drop(['RGB','ROI_ID'],axis=1)
+a
+
+pd.DataFrame(model_consensus_to_plot['Past'].loc[:,:,:,'Default'].T.loc[:,:,:,'Vis'].values).hvplot.heatmap()
+
+model_consensus_to_plot['Past'].loc[:,:,:,'Default'].T.loc[:,:,:,'Vis']
+
+
