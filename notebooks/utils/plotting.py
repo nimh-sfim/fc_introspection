@@ -130,8 +130,7 @@ def get_net_divisions_by_Network(roi_info_input, verbose=False):
         print('++ INFO: Network Midpoint IDs: %s ' % str(net_meds))
     return Nrois, Nnetworks, net_names, net_edges, net_meds
 
-   
-def hvplot_fc(data, roi_info_input = None, by='Hemisphere', 
+def hvplot_fc(data, roi_info_input = None, by='Hemisphere', alpha=1, apply_triu=False, apply_tril=False, bgcolor='#ffffff', ticks_font_size=12,
               hm_cmap=hm_color_map, net_cmap=nw_color_map, cbar_title='',
               clim=(-.8,.8), cbar_title_fontsize=16, 
               add_labels=True,add_color_segments=True,
@@ -160,6 +159,16 @@ def hvplot_fc(data, roi_info_input = None, by='Hemisphere',
         if verbose:
             print('++ INFO[hvplot_fc]: removing index and column names from inputted data structure')
         data = data.values
+    if apply_triu:
+        if verbose:
+            print('++ INFO[hvplot_fc]: removing upper triangle')
+        data = np.triu(data).astype(float)
+        data[data==0] = np.nan
+    if apply_tril:
+        if verbose:
+            print('++ INFO[hvplot_fc]: removing lower triangle')
+        data = np.tril(data).astype(float)
+        data[data==0] = np.nan
     matrix_to_plot              = pd.DataFrame(data)
     matrix_to_plot.index        = np.arange(matrix_to_plot.shape[0])
     matrix_to_plot.index.name   = 'ROI2'
@@ -217,20 +226,37 @@ def hvplot_fc(data, roi_info_input = None, by='Hemisphere',
     # ------------------------------------------
     dict_heatmapopts = dict(color_levels=[-1,-0.10,0.10,1], cmap=cmap)
     if add_labels:
-        plot           = matrix_to_plot.hvplot.heatmap(aspect='square', frame_width=500 , cmap=cmap,
+        if major_label_overrides == 'regular_grid':
+             plot           = matrix_to_plot.hvplot.heatmap(aspect='square', frame_width=500 , cmap=cmap,fontsize={'ticks':ticks_font_size,'clabel':cbar_title_fontsize},
+                                                            clim=clim, alpha=alpha,
+                                                            xlim=(x_min_lim,Nrois-.5), 
+                                                            ylim=(y_min_lim,Nrois-.5), 
+                                                            yticks=y_ticks_info, 
+                                                            xticks= x_ticks_info).opts(colorbar_opts={'title':cbar_title}, bgcolor=bgcolor)
+        else:
+             plot           = matrix_to_plot.hvplot.heatmap(aspect='square', frame_width=500 , cmap=cmap,alpha=alpha, 
                                                        clim=clim, xlim=(x_min_lim,Nrois-.5), ylim=(y_min_lim,Nrois-.5), 
                                                        yticks=y_ticks_info, xticks= x_ticks_info, 
-                                                       fontsize={'ticks':12,'clabel':cbar_title_fontsize}).opts(colorbar_position=colorbar_position,xrotation=x_rotation, colorbar_opts={'title':cbar_title,  
-                                                                                                                               'major_label_overrides':major_label_overrides, 
-                                                                                                                               'ticker': FixedTicker(ticks=[-1.5,-0.5,0.5,1.5]),
-                                                                                                                               }, **dict_heatmapopts)
+                                                       fontsize={'ticks':ticks_font_size,'clabel':cbar_title_fontsize}).opts(colorbar_position=colorbar_position,
+                                                                                                                xrotation=x_rotation, 
+                                                                                                                bgcolor=bgcolor,
+                                                                                                                colorbar_opts={'title':cbar_title,                                                                                                                                                                           'major_label_overrides':major_label_overrides, 
+                                                                                                                'ticker': FixedTicker(ticks=[-1.5,-0.5,0.5,1.5]),
+                                                                                                                }, **dict_heatmapopts)
 
     else:
-        plot           = matrix_to_plot.hvplot.heatmap(aspect='square', frame_width=500 , cmap=cmap,
+        if major_label_overrides == 'regular_grid':
+            plot           = matrix_to_plot.hvplot.heatmap(aspect='square', frame_width=500 , cmap=cmap, alpha=alpha, 
                                                        clim=clim, xlim=(x_min_lim,Nrois-.5), 
                                                        ylim=(y_min_lim,Nrois-.5), 
                                                        yaxis=None, xaxis=None,
-                                                       fontsize={'ticks':12,'clabel':cbar_title_fontsize}).opts(colorbar_position=colorbar_position,xrotation=x_rotation, colorbar_opts={'title':cbar_title, 
+                                                       fontsize={'ticks':ticks_font_size,'clabel':cbar_title_fontsize}).opts(colorbar_position=colorbar_position,xrotation=x_rotation,bgcolor=bgcolor).opts(colorbar_opts={'title':cbar_title})
+        else:
+            plot           = matrix_to_plot.hvplot.heatmap(aspect='square', frame_width=500 , cmap=cmap,alpha=alpha,
+                                                       clim=clim, xlim=(x_min_lim,Nrois-.5), 
+                                                       ylim=(y_min_lim,Nrois-.5), 
+                                                       yaxis=None, xaxis=None,
+                                                       fontsize={'ticks':ticks_font_size,'clabel':cbar_title_fontsize}).opts(bgcolor=bgcolor,colorbar_position=colorbar_position,xrotation=x_rotation, colorbar_opts={'title':cbar_title, 
                                                                                                                                'major_label_overrides':major_label_overrides, 
                                                                                                                                'ticker': FixedTicker(ticks=[-1.5,-0.5,0.5,1.5]),
                                                                                                                                }, **dict_heatmapopts)
@@ -307,7 +333,7 @@ def plot_fc(data,roi_info_path, hm_cmap=hm_color_map, net_cmap=nw_color_map, cba
 # =====================================================================
 #      Network-level Summary Matrix
 # =====================================================================
-def hvplot_fc_nwlevel(data,mode='percent',clim_max=None,clim_min=0, cmap='viridis', title='', add_net_colors=False, add_net_labels=False, labels_text_color='lightgray'):
+def hvplot_fc_nwlevel(data,mode='percent',clim_max=None,clim_min=0, cmap='viridis', title='', add_net_colors=False, add_net_labels=False, labels_text_color='lightgray', labels_cmap='purples_r', return_data_only=False):
     """
     This function plots a summary view of how many within- and between- network connections
     are significantly different in a given contrast.
@@ -359,10 +385,14 @@ def hvplot_fc_nwlevel(data,mode='percent',clim_max=None,clim_min=0, cmap='viridi
         
     # Create Network Colorbar
     if add_net_colors:
-        net_segments_y = hv.Segments((tuple(np.ones(num_networks)-1.5),tuple(np.arange(num_networks)-.5),
-                                      tuple(np.ones(num_networks)-1.5),tuple(np.arange(num_networks)+.5), networks),vdims='Networks').opts(cmap=nw_color_map, color=dim('Networks'), line_width=10,show_legend=False)
-        net_segments_x = hv.Segments((tuple(np.arange(num_networks)-.5),tuple(np.ones(num_networks)-1.5),
-                                      tuple(np.arange(num_networks)+.5),tuple(np.ones(num_networks)-1.5), networks),vdims='Networks').opts(cmap=nw_color_map, color=dim('Networks'), line_width=10,show_legend=False) 
+        net_segments_y = hv.Segments((tuple(np.ones(num_networks)-1),tuple(np.arange(num_networks)-.5),
+                                  tuple(np.ones(num_networks)-1),tuple(np.arange(num_networks)+.5), networks),vdims='Networks').opts(cmap=nw_color_map, color=dim('Networks'), line_width=10,show_legend=False)
+        net_segments_x = hv.Segments((tuple(np.arange(num_networks)),tuple(np.ones(num_networks)-1.5),
+                                  tuple(np.arange(num_networks)+1),tuple(np.ones(num_networks)-1.5), networks),vdims='Networks').opts(cmap=nw_color_map, color=dim('Networks'), line_width=10,show_legend=False) 
+        #net_segments_y = hv.Segments((tuple(np.ones(num_networks)-1.5),tuple(np.arange(num_networks)-.5),
+        #                              tuple(np.ones(num_networks)-1.5),tuple(np.arange(num_networks)+.5), networks),vdims='Networks').opts(cmap=nw_color_map, color=dim('Networks'), line_width=10,show_legend=False)
+        #net_segments_x = hv.Segments((tuple(np.arange(num_networks)-.5),tuple(np.ones(num_networks)-1.5),
+        #                              tuple(np.arange(num_networks)+.5),tuple(np.ones(num_networks)-1.5), networks),vdims='Networks').opts(cmap=nw_color_map, color=dim('Networks'), line_width=10,show_legend=False) 
         x_min_lim = -4
         y_min_lim = -4
     else:
@@ -372,26 +402,43 @@ def hvplot_fc_nwlevel(data,mode='percent',clim_max=None,clim_min=0, cmap='viridi
     if mode=='percent':
         matrix_to_plot              = pd.DataFrame(pc_sig_cons.values)
         cbar_title = 'Percent of Connections:'
+        value_dimension = hv.Dimension('PCConns', value_format=lambda x: '%.1f' % x)
+        xs = ys = np.arange(matrix_to_plot.shape[0], dtype=int)
+        zs = pc_sig_cons.values
+        labels = hv.Labels((xs,ys,zs), vdims=value_dimension)
+        labels.opts(opts.Labels(cmap='purples_r', text_color='PCConns'))
     else:
         matrix_to_plot              = pd.DataFrame(num_sig_cons.values)
         cbar_title = 'Number of Connections:'
+        value_dimension = hv.Dimension('NConns', value_format=lambda x: '%d' % x)
+        xs = ys = np.arange(matrix_to_plot.shape[0], dtype=int)
+        zs = num_sig_cons.values
+        labels = hv.Labels((xs,ys,zs), vdims=value_dimension)
+        labels.opts(opts.Labels(cmap=labels_cmap, text_color='NConns'))
     matrix_to_plot.index        = np.arange(matrix_to_plot.shape[0], dtype=int)
     matrix_to_plot.columns      = np.arange(matrix_to_plot.shape[1], dtype=int)
     matrix_to_plot.index.name   = 'Network1'
     matrix_to_plot.columns.name = 'Network2'
-    #return matrix_to_plot
+    
+    if return_data_only:
+        matrix_to_plot.index = networks
+        matrix_to_plot.columns = networks
+        matrix_to_plot.index.name   = 'Network1'
+        matrix_to_plot.columns.name = 'Network2'
+        return matrix_to_plot
+    
     if clim_max is None:
         clim_max = matrix_to_plot.quantile(.95).max()
     heatmap = matrix_to_plot.round(1).hvplot.heatmap(aspect='square', clim=(0,clim_max), frame_width=500,
                                                      cmap=cmap, 
                                                      title=title).opts(colorbar_opts={'title':cbar_title}, fontsize={'ticks':12,'clabel':12})
-
-    plot = heatmap * hv.Labels(heatmap).opts(opts.Labels(text_color=labels_text_color))
+    plot = heatmap * labels
+    #plot = heatmap * hv.Labels(heatmap).opts(opts.Labels(cmap='viridis', text_color='NConns'))#text_color=labels_text_color))
     if add_net_colors:
         plot = plot * net_segments_x * net_segments_y
-    plot.opts(xlim=(-.5,num_networks-.5), ylim=(-.5,num_networks-.5), xticks=x_ticks_info, xrotation=90, yticks=y_ticks_info)
+    #plot.opts(xlim=(-.5,num_networks-.5), ylim=(-.5,num_networks-.5), xticks=x_ticks_info, xrotation=90, yticks=y_ticks_info)
+    plot.opts(xlim=(-.5,num_networks-.5), ylim=(-.5,num_networks-.5), xrotation=90, yticks=y_ticks_info)
     return plot   
-
 
 # =====================================================================
 #                   CIRCOS PLOTS
