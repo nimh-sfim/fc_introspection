@@ -156,6 +156,18 @@ for TARGET in targets:
         swarm_file.write('\n')
     swarm_file.close()
 
+# Once all the jobs have successfully completed, you should run the following command to compile all the outputs into a single file.
+#
+# ```bash
+# conda activate fc_introspection_2023_py310
+#
+# # Compile together the results over the 100 real permutations
+# python /data/SFIMJGC_Introspec/2023_fc_introspection/code/fc_introspection/notebooks/S16b_GatherSwarmResults.py \
+#    -i /data/SFIMJGC_Introspec/2023_fc_introspection/code/fc_introspection/resources/cpm/swarm_outputs/real/Schaefer2018_400Parcels_7Networks_AAL2/subject_aware/conf_residualized/pearson_sum/ \
+#    -o /data/SFIMJGC_Introspec/2023_fc_introspection/code/fc_introspection/resources/cpm/real-Schaefer2018_400Parcels_7Networks_AAL2-subject_aware-conf_residualized-pearson_sum.pkl \
+#    -n 100
+# ```
+
 # ## 1.3. Create Swarm jobs for the Null Distributions
 
 for TARGET in targets:    
