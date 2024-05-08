@@ -212,9 +212,9 @@ def cluster_scans(W,n_clusters=None, kmin=1, kmax=10):
 # DEPRECATED#     plt.close()
 # DEPRECATED#     return f
 
-def plot_W_scatter(W,figsize=(6,6), plot_hist=False, plot_kde=False, cluster_palette='tab10', marker_size=10, clusters_info=None):
+def plot_W_scatter(W,figsize=(6,6), plot_hist=False, plot_kde=False, cluster_palette='tab10', marker_size=10, clusters_info=None, xlabel=None, ylabel=None, marker_alpha=0.8, edgecolor='k'):
     Nscans,Ndims = W.shape
-    assert Ndims == 2
+    assert Ndims == 2, "This function is desined only for 2 dimensional representations. The dimensionality of the provided W is not 2."
     fig, ax = plt.subplots(figsize=figsize)
     if plot_hist:
         sns.histplot(data=W,    x='Factor 1', y='Factor 2', bins=10, pthresh=-1, cmap="viridis", alpha=.5)
@@ -224,17 +224,19 @@ def plot_W_scatter(W,figsize=(6,6), plot_hist=False, plot_kde=False, cluster_pal
         cl_id2label = clusters_info.drop_duplicates().set_index('Cluster ID').to_dict()['Cluster Label']
         N_clusters = len(clusters_info['Cluster ID'].unique())
         aux = pd.concat([W,clusters_info],axis=1)
-        sns.scatterplot(data=aux, x='Factor 1', y='Factor 2', s=marker_size, hue='Cluster ID', palette=cluster_palette)
+        sns.scatterplot(data=aux, x='Factor 1', y='Factor 2', s=marker_size, hue='Cluster ID', palette=cluster_palette, edgecolor=edgecolor, alpha=marker_alpha)
         handles, labels  =  ax.get_legend_handles_labels()
         ax.legend(handles, [cl_id2label[c+1] for c in range(N_clusters)], loc='lower left')
     else:
-        sns.scatterplot(data=W, x='Factor 1', y='Factor 2', s=marker_size, color='k')
+        sns.scatterplot(data=W, x='Factor 1', y='Factor 2', s=marker_size, color='k', edgecolor=edgecolor, linewidth=1, alpha=marker_alpha)
     ax.set_xlim(-0.005,1.005)
     ax.set_ylim(-0.005,1.005)
+    ax.set_xlabel(xlabel)
+    ax.set_ylabel(ylabel)
     plt.close()
     return fig
    
-def plot_P(P,figsize=(16,4),question_order=None, scan_order=None, clusters_info=None, transpose=True):
+def plot_P(P,figsize=(16,4),question_order=None, scan_order=None, clusters_info=None, transpose=True, cluster_name_rotation=0):
     assert isinstance(P,pd.DataFrame)
     Nscans,Nquestions=P.shape
     fig, ax = plt.subplots(figsize=figsize)
@@ -268,22 +270,22 @@ def plot_P(P,figsize=(16,4),question_order=None, scan_order=None, clusters_info=
         for (i, loc) in enumerate(jump):
             ax.vlines(loc+1,0-0.5,P.shape[1], color='r', lw=2)
         for (i, loc) in enumerate(center):
-            ax.text(loc, -0.5, aux_cl_labels[i], ha='left', rotation=45, fontsize=14)
+            ax.text(loc, -0.5, aux_cl_labels[i], ha='left', rotation=cluster_name_rotation, fontsize=14)
         
     plt.close()
     return fig
    
-def plot_W_heatmap(W,clusters_info=None,scan_order=None):
+def plot_W_heatmap(W,clusters_info=None,scan_order=None, cmap='Blues'):
     Nscans,Ndims = W.shape
     assert Ndims == 2
     fig, ax = plt.subplots(figsize=(16,0.5*Ndims))
     if clusters_info is None:
         if scan_order is None:
             xlabel = 'Unsorted Scans'
-            sns.heatmap(W.T, cmap='Blues', ax=ax, cbar=True)
+            sns.heatmap(W.T, cmap=cmap, ax=ax, cbar=True)
         else:
             xlabel = 'Sorted Scans'
-            sns.heatmap((W[scan_order,:]).T, cmap='Blues', ax=ax, cbar=True)
+            sns.heatmap((W[scan_order,:]).T, cmap=cmap, ax=ax, cbar=True)
     else:
         aux = pd.concat([W,clusters_info],axis=1)
         if not(scan_order is None):
@@ -295,7 +297,7 @@ def plot_W_heatmap(W,clusters_info=None,scan_order=None):
         center = np.append(jump,Nscans)
         diff   = (center[1:] - center[:-1])/2
         center = center - np.append(center[0]/2, diff)
-        sns.heatmap((aux[['Factor 1','Factor 2']]).T, cmap='Blues', ax=ax, cbar=True)
+        sns.heatmap((aux[['Factor 1','Factor 2']]).T, cmap=cmap, ax=ax, cbar=True)
         aux_cl_labels = list(aux_filtered['Cluster Label'].values)
         for (i, loc) in enumerate(jump):
             ax.vlines(loc+1,0-0.5,W.shape[1], color='r')
