@@ -6,9 +6,9 @@
 #       extension: .py
 #       format_name: light
 #       format_version: '1.5'
-#       jupytext_version: 1.12.0
+#       jupytext_version: 1.15.2
 #   kernelspec:
-#     display_name: FC Instrospection
+#     display_name: FC Introspection (Jan 2023)
 #     language: python
 #     name: fc_introspection
 # ---
@@ -70,7 +70,6 @@ from sfim_lib.atlases.raking import correct_ranked_atlas
 
 # 4. Correct space, generate label table and attach it to atlas file
 
-# + tags=[]
 # Correct the space tag, generate a label table, attach it to the original atlas file.
 command = """module load afni; \
    cd {ATLAS_PATH}; \
@@ -80,7 +79,6 @@ command = """module load afni; \
    @MakeLabelTable -lab_file {ATLAS_NAME}_order.txt 1 0 -labeltable {ATLAS_NAME}.niml.lt -dset {ATLAS_NAME}.nii.gz;""".format(ATLAS_PATH=CORTICAL_ATLAS_PATH,ATLAS_NAME=CORTICAL_ATLAS_NAME)
 output  = subprocess.check_output(command, shell=True, stderr=subprocess.STDOUT)
 print(output.strip().decode())
-# -
 
 # 5. Convert Atlas file to final grid of all pre-processed data
 
@@ -217,7 +215,6 @@ print(output.strip().decode())
 
 # 6. Create new atlas file with only the 8 ROIs we need
 
-# + tags=[]
 command = """module load afni; \
              cd {ATLAS_PATH}; \
              3dcalc -overwrite -a {ATLAS_NAME}.nii.gz \
@@ -229,7 +226,6 @@ command = """module load afni; \
              rm rm.{ATLAS_NAME}.subcortical.nii.gz;""".format(ATLAS_PATH=SUBCORTICAL_ATLAS_PATH,ATLAS_NAME=SUBCORTICAL_ATLAS_NAME)
 output  = subprocess.check_output(command, shell=True, stderr=subprocess.STDOUT)
 print(output.strip().decode())
-# -
 
 # 7. Remove areas of overlap between the two atlases
 #
