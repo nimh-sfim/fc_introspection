@@ -43,11 +43,11 @@ fi
 # Pass additional boolean flags if needed
 # =======================================
 if [[ "${RANDOMIZE_BEHAVIOR}" == "True" ]]; then echo "++ Setting Randomization Flag"; ARG_LIST=`echo ${ARG_LIST} --randomize_behavior`; fi
-if [[ "${CONFOUNDS}" == "True" ]]; then echo "++ Setting Confound Residualization Flag"; ARG_LIST=`echo ${ARG_LIST} --residualize_motion`; fi
+if [[ "${CONFOUNDS}" == "True" ]]; then echo "++ Setting Confound Residualization Flag"; ARG_LIST=`echo ${ARG_LIST} --residualize_motion -M ${CONFOUNDS_PATH}`; fi
 
 if [[ "${VERBOSE}" == "True" ]]; then echo "++ Setting Verbose Flag"; ARG_LIST=`echo ${ARG_LIST} --verbose`; fi
 
 # CALL THE CPM_BATCH PROGRAM 
 # ==========================
 echo "++ Calling: python ./cpm_batch.py ${ARG_LIST}"
-python ./cpm_batch.py ${ARG_LIST}
+python ../../python/cpm_batch_program.py ${ARG_LIST}

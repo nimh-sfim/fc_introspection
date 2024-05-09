@@ -9,10 +9,8 @@ import pickle
 def read_command_line():
     parser = argparse.ArgumentParser(description='Run the CPM algorithm given a set of FC matrices (vectorized) and an external quantity (e.g., behavior) to be predicted.')
     parser.add_argument('-b','--behav_path',          type=str,   help="Path to dataframe with behaviors",             required=True, dest='behav_path')
-    parser.add_argument('-f','--fc_a_path',           type=str,   help="Path to dataframe with fc vectors (case 1)",            required=True, dest='fc_a_path')
-    parser.add_argument('-F','--fc_b_path',           type=str,   help="Path to dataframe with fc vectors (case 2)",            required=True, dest='fc_b_path')
-    parser.add_argument('-l','--fc_a_label',          type=str,   help="Label for fc vectors (case 1)",            required=True, dest='fc_a_label')
-    parser.add_argument('-L','--fc_b_label',          type=str,   help="Label for fc vectors (case 2)",            required=True, dest='fc_b_label')
+    parser.add_argument('-f','--fc_path',           type=str,   help="Path to dataframe with fc vectors (case 1)",            required=True, dest='fc_path')
+    parser.add_argument('-l','--fc_label',          type=str,   help="Label for fc vectors (case 1)",            required=False, default=None, dest='fc_label')
     parser.add_argument('-t','--target_behav',        type=str,   help="Target behavior to predict",                   required=True, dest='behavior')
     parser.add_argument('-k','--number_of_folds',     type=int,   help="Number of cross-validation folds",             required=False, default=10, dest='k')
     parser.add_argument('-o','--output_dir',          type=str,   help="Output folder where to write results",         required=True, dest='output_dir')
@@ -42,7 +40,10 @@ def main():
     assert osp.exists(opts.behav_path),'++ ERROR [main]: Behavioral Dataframe not found.'
     print('   * [%s] FC Dataframe Path            : %s' % (opts.fc_label,opts.fc_path))
     assert osp.exists(opts.fc_path), '++ ERROR [main]: FC Dataframe not found.'
-    aux_out_dir = osp.join(opts.output_dir, opts.fc_label)
+    if opts.fc_label is not None:
+       aux_out_dir = osp.join(opts.output_dir, opts.fc_label)
+    else:
+       aux_out_dir = opts.output_dir
     print('   * [%s] Output Folder                : %s' % (opts.fc_label,aux_out_dir), end=' | ')
     if osp.exists(aux_out_dir):
         print(' ALREADY EXISTS', end='\n')
@@ -256,7 +257,10 @@ def main():
                    'behav_obs_pred': behav_obs_pred,
                     'kfold_test_idx':indices}
     # 2. Create output path
-    output_file = osp.join(opts.output_dir,opts.fc_label,'cpm_{beh}_rep-{rep}.pkl'.format(rep=str(opts.repetition).zfill(5), beh=opts.behavior))
+    if opts.fc_label is None:
+       output_file = osp.join(opts.output_dir,'cpm_{beh}_rep-{rep}.pkl'.format(rep=str(opts.repetition).zfill(5), beh=opts.behavior))
+    else:
+       output_file = osp.join(opts.output_dir,opts.fc_label,'cpm_{beh}_rep-{rep}.pkl'.format(rep=str(opts.repetition).zfill(5), beh=opts.behavior))
     # 3. Dump to disk
     with open(output_file, 'wb') as f:
         pickle.dump(cpm_outputs, f)
