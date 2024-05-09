@@ -1,6 +1,9 @@
 import os.path as osp
 import pandas as pd
 from sfim_lib.io.afni import load_netcc
+import numpy as np
+from scipy.spatial.distance import squareform
+from tqdm import tqdm
 
 def read_fc_matrices(scan_list,data_dir,atlas_name,pb_folder,fisher_transform=False):
     """Read all FC matrices into memory and return a pandas dataframe where
