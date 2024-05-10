@@ -142,7 +142,7 @@ for TARGET in targets:
         swarm_file.write("export BEHAV_PATH={behav_path} FC_PATH={fc_path} OUT_DIR={output_dir} BEHAVIOR={behavior} NUM_FOLDS={k} NUM_ITER={n_iter} CORR_TYPE={corr_type} E_SUMMARY_METRIC={e_summary_metric} E_THR_R={e_thr_r} E_THR_P={e_thr_p} SPLIT_MODE={split_mode} VERBOSE=True RANDOMIZE_BEHAVIOR=False CONFOUNDS={confounds} CONFOUNDS_PATH={confounds_path}; sh {scripts_folder}/S16_cpm_batch.sh".format(scripts_folder = SCRIPTS_DIR,
                            behav_path       = osp.join(RESOURCES_CPM_DIR,'behav_data.csv'),
                            fc_path          = osp.join(RESOURCES_CPM_DIR,f'fc_data_{ATLAS_NAME}.csv'),
-                           confounds_path   = osp.join(RESOURCES_DINFO_DIR,'motion_confounds.csv'),                                                                                                                                                                                                                                               
+                           confounds_path   = osp.join(RESOURCES_DINFO_DIR,'motion_confounds.csv'),                        
                            output_dir       = out_dir,
                            behavior         = TARGET,
                            k                = 10,
@@ -194,9 +194,10 @@ for TARGET in targets:
         out_dir = osp.join(RESOURCES_CPM_DIR,'swarm_outputs','null',ATLAS_NAME,SPLIT_MODE,CONFOUNDS,MODEL_TYPE,TARGET)
         if not osp.exists(out_dir):
             os.makedirs(out_dir)
-        swarm_file.write("export BEHAV_PATH={behav_path} FC_PATH={fc_path} OUT_DIR={output_dir} BEHAVIOR={behavior} NUM_FOLDS={k} NUM_ITER={n_iter} CORR_TYPE={corr_type} E_SUMMARY_METRIC={e_summary_metric} E_THR_R={e_thr_r} E_THR_P={e_thr_p} SPLIT_MODE={split_mode} VERBOSE=True RANDOMIZE_BEHAVIOR=True CONFOUNDS={confounds}; sh {scripts_folder}/S16_cpm_batch.sh".format(scripts_folder = SCRIPTS_DIR,
+        swarm_file.write("export BEHAV_PATH={behav_path} FC_PATH={fc_path} OUT_DIR={output_dir} BEHAVIOR={behavior} NUM_FOLDS={k} NUM_ITER={n_iter} CORR_TYPE={corr_type} E_SUMMARY_METRIC={e_summary_metric} E_THR_R={e_thr_r} E_THR_P={e_thr_p} SPLIT_MODE={split_mode} VERBOSE=True RANDOMIZE_BEHAVIOR=True CONFOUNDS={confounds} CONFOUNDS_PATH={confounds_path}; sh {scripts_folder}/S16_cpm_batch.sh".format(scripts_folder = SCRIPTS_DIR,
                            behav_path       = osp.join(RESOURCES_CPM_DIR,'behav_data.csv'),
                            fc_path          = osp.join(RESOURCES_CPM_DIR,f'fc_data_{ATLAS_NAME}.csv'),
+                           confounds_path   = osp.join(RESOURCES_DINFO_DIR,'motion_confounds.csv'), 
                            output_dir       = out_dir,
                            behavior         = TARGET,
                            k                = 10,
