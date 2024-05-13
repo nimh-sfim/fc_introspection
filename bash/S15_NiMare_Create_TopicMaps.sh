@@ -13,11 +13,12 @@ set -e
 
 # Load conda environment
 # ----------------------
-source /data/SFIMJGC_HCP7T/Apps/miniconda38/etc/profile.d/conda.sh && conda activate fc_introspection 
+#source /data/SFIMJGC_HCP7T/Apps/miniconda38/etc/profile.d/conda.sh && conda activate fc_introspection 
+source /data/SFIMJGC_HCP7T/Apps/miniconda38/etc/profile.d/conda.sh && conda activate fc_introspection_2023_py310 
 
 # Enter lemon dataset pre-processing pipelines
 # --------------------------------------------
-cd /data/SFIMJGC_Introspec/2023_fc_introspection/code/fc_introspection/notebooks/
+cd /data/SFIMJGC_Introspec/2023_fc_introspection/code/fc_introspection/python/
 
 # Unset DISPLAY variable
 # ----------------------
