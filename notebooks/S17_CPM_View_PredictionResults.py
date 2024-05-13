@@ -8,9 +8,9 @@
 #       format_version: '1.5'
 #       jupytext_version: 1.15.2
 #   kernelspec:
-#     display_name: FC Introspection (Jan 2023)
+#     display_name: FC Instrospection (2023 | 3.10)
 #     language: python
-#     name: fc_introspection
+#     name: fc_introspection_2023_py310
 # ---
 
 # # Description
@@ -22,6 +22,8 @@
 # Finally, the notebook generates summary figures for the ability of CPM to predict experiential variables.
 #
 # > **NOTE:** Although the notebook loads and computes values for the three CPM models (pos, neg and glm), ultimately on the paper we only report results for the glm case.
+# >
+# > **NOTE:** Run with kernel display name "FC Instropection (2023 | 3.10)"
 
 import pandas as pd
 import os.path as osp
@@ -35,6 +37,11 @@ from cpm.plotting import plot_predictions
 import seaborn as sns
 import matplotlib.pyplot as plt
 from scipy.stats import pearsonr, spearmanr
+import xarray as xr
+
+print('hvplot version: %s' % str(hvplot.__version__))
+print('xr version: %s' % str(xr.__version__))
+print('pandas version: %s' % str(pd.__version__))
 
 ACCURACY_METRIC      = 'pearson'
 CORR_TYPE            = 'pearson'
@@ -55,11 +62,14 @@ ATLAS                = FB_400ROI_ATLAS_NAME
 #
 # 1.1. Real data
 
+# %%time
 real_results_path = osp.join(RESOURCES_CPM_DIR,f'real-{ATLAS}-{SPLIT_MODE}-{CONFOUNDS}-{CORR_TYPE}_{E_SUMMARY_METRIC}.pkl')
 with open(real_results_path,'rb') as f:
      real_predictions_xr = pickle.load(f)
 Nbehavs, Niters_real, Nscans, Nresults = real_predictions_xr.shape
 print(Nbehavs, Niters_real, Nscans, Nresults)
+
+print(real_results_path)
 
 # Updating Behavior coordinate dimensions for proper labeling of final figures so that they agree with the main text
 
@@ -68,6 +78,7 @@ real_predictions_xr = real_predictions_xr.assign_coords({'Behavior':[BEHAVIOR_LA
 # 1.2. Randomized data
 
 # +
+# %%time
 null_results_path = osp.join(RESOURCES_CPM_DIR,f'null-{ATLAS}-{SPLIT_MODE}-{CONFOUNDS}-{CORR_TYPE}_{E_SUMMARY_METRIC}.pkl')
 
 with open(null_results_path,'rb') as f:
@@ -75,6 +86,8 @@ with open(null_results_path,'rb') as f:
 _, Niters_null, _, _ = null_predictions_xr.shape
 print(Nbehavs, Niters_null, Nscans, Nresults)
 # -
+
+print(null_results_path)
 
 null_predictions_xr = null_predictions_xr.assign_coords({'Behavior':[BEHAVIOR_LABELS_DICT[b] for b in null_predictions_xr.Behavior.values]})
 
@@ -126,6 +139,11 @@ for BEHAVIOR in BEHAVIOR_LABELS:
     p_values.loc[BEHAVIOR,'Non Parametric'] = (((accuracy_null[BEHAVIOR] > accuracy_real[BEHAVIOR].median()).sum() + 1) / (Niters_null+1)).values[0]
 
 # # 4. Generate Prediction-reporting Figures
+#
+# > **NOTE:** Next cell should be updated to not depend on pandas.append (given it is about to become deprecated). To avoid continous warnings, we ignore those next.
+
+import warnings
+warnings.simplefilter(action='ignore', category=FutureWarning)
 
 # %%time
 null_df = pd.DataFrame(columns=['Question','Iteration','R'])
@@ -140,6 +158,8 @@ for BEHAVIOR in BEHAVIOR_LABELS:
         real_df = real_df.append({'Question':BEHAVIOR,'Iteration':i,'R':accuracy_real[BEHAVIOR].loc[i].values[0]}, ignore_index=True)
 
 # We will now save these summary views to disk, as we will need them on the next notebook that creates a dashboard that allows a comprehensive exploration of the CPM results.
+#
+# > **NOTE:** This file is used in S18 Dashboard to load results. If you don't run this cell when new CPM results are available, the Dashboard will present outdated results.
 
 output_path = osp.join(RESOURCES_CPM_DIR,f'cpm_predictions_summary-{SPLIT_MODE}-{CONFOUNDS}-{CORR_TYPE}.pkl')
 outputs     = {'real_df':real_df,'null_df':null_df, 'accuracy_real': accuracy_real, 'accuracy_null':accuracy_null, 'p_values':p_values, 'real_predictions_xr':real_predictions_xr, 'null_predictions_xr':null_predictions_xr}
@@ -326,6 +346,9 @@ ax[2].set_ylim(-.3,.4)
 ax[2].set_ylabel('R (Observed,Predicted)');
 ax[2].set_xlabel('SNYC Questionnaire: Form and Content of Thoughts')
 plt.tight_layout()
+# -
+
+fig.savefig('./figures/S17_CPM_subject_aware-PredictionAccuracy.png')
 
 # +
 median_width = 0.4
@@ -424,7 +447,7 @@ ax[2].set_xlabel('SNYC Questionnaire Items')
 plt.tight_layout()
 # -
 
-fig.savefig('./figures/S17_CPM_subject_aware-PredictionAccuracy.png')
+fig.savefig('./figures/S17_CPM_subject_aware-PredictionAccuracy_onlySignificant.png')
 
 # ## 4.3. Scatter Plots of Observed vs. Predicted Values
 
@@ -433,17 +456,15 @@ print('++ INFO: Number of items predicted significantly: %d ' % N_sign_results)
 
 fig,ax = plt.subplots(2,int(N_sign_results/2),figsize=(16,10))
 i = 0
-for BEHAVIOR in BEHAVIOR_LABELS:
+for BEHAVIOR in BEHAVIOR_LABELS_DICT.values():
     p = p_values.loc[BEHAVIOR,'Non Parametric']
     if p <= 0.05:
         row,col        = np.unravel_index(i,(2,int(N_sign_results/2)))
         behav_obs_pred = pd.DataFrame(real_predictions_xr.median(dim='Iteration').loc[BEHAVIOR,:,['observed','predicted (glm)']], columns=['observed','predicted (glm)'])
         r,p = plot_predictions(behav_obs_pred, ax=ax[row,col], xlabel='Observed [%s]' % BEHAVIOR, ylabel='Predicted [%s]' % BEHAVIOR, font_scale=1,p_value=p_values.loc[BEHAVIOR,'Non Parametric'], 
-                               ylim=(behav_obs_pred['predicted (glm)'].min().values, behav_obs_pred['predicted (glm)'].max().values),
-                               xlim=(behav_obs_pred['observed'].min().values, behav_obs_pred['observed'].max().values))
+                               ylim=(behav_obs_pred['predicted (glm)'].min(), behav_obs_pred['predicted (glm)'].max()),
+                               xlim=(behav_obs_pred['observed'].min(), behav_obs_pred['observed'].max()))
         i= i + 1
 
 plt.tight_layout()
 fig.savefig('./figures/S17_CPM_subject_aware-ScatterPlots.png')
-
-

@@ -333,7 +333,7 @@ def plot_fc(data,roi_info_path, hm_cmap=hm_color_map, net_cmap=nw_color_map, cba
 # =====================================================================
 #      Network-level Summary Matrix
 # =====================================================================
-def hvplot_fc_nwlevel(data,mode='percent',clim_max=None,clim_min=0, cmap='viridis', title='', add_net_colors=False, add_net_labels=False, labels_text_color='lightgray', labels_cmap='purples_r', return_data_only=False):
+def hvplot_fc_nwlevel(data,mode='percent',clim_max=None,clim_min=0, cmap='viridis', title='', add_net_colors=False, add_net_labels=None, labels_text_color='lightgray', labels_cmap='purples_r', return_data_only=False):
     """
     This function plots a summary view of how many within- and between- network connections
     are significantly different in a given contrast.
@@ -354,6 +354,10 @@ def hvplot_fc_nwlevel(data,mode='percent',clim_max=None,clim_min=0, cmap='viridi
     title: title for the plot. [default = '']
     
     add_net_colors: flag to remove substitute text labels in the X-axis by colored segments denoting the different networks.
+
+    add_net_labels: flag to decide on which axis should show network labels. 
+                    options: 'both','x','y',None
+                    default: None
     """
     assert mode in ['percent','count']
     data         = data.copy()
@@ -375,19 +379,32 @@ def hvplot_fc_nwlevel(data,mode='percent',clim_max=None,clim_min=0, cmap='viridi
     num_sig_cons = num_sig_cons.infer_objects()
     pc_sig_cons  = pc_sig_cons.infer_objects()
     #Advance plotting mode with colored segments in the horizontal axis.
-    if add_net_labels:
-       # Create Y axis ticks and labels
+    if add_net_labels == 'both':
        y_ticks_info = list(tuple(zip(range(num_networks), networks)))
        x_ticks_info = y_ticks_info
-    else:
+    if add_net_labels == 'x':
+       x_ticks_info = list(tuple(zip(range(num_networks), networks)))
        y_ticks_info = list(tuple(zip([0,num_networks],['',''])))
-       x_ticks_info = y_ticks_info
+    if add_net_labels == 'y':
+       x_ticks_info = list(tuple(zip([0,num_networks],['',''])))
+       y_ticks_info = list(tuple(zip(range(num_networks), networks)))
+    if add_net_labels == None:
+       x_ticks_info = list(tuple(zip([0,num_networks],['',''])))
+       y_ticks_info = x_ticks_info
+#
+#    if add_net_labels:
+#       # Create Y axis ticks and labels
+#       y_ticks_info = list(tuple(zip(range(num_networks), networks)))
+#       x_ticks_info = y_ticks_info
+#    else:
+#       y_ticks_info = list(tuple(zip([0,num_networks],['',''])))
+#       x_ticks_info = y_ticks_info
         
     # Create Network Colorbar
     if add_net_colors:
-        net_segments_y = hv.Segments((tuple(np.ones(num_networks)-1),tuple(np.arange(num_networks)-.5),
-                                  tuple(np.ones(num_networks)-1),tuple(np.arange(num_networks)+.5), networks),vdims='Networks').opts(cmap=nw_color_map, color=dim('Networks'), line_width=10,show_legend=False)
-        net_segments_x = hv.Segments((tuple(np.arange(num_networks)),tuple(np.ones(num_networks)-1.5),
+        net_segments_y = hv.Segments((tuple(np.ones(num_networks)-1.5),tuple(np.arange(num_networks)-.5),
+                                  tuple(np.ones(num_networks)-1.5),tuple(np.arange(num_networks)+.5), networks),vdims='Networks').opts(cmap=nw_color_map, color=dim('Networks'), line_width=10,show_legend=False)
+        net_segments_x = hv.Segments((tuple(np.arange(num_networks)-.5),tuple(np.ones(num_networks)-1.5),
                                   tuple(np.arange(num_networks)+1),tuple(np.ones(num_networks)-1.5), networks),vdims='Networks').opts(cmap=nw_color_map, color=dim('Networks'), line_width=10,show_legend=False) 
         #net_segments_y = hv.Segments((tuple(np.ones(num_networks)-1.5),tuple(np.arange(num_networks)-.5),
         #                              tuple(np.ones(num_networks)-1.5),tuple(np.arange(num_networks)+.5), networks),vdims='Networks').opts(cmap=nw_color_map, color=dim('Networks'), line_width=10,show_legend=False)
@@ -432,12 +449,14 @@ def hvplot_fc_nwlevel(data,mode='percent',clim_max=None,clim_min=0, cmap='viridi
     heatmap = matrix_to_plot.round(1).hvplot.heatmap(aspect='square', clim=(0,clim_max), frame_width=500,
                                                      cmap=cmap, 
                                                      title=title).opts(colorbar_opts={'title':cbar_title}, fontsize={'ticks':12,'clabel':12})
+    heatmap.opts(xlim=(-.5,num_networks-.5), ylim=(-.5,num_networks-.5),xrotation=90, yticks=y_ticks_info, xticks=x_ticks_info)
     plot = heatmap * labels
+    #plot.opts(xlim=(-.5,num_networks-.5), ylim=(-.5,num_networks-.5))
     #plot = heatmap * hv.Labels(heatmap).opts(opts.Labels(cmap='viridis', text_color='NConns'))#text_color=labels_text_color))
     if add_net_colors:
         plot = plot * net_segments_x * net_segments_y
     #plot.opts(xlim=(-.5,num_networks-.5), ylim=(-.5,num_networks-.5), xticks=x_ticks_info, xrotation=90, yticks=y_ticks_info)
-    plot.opts(xlim=(-.5,num_networks-.5), ylim=(-.5,num_networks-.5), xrotation=90, yticks=y_ticks_info)
+    #plot.opts(xlim=(-.5,num_networks-.5), ylim=(-.5,num_networks-.5), xrotation=90, yticks=y_ticks_info, xticks=x_ticks_info)
     return plot   
 
 # =====================================================================
