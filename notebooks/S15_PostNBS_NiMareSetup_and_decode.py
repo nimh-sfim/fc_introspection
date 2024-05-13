@@ -13,7 +13,16 @@
 #     name: fc_introspection_2023_py310
 # ---
 
-from utils.basics import RESOURCES_NIMARE_DIR, ATLASES_DIR, FB_400ROI_ATLAS_NAME
+# # NOTE TO SELF
+#
+# After a lot of different attempts, I believe that for the purpose of this single ROI decoding in which everything takes place within nimare world, we do not need to either write the individual topic maps to disk or to flip them. 
+#
+# The code for flipping is in S15a. Code for decoding based on flip S15b. No flip, but flipped atlas S15c. I believe there is no need for these extra steps, that alghouh slightly change the p-values, it does not change the top topics and wordcloud... and therefore interpretation
+#
+# May 13th, 2024
+
+# +
+from utils.basics import RESOURCES_NIMARE_DIR, ATLASES_DIR, FB_400ROI_ATLAS_NAME, PRJ_DIR, SCRIPTS_DIR, RESOURCES_NBS_DIR
 from utils.plotting import create_graph_from_matrix
 import os
 import os.path as osp
@@ -34,6 +43,11 @@ import shutil
 import seaborn as sns
 from sklearn.preprocessing import MinMaxScaler
 from matplotlib.colors import LinearSegmentedColormap
+
+import getpass
+from datetime import datetime
+from glob import glob
+# -
 
 import wordcloud
 print(wordcloud.__version__)
@@ -56,17 +70,16 @@ def my_blue_color_func(dictionary):
 # # 1. NiMare Setup
 # ## 1.1. Folder Setup
 
-vocab = 'LDA50'
+VOCAB = 'LDA50'
 ATLAS_NAME = FB_400ROI_ATLAS_NAME
 
 # +
-VOCAB_DIR            = osp.join(RESOURCES_NIMARE_DIR,vocab)
+VOCAB_DIR            = osp.join(RESOURCES_NIMARE_DIR,VOCAB)
 METAMAPS_ORIG_DIR    = osp.join(VOCAB_DIR,"meta-analyses-orig")  # where to save meta-analysis maps
 METAMAPS_RPI_DIR     = osp.join(VOCAB_DIR,"meta-analyses-RPI")  # where to save meta-analysis maps
 
-ns_dset_path         = osp.join(VOCAB_DIR, f"neurosynth_dataset_{vocab}.pkl.gz")
-ns_dset_mask_path    = osp.join(VOCAB_DIR, f"neurosynth_dataset_{vocab}_mask.nii")
-#lda_model_path       = osp.join(VOCAB_DIR, f'lda_model.pkl.gz')
+ns_dset_path         = osp.join(VOCAB_DIR, f"neurosynth_dataset_{VOCAB}.pkl.gz")
+ns_dset_mask_path    = osp.join(VOCAB_DIR, f"neurosynth_dataset_{VOCAB}_mask.nii")
 
 print('++ INFO: Resource Folder for NiMare Analyses                              : %s' % RESOURCES_NIMARE_DIR)
 print('++ INFO: Folder for this vocabulary                                       : %s' % VOCAB_DIR)
@@ -81,7 +94,7 @@ print('++ INFO: Path for NeuroSynth Dataset mask                                
 # Create Empty Output Folders
 # ===========================
 print("++ INFO: Setting up all necessary folders")
-for folder_path in [VOCAB_DIR, METAMAPS_ORIG_DIR, METAMAPS_RPI_DIR]:
+for folder_path in [RESOURCES_NIMARE_DIR, VOCAB_DIR, METAMAPS_ORIG_DIR, METAMAPS_RPI_DIR]:
     if osp.exists(folder_path):
         print(" + WARNING: Removing folder [%s]" % folder_path)
         shutil.rmtree(folder_path)
@@ -90,11 +103,11 @@ for folder_path in [VOCAB_DIR, METAMAPS_ORIG_DIR, METAMAPS_RPI_DIR]:
 
 # ## 1.2. Download Neurosynth 7 database
 #
-# First, we need to download the Neurosynth database (version 7) for the 400 Topic Vocabulary
+# First, we need to download the Neurosynth database (version 7) for the 50 Topic Vocabulary
 
 # Download NeuroSynth database
 print("++ INFO: Fetching neurosynth dataset for this vocabulary...")
-files = fetch_neurosynth(data_dir=VOCAB_DIR, version="7", overwrite=False, vocab=vocab, source="abstract")
+files = fetch_neurosynth(data_dir=VOCAB_DIR, version="7", overwrite=False, vocab=VOCAB, source="abstract")
 
 # ## 1.3. Convert Neurosynth Database to NiMare Dataset
 #
@@ -119,7 +132,7 @@ neurosynth_dset.save(ns_dset_path)
 
 # Extract Topic Names
 topics_ORIG = neurosynth_dset.get_labels()
-print('++ INFO: First few topics      : %s' % str(topics_ORIG[0:10]))
+print('++ INFO: First few topics      : %s' % str(topics_ORIG[0:5]))
 print('++ INFO: Total number of topics: %d' % len(topics_ORIG))
 
 # ## 1.4. Extract Dset Mask
@@ -130,9 +143,19 @@ nib.save(neurosynth_dset.masker.mask_img,ns_dset_mask_path)
 print('++ INFO: Neurosynth Dataset mask saved to disk: %s' % ns_dset_mask_path)
 
 dset_mask = load_img(ns_dset_mask_path)
-plot_roi(dset_mask, draw_cross=False)
+plot_roi(dset_mask, draw_cross=False);
 
-# ## 1.5 Make a version of the Atlas that has the same space and grid than the NeuroSynth Dataset
+command = f'''module load afni; \
+              3dinfo -space -orient -header_name -header_line {ns_dset_mask_path}; \
+        '''
+output  = subprocess.check_output(command, shell=True, stderr=subprocess.STDOUT)
+print(output.strip().decode())
+
+# ## 1.5. Make a mask restricted to GM ribbon for decoding
+#
+# Although it is possible to decode using a full brain mask, this tends to not work so well becuase WM voxels cloud the correlations. 
+
+# First, we create a version of the atlas (Which covers the GM ribbon) in the same grid as the mask file provided by nimare. which as you can see above is a full brain mask
 
 FB_400ROI_ATLAS_ORIG_GRID_FILE   = osp.join(FB_400ROI_ATLAS_PATH,f'{ATLAS_NAME}.nii.gz')
 FB_400ROI_ATLAS_NIMARE_GRID_FILE = osp.join(RESOURCES_NIMARE_DIR,f'{ATLAS_NAME}_NiMareGrid.nii.gz')
@@ -143,13 +166,31 @@ command = f'''module load afni; \
                          -master {ns_dset_mask_path}'''
 output  = subprocess.check_output(command, shell=True, stderr=subprocess.STDOUT)
 print(output.strip().decode())
+print('++ New File: %s' % FB_400ROI_ATLAS_NIMARE_GRID_FILE)
 
 atlas_img = load_img(FB_400ROI_ATLAS_NIMARE_GRID_FILE)
 plot_roi(atlas_img, draw_cross=False)
 
+# Create final mask for decoding (Neurosynth grid but restricted to the GM ribbon on which we computed the CPCAs)
+
+NIMARE_DECODING_RIBBON_MASK = osp.join(RESOURCES_NIMARE_DIR,'NiMare_Decoding_Mask_GMribbon.nii.gz')
+command = f'''module load afni; \
+              3dcalc -overwrite \
+                         -a {FB_400ROI_ATLAS_NIMARE_GRID_FILE} \
+                         -b {ns_dset_mask_path} \
+                         -expr "step(a)*b" \
+                         -prefix {NIMARE_DECODING_RIBBON_MASK}'''
+output  = subprocess.check_output(command, shell=True, stderr=subprocess.STDOUT)
+print(output.strip().decode())
+
+ribbon_mask_img = load_img(NIMARE_DECODING_RIBBON_MASK)
+plot_roi(ribbon_mask_img, draw_cross=False)
+
 # # 2. Extract ROIs with highest degree for both NBS contrasts
 #
 # # 2.1. Load Atlas Information so that we can annotate Pandas Dataframes
+
+NBS_THRESHOLD        = 'NBS_3p1'
 
 ATLASINFO_PATH = osp.join(ATLASES_DIR,ATLAS_NAME,'{ATLAS_NAME}.roi_info.csv'.format(ATLAS_NAME=ATLAS_NAME))
 roi_info       = pd.read_csv(ATLASINFO_PATH)
@@ -160,7 +201,8 @@ NBS_constrasts = {}
 
 # Load the connections that are significantly stronger for the contrast: $$Image-Pos-Others > Surr-Neg-Self$$
 
-data_f1GTf2 = np.loadtxt(f'/data/SFIMJGC_Introspec/2023_fc_introspection/code/fc_introspection/resources/nbs/{ATLAS_NAME}/NBS_CL02_Results/NBS_CL02_Image-Pos-Others_gt_Surr-Neg-Self.edge')
+#data_f1GTf2 = np.loadtxt(f'/data/SFIMJGC_Introspec/2023_fc_introspection/code/fc_introspection/resources/nbs/{ATLAS_NAME}/NBS_CL02_Results/NBS_CL02_Image-Pos-Others_gt_Surr-Neg-Self.edge')
+data_f1GTf2 = np.loadtxt(osp.join(RESOURCES_NBS_DIR,ATLAS_NAME,'All_Scans','NBS_CL02_Results',NBS_THRESHOLD,'NBS_CL02_Image-Pos-Others_gt_Surr-Neg-Self.edge'))
 NBS_constrasts['f1GTf2'] = pd.DataFrame(data_f1GTf2,
                            index   = roi_info.set_index(['Hemisphere','Network','ROI_Name','ROI_ID','RGB']).index, 
                            columns = roi_info.set_index(['Hemisphere','Network','ROI_Name','ROI_ID','RGB']).index)
@@ -168,7 +210,8 @@ del data_f1GTf2
 
 # Load the connections that are significantly stronger for the contrast: $$Surr-Neg-Self > Image-Pos-Others$$
 
-data_f2GTf1 = np.loadtxt(f'/data/SFIMJGC_Introspec/2023_fc_introspection/code/fc_introspection/resources/nbs/{ATLAS_NAME}/NBS_CL02_Results/NBS_CL02_Surr-Neg-Self_gt_Image-Pos-Others.edge')
+#data_f2GTf1 = np.loadtxt(f'/data/SFIMJGC_Introspec/2023_fc_introspection/code/fc_introspection/resources/nbs/{ATLAS_NAME}/NBS_CL02_Results/NBS_CL02_Surr-Neg-Self_gt_Image-Pos-Others.edge')
+data_f2GTf1 = np.loadtxt(osp.join(RESOURCES_NBS_DIR,ATLAS_NAME,'All_Scans','NBS_CL02_Results',NBS_THRESHOLD,'NBS_CL02_Surr-Neg-Self_gt_Image-Pos-Others.edge'))
 NBS_constrasts['f2GTf1'] = pd.DataFrame(data_f2GTf1,
                            index   = roi_info.set_index(['Hemisphere','Network','ROI_Name','ROI_ID','RGB']).index, 
                            columns = roi_info.set_index(['Hemisphere','Network','ROI_Name','ROI_ID','RGB']).index)
@@ -202,7 +245,7 @@ for contrast in NBS_constrasts.keys():
             output_vector[atlas_vector==roi_id] = NBS_Gatts[contrast].loc[(hm,nw,roi_name,roi_id,rgb),metric]
         # Write to disk just in case we want to look at it later
         output_img = masking.unmask(output_vector,dset_mask)
-        output_path = osp.join(RESOURCES_NIMARE_DIR,f'{contrast}_{metric}.nii')
+        output_path = osp.join(RESOURCES_NIMARE_DIR,f'{NBS_THRESHOLD}_{contrast}_{metric}.nii')
         output_img.to_filename(output_path)
         print('++ INFO: File written to disk [%s]' % output_path)
         if metric == 'Degree':
@@ -211,8 +254,8 @@ for contrast in NBS_constrasts.keys():
 # ## 2.5. Also write file for the top degree ROI for each contrast (this is the one we will decode)
 
 for contrast in NBS_constrasts.keys():
-    input_path = osp.join(RESOURCES_NIMARE_DIR,f'{contrast}_Degree.nii')
-    output_path = osp.join(RESOURCES_NIMARE_DIR,f'{contrast}_Degree_TopROI.nii')
+    input_path = osp.join(RESOURCES_NIMARE_DIR,f'{NBS_THRESHOLD}_{contrast}_Degree.nii')
+    output_path = osp.join(RESOURCES_NIMARE_DIR,f'{NBS_THRESHOLD}_{contrast}_Degree_TopROI.nii')
     input_img  = load_img(input_path)
     top_degree_value = int(input_img.get_fdata().max())
     command = f'''module load afni; \
@@ -231,7 +274,7 @@ my_stopwords = list(STOPWORDS) + ['resonance','magnetic','medial','lateral','dor
 
 # In this study we work with the 50 Topic dictionary. Each topic is associated with a set of terms that appear in unison in the neuroimaing literature. The next cell gathers the 40 top terms associated with each topic. We will only pick only those assoicated with topics that show significant correlations with our ROIs later when generating wordclouds. For now we load them all and have then ready on a pandas dataframe.
 
-path            = osp.join(VOCAB_DIR,'neurosynth',f'data-neurosynth_version-7_vocab-{vocab}_keys.tsv')
+path            = osp.join(VOCAB_DIR,'neurosynth',f'data-neurosynth_version-7_vocab-{VOCAB}_keys.tsv')
 words_per_topic = pd.read_csv(path, sep='\t', header=None)
 words_per_topic.index = neurosynth_dset.get_labels()
 words_per_topic.index.name = 'Topic Label'
@@ -248,12 +291,12 @@ roi_cmap = LinearSegmentedColormap.from_list('black',['#000000','#ffffff'],10)
 #
 # ### 4.1.1. Load the target ROI
 
-top_degree_roi_path =  osp.join(RESOURCES_NIMARE_DIR,'f1GTf2_Degree_TopROI.nii')
+top_degree_roi_path =  osp.join(RESOURCES_NIMARE_DIR,f'{NBS_THRESHOLD}_f1GTf2_Degree_TopROI.nii')
 top_degree_roi      = load_img(top_degree_roi_path)
 
 f = plot_roi(top_degree_roi,draw_cross=False, display_mode='ortho', linewidths=3, cut_coords=[-5,-60,30], view_type='contours', cmap=roi_cmap)
 
-f.savefig('./figures/S14b_f1GTf2_TopDegree_ROI.png')
+f.savefig(f'./figures/S15_{NBS_THRESHOLD}_f1GTf2_TopDegree_ROI.png')
 
 # ### 4.1.2. Gather the studies with coordinates that overlap with the ROI
 
@@ -278,7 +321,7 @@ selected_topics
 #
 # That dictorionary will contain the term, and a weight that corresponds to the inverse rank of the term within the topic. As we consider only the top 40 terms associated with each topic (what Neurosynth makes available), weights will be integers in the range 1 to 40.
 
-if vocab != 'terms':
+if VOCAB != 'terms':
     term_weights_per_topic={}
     for topic in words_per_topic.index:
         this_topic_words              = words_per_topic.loc[topic]['Terms']
@@ -288,7 +331,7 @@ if vocab != 'terms':
 # Next, to generate final weights per term used in the wordcloud formation, we will multiply each term by the reverse probability of the topic to which they belong. Then for each term we will compute the final weight as the sum of all such topic specific weights (just in case a term appears in more than one selected topic.)
 
 freqs_df = pd.Series(dtype=float)
-if vocab == 'terms':
+if VOCAB == 'terms':
     for term_long,row in selected_topics.iterrows():
         term = term_long.split('__')[1]
         term_prob = row['probReverse']
@@ -328,13 +371,13 @@ wc = WordCloud(max_font_size=40,min_font_size=9, stopwords=set(my_stopwords),
 plt.imshow(wc,interpolation='bilinear')
 plt.axis('off')
 plt.tight_layout()
-plt.savefig('./figures/S14b_WordCloud_f1GTf2_TopDegree_NeuosynthDeconding.png')
+plt.savefig(f'./figures/S15_WordCloud_{NBS_THRESHOLD}_f1GTf2_TopDegree_NeuosynthDeconding.png')
 
 # ## 4.2. Surr-Neg-Self > Images-Pos-Others
 #
 # ### 4.2.1. Load the target ROI
 
-top_degree_roi_path =  osp.join(RESOURCES_NIMARE_DIR,'f2GTf1_Degree_TopROI.nii')
+top_degree_roi_path =  osp.join(RESOURCES_NIMARE_DIR,f'{NBS_THRESHOLD}_f2GTf1_Degree_TopROI.nii')
 top_degree_roi      = load_img(top_degree_roi_path)
 
 f = plot_roi(top_degree_roi,draw_cross=False, display_mode='ortho', linewidths=3, cut_coords=[-61,-36,33], view_type='contours', cmap=roi_cmap)
@@ -364,7 +407,7 @@ selected_topics
 #
 # That dictorionary will contain the term, and a weight that corresponds to the inverse rank of the term within the topic. As we consider only the top 40 terms associated with each topic (what Neurosynth makes available), weights will be integers in the range 1 to 40.
 
-if vocab != 'terms':
+if VOCAB != 'terms':
     term_weights_per_topic={}
     for topic in words_per_topic.index:
         this_topic_words              = words_per_topic.loc[topic]['Terms']
@@ -374,7 +417,7 @@ if vocab != 'terms':
 # Next, to generate final weights per term used in the wordcloud formation, we will multiply each term by the reverse probability of the topic to which they belong. Then for each term we will compute the final weight as the sum of all such topic specific weights (just in case a term appears in more than one selected topic.)
 
 freqs_df = pd.Series(dtype=float)
-if vocab == 'terms':
+if VOCAB == 'terms':
     for term_long,row in selected_topics.iterrows():
         term = term_long.split('__')[1]
         term_prob = row['probReverse']
@@ -414,6 +457,6 @@ wc = WordCloud(max_font_size=40,min_font_size=9, stopwords=set(my_stopwords),
 plt.imshow(wc,interpolation='bilinear')
 plt.axis('off')
 plt.tight_layout()
-plt.savefig('./figures/S14b_WordCloud_f2GTf1_TopDegree_NeuosynthDeconding.png')
+plt.savefig(f'./figures/S15_WordCloud_{NBS_THRESHOLD}_f2GTf1_TopDegree_NeuosynthDeconding.png')
 
 
