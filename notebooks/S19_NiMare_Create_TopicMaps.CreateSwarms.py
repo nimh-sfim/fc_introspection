@@ -6,7 +6,7 @@
 #       extension: .py
 #       format_name: light
 #       format_version: '1.5'
-#       jupytext_version: 1.14.4
+#       jupytext_version: 1.15.2
 #   kernelspec:
 #     display_name: FC Introspection (Jan 2023)
 #     language: python
@@ -22,7 +22,7 @@ from nimare.io import convert_neurosynth_to_dataset
 from glob import glob
 import numpy as np
 import pickle
-from utils.basics import PRJ_DIR
+from utils.basics import PRJ_DIR, RESOURCES_NIMARE_DIR
 
 print(nimare.__version__)
 
@@ -31,15 +31,15 @@ print(nimare.__version__)
 vocab = 'LDA50'
 
 # +
-RESOURCE_NIMARE_DIR  = osp.join(PRJ_DIR,'nimare')
-VOCAB_DIR            = osp.join(RESOURCE_NIMARE_DIR,vocab)
+#RESOURCE_NIMARE_DIR  = osp.join(PRJ_DIR,'nimare')
+VOCAB_DIR            = osp.join(RESOURCES_NIMARE_DIR,vocab)
 METAMAPS_ORIG_DIR    = osp.join(VOCAB_DIR,"meta-analyses-orig")  # where to save meta-analysis maps
 METAMAPS_RPI_DIR     = osp.join(VOCAB_DIR,"meta-analyses-RPI")  # where to save meta-analysis maps
 
 ns_dset_path         = osp.join(VOCAB_DIR, f"neurosynth_dataset_{vocab}.pkl.gz")
 lda_model_path       = osp.join(VOCAB_DIR, f'lda_model.pkl.gz')
 
-print('++ INFO: Resource Folder for NiMare Analyses                              : %s' % RESOURCE_NIMARE_DIR)
+print('++ INFO: Resource Folder for NiMare Analyses                              : %s' % RESOURCES_NIMARE_DIR)
 print('++ INFO: Folder for this vocabulary                                       : %s' % VOCAB_DIR)
 print('++ INFO: Folder for meta-maps in original orientation as written by NiMare: %s' % METAMAPS_ORIG_DIR)
 print('++ INFO: Folder for meta-maps in RPI orientation (the one our data has)   : %s' % METAMAPS_RPI_DIR)
@@ -58,11 +58,9 @@ for folder_path in [VOCAB_DIR, METAMAPS_ORIG_DIR, METAMAPS_RPI_DIR]:
     print(" + INFO: Generating/Regenerating output folder [%s]" % folder_path)
     os.mkdir(folder_path)
 
-# + [markdown] tags=[]
 # # 2. Download Neurosynth 7 database
 #
 # First, we need to download the Neurosynth database (version 7) for the 400 Topic Vocabulary
-# -
 
 # Download NeuroSynth database
 print("++ INFO: Fetching neurosynth dataset for this vocabulary...")
