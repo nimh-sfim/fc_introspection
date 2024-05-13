@@ -223,6 +223,14 @@ for BEHAVIOR in BEHAVIOR_LIST_LABELS.values():
     np.savetxt(aux_fc_path,aux_fc.values)
     print("++ INFO [CONN OUTPUTS] Saving matrix model to %s" % aux_fc_path)
 
+# Create extra files that are ATLAS specific so that we can plot results in CONN
+
+roi_info['ROI_Name'].to_csv(osp.join(RESOURCES_CONN_DIR,'roi_labels.txt'),header=None, index=None)
+
+roi_info[['pos_R','pos_A','pos_S']].to_csv(osp.join(RESOURCES_CONN_DIR,'roi_coords.txt'),header=None, index=None)
+
+(roi_info[['color_R','color_G','color_B']]/256).round(2).to_csv(osp.join(RESOURCES_CONN_DIR,'roi_colors.txt'),header=None, index=None)
+
 # ***
 # # 3. Create Dashboard
 #
@@ -415,28 +423,16 @@ dashboard_server.stop()
 
 display.Image('./figures/S17_CPM_Dashboard_screenshot.png')
 
-(model_consensus_to_plot['Vigilance'] > 0).sum(axis=1).sort_values(ascending=False)
+# # END OF NOTEBOOK - CODE BELOW SHOULD NOT BE NEEDED --> SHOULD DELETE SOON
+#
+# # Write NifTi Files with Top Dregree ROIs
+#
+# 1. Create Separate Dataframes for each target and model with the name of the 10 ROIs with the top degrees
 
-RESOURCES_CONN_DIR = '/data/SFIMJGC_Introspec/2023_fc_introspection/code/fc_introspection/resources/conn'
-
-for bh in ['Factor1','Factor2']:
-    aux      = squareform(model_consensus[(bh,'pos')].values-model_consensus[(bh,'neg')].values)
-    out_file = osp.join(RESOURCES_CONN_DIR,f'{bh}_matrix.txt')
-    np.savetxt(out_file,aux)
-    print('++ INFO: Saved matrix for item [%s] in %s' %(bh,out_file))
-
-# Create extra files that are ATLAS specific so that we can plot results in CONN
-
-roi_info['ROI_Name'].to_csv('roi_labels.txt',header=None, index=None)
-
-roi_info[['pos_R','pos_A','pos_S']].to_csv('roi_coords.txt',header=None, index=None)
-
-(roi_info[['color_R','color_G','color_B']]/256).round(2).to_csv('roi_colors.txt',header=None, index=None)
-
-int((model_consensus_to_plot['Vigilance']>0).sum().sum()/2)
+SIGNIFICANT_BEHAVIORS = ['Thought Pattern 1','Thought Pattern 2','Wakefulness','Surroundings','Past','Images']
 
 supp_tables_top10_degree = {}
-for behavior in ['Factor1','Factor2','Vigilance','Surroundings','Past','Images']:
+for behavior in SIGNIFICANT_BEHAVIORS:
     aux_pos      = (model_consensus_to_plot[behavior]>0).sum().sort_values(ascending=False)[0:10]
     aux_pos.name = 'Degree'
     aux_pos      = pd.DataFrame(aux_pos).reset_index()
@@ -448,10 +444,17 @@ for behavior in ['Factor1','Factor2','Vigilance','Surroundings','Past','Images']
     aux_neg      = pd.DataFrame(aux_neg).reset_index()
     nodes_neg    = aux_neg['ROI_ID'].values.astype(int)
     supp_tables_top10_degree[behavior,'neg']      = aux_neg.drop(['RGB','ROI_ID'],axis=1)
-    print('++ [%s] Regions in top 10 degree for both positivie and negative models: %s' % (behavior,np.intersect1d(nodes_pos,nodes_neg)))
+    print('++ [%s] Regions in top 10 degree for both positive and negative models: %s' % (behavior,np.intersect1d(nodes_pos,nodes_neg)))
+
+from utils.basics import RESOURCES_NIMARE_DIR
+if not osp.exists(RESOURCES_NIMARE_DIR):
+    print('++ INFO: Creatring RESOURCES_NIMARE_DIR = %s' % RESOURCES_NIMARE_DIR)
+    os.makedirs(RESOURCES_NIMARE_DIR)
+
+# > **NOTE**: ```Schaefer2018_400Parcels_7Networks_AAL2_NiMareGrid.nii.gz``` is created in ```S15_PostNBS_NiMareSetup_and_decode```
 
 import subprocess
-for behavior in ['Factor1','Factor2','Vigilance','Surroundings','Past','Images']:
+for behavior in SIGNIFICANT_BEHAVIORS:
     # Extract list of top 10 degree nodes for the positive model
     aux_pos      = (model_consensus_to_plot[behavior]>0).sum().sort_values(ascending=False)[0:10]
     aux_pos.name = 'Degree'
@@ -462,7 +465,7 @@ for behavior in ['Factor1','Factor2','Vigilance','Surroundings','Past','Images']
     aux_neg.name = 'Degree'
     aux_neg      = pd.DataFrame(aux_neg).reset_index()
     nodes_neg    = aux_neg['ROI_ID'].values.astype(int)
-    
+    behavior     = behavior.replace(' ','_') # We do not want to write file names with spaces
     for model,nodes in zip(['pos','neg'],[nodes_pos, nodes_neg]):
         expr_str = ''
         for node in nodes:
@@ -477,7 +480,7 @@ for behavior in ['Factor1','Factor2','Vigilance','Surroundings','Past','Images']
                 else:
                     expr_str = expr_str + '-' + 'equals(a,%d)*b' % node
         command = f"""module load afni; \
-                 cd /data/SFIMJGC_Introspec/2023_fc_introspection/code/fc_introspection/resources/nimare;
+                 cd {RESOURCES_NIMARE_DIR};
                  pwd; \
                  3dcalc -a Schaefer2018_400Parcels_7Networks_AAL2_NiMareGrid.nii.gz -b {behavior}-{model}_Degree.nii -prefix {behavior}-{model}-Top10DegreeNodes.nii -overwrite -expr \'{expr_str}\';"""
         output  = subprocess.check_output(command, shell=True, stderr=subprocess.STDOUT)
@@ -486,12 +489,14 @@ for behavior in ['Factor1','Factor2','Vigilance','Surroundings','Past','Images']
 
 # # Info Needed for Degree Figure (Factor 1)
 
-a = (model_consensus_to_plot['Factor1']>0).sum().sort_values(ascending=False)[0:10]
+a = (model_consensus_to_plot['Thought Pattern 1']>0).sum().sort_values(ascending=False)[0:10]
 a.name = 'Degree'
 a = pd.DataFrame(a).reset_index()
 print(a['ROI_ID'].values)
 a = a.drop(['RGB','ROI_ID'],axis=1)
 a
+
+
 
 a = (model_consensus_to_plot['Factor1']<0).sum().sort_values(ascending=False)[0:10]
 a.name = 'Degree'
