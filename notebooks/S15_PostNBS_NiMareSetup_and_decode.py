@@ -191,6 +191,7 @@ plot_roi(ribbon_mask_img, draw_cross=False)
 # # 2.1. Load Atlas Information so that we can annotate Pandas Dataframes
 
 NBS_THRESHOLD        = 'NBS_3p1'
+DESIGN_MATRIX        = 'SbjAware'
 
 ATLASINFO_PATH = osp.join(ATLASES_DIR,ATLAS_NAME,'{ATLAS_NAME}.roi_info.csv'.format(ATLAS_NAME=ATLAS_NAME))
 roi_info       = pd.read_csv(ATLASINFO_PATH)
