@@ -1,3 +1,4 @@
+.ipynb_checkpoints/
 notebooks/.ipynb_checkpoints/
 notebooks/utils/.ipynb_checkpoints/
 notebooks/utils/__pycache__/
@@ -11,7 +12,9 @@ resources/cpm/
 resources/cpm_literature_search/
 resources/dataset_info/
 resources/mtl_snycq/
+resources/OLD.READY_TO_DELETE/
 resources/nbs/
+resources/nbs.bck_13May2024/
 resources/nbs.march2023/
 resources/conn/
 resources/snycq/
