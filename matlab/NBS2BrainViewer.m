@@ -1,13 +1,14 @@
 %% Transform results so that they can be loaded in BrianNet
-%  ========================================================
+% In ther pre-print version we use CONN to visualize connectivity on glass brains
+% This code remains here just in case we decide to revert back to BrainNet for plotting purposes
+%  ===============================================================================================
 clear all
 RESOURCES_DIR="/data/SFIMJGC_Introspec/2023_fc_introspection/code/fc_introspection/resources/nbs";
-atlases=["Schaefer2018_400Parcels_7Networks_AAL2"];%,"Schaefer2018_200Parcels_7Networks_AAL2"];
-%scenarios=["All_Scans"];
+atlases=["Schaefer2018_400Parcels_7Networks_AAL2"];
 designs=["SbjAware"];
 cluster_solution = "CL02";
 contrasts=["Image-Pos-Others_gt_Surr-Neg-Self","Surr-Neg-Self_gt_Image-Pos-Others"];
-thresholds = ["NBS_3p1", "FDR_0p05"]; %,"NBS_3p5","FDR_0p05","NBS_3p1_augmented","NBS_3p5_augmented","NBS_2p7_augmented"];
+thresholds = ["NBS_3p1", "FDR_0p05"];
 for atlas = atlases
     for threshold = thresholds
         for design = designs
