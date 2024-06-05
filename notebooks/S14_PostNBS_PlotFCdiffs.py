@@ -103,6 +103,26 @@ hvplot_fc_nwlevel(data['Surr-Neg-Self_gt_Image-Pos-Others'], title='', add_net_c
 
 hvplot_fc_nwlevel(data['Image-Pos-Others_gt_Surr-Neg-Self'], title='', add_net_colors=True, add_net_labels='y', mode='count', cmap='Reds', clim_max=30, labels_text_color='Reds_r').opts(toolbar=None)
 
+# # Laterality Index for each contrast
+#
 
+aux         = (data['Surr-Neg-Self_gt_Image-Pos-Others']).copy()
+aux.index   = data['Surr-Neg-Self_gt_Image-Pos-Others'].index.get_level_values('Hemisphere')
+aux.columns = data['Surr-Neg-Self_gt_Image-Pos-Others'].columns.get_level_values('Hemisphere')
+f2GTf1_LL   = (aux.loc['LH','LH'].sum().sum() / 2)
+f2GTf1_RR   = (aux.loc['RH','RH'].sum().sum() / 2)
+f2GTf1_LR   = aux.loc['LH','RH'].sum().sum()
+print('++ INFO [Surr-Neg-Self > Image-Pos-Others] L-L Conns: %d' % f2GTf1_LL)
+print('++ INFO [Surr-Neg-Self > Image-Pos-Others] R-R Conns: %d' % f2GTf1_RR)
+print('++ INFO [Surr-Neg-Self > Image-Pos-Others] R-L Conns: %d' % f2GTf1_LR)
+print('++ --------------------------------------------------------')
+f2GTf1_fcLI  = (f2GTf1_LL - f2GTf1_RR) / (f2GTf1_LL + f2GTf1_RR)
+print('++ INFO [Surr-Neg-Self > Image-Pos-Others] fcLI:      %.2f' % f2GTf1_fcLI)
+
+data.keys()
+
+from statsmodels.stats.multitest import multipletests
+
+multipletests([0.009, 5.6e-5, 0.0000, 0.00],alpha=0.05, method='bonferroni')
 
 
