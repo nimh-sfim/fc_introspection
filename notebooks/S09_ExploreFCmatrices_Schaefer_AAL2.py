@@ -6,11 +6,11 @@
 #       extension: .py
 #       format_name: light
 #       format_version: '1.5'
-#       jupytext_version: 1.14.4
+#       jupytext_version: 1.15.2
 #   kernelspec:
-#     display_name: FC Introspection (Jan 2023)
+#     display_name: FC Instrospection py 3.10 | 2023b
 #     language: python
-#     name: fc_introspection
+#     name: fc_introspection_2023b_py310
 # ---
 
 # # Description
@@ -25,6 +25,10 @@
 #
 # * Create dashboard to fastly explore all the individual scan FC matrices
 
+import warnings
+warnings.simplefilter(action='ignore', category=FutureWarning)
+
+# +
 import pandas as pd
 import xarray as xr
 import numpy as np
@@ -45,11 +49,14 @@ import seaborn as sns
 import panel as pn
 from sklearn.utils.validation import check_symmetric
 
+
+# -
+
 import os
 port_tunnel = int(os.environ['PORT2'])
 print('++ INFO: Second Port available: %d' % port_tunnel)
 
-ATLAS_NAME = FB_200ROI_ATLAS_NAME
+ATLAS_NAME = FB_400ROI_ATLAS_NAME
 
 # # 1. Load the final list of scans used in this project
 
@@ -129,9 +136,9 @@ REFERENCE_fc.columns.name = 'ROI2'
 
 # Plot the sample mean (or Reference) FC matrix
 
-hvplot_fc(REFERENCE_fc, ATLASINFO_PATH, cbar_title='Average FC for the whole sample')
+hvplot_fc(REFERENCE_fc, ATLASINFO_PATH, cbar_title='Average FC for the whole sample', cmap='RdBu_r', major_label_overrides = 'regular_grid')
 
-# # 5. Comput average FC matrix per subject (in case we want to explore those)
+# # 5. Explore individual subject matrices
 
 sbj_level_sfc_R = np.arctan(all_sfc_Z.mean(dim='Run'))
 
@@ -139,14 +146,14 @@ sbj_select = pn.widgets.Select(name='Subject', options=unique_sbj_ids)
 @pn.depends(sbj_select)
 def plot_subject_fc(sbj):
     this_subject_mat = pd.DataFrame(sbj_level_sfc_R.loc[sbj].values, index=list(sbj_level_sfc_R.coords['ROI1'].values), columns=list(sbj_level_sfc_R.coords['ROI2'].values))
-    return hvplot_fc(this_subject_mat, ATLASINFO_PATH, cbar_title='FC '+sbj)
+    return hvplot_fc(this_subject_mat, ATLASINFO_PATH, cbar_title='FC '+sbj, cmap='RdBu_r', major_label_overrides = 'regular_grid')
 sbj_mat_dashboard = pn.Row(sbj_select, plot_subject_fc)
 
 sbj_mat_dashboard_server = sbj_mat_dashboard.show(port=port_tunnel,open=False)
 
 sbj_mat_dashboard_server.stop()
 
-# ## 4.1. Vectorize Reference FC Matrix
+# ## 6. Vectorize Reference FC Matrix
 #
 # For many subsequent operations it is necessary to go back and forth between the full matrix and its vectorized version (e.g., only the values in the top triangular half). 
 #
