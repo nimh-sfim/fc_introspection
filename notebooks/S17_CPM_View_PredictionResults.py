@@ -38,6 +38,7 @@ import seaborn as sns
 import matplotlib.pyplot as plt
 from scipy.stats import pearsonr, spearmanr
 import xarray as xr
+from statsmodels.stats.multitest import multipletests
 
 print('hvplot version: %s' % str(hvplot.__version__))
 print('xr version: %s' % str(xr.__version__))
@@ -97,9 +98,11 @@ null_predictions_xr = null_predictions_xr.assign_coords({'Behavior':[BEHAVIOR_LA
 
 # +
 # %%time
-accuracy_real = {BEHAVIOR:pd.DataFrame(index=range(Niters_real), columns=['Accuracy']) for BEHAVIOR in BEHAVIOR_LABELS}
+accuracy_real          = {BEHAVIOR:pd.DataFrame(index=range(Niters_real), columns=['Accuracy']) for BEHAVIOR in BEHAVIOR_LABELS}
+accuracy_real_Spearman = {BEHAVIOR:pd.DataFrame(index=range(Niters_real), columns=['Accuracy']) for BEHAVIOR in BEHAVIOR_LABELS}
 
-p_values = pd.DataFrame(index=BEHAVIOR_LABELS,columns=['Non Parametric','Parametric'])
+p_values          = pd.DataFrame(index=BEHAVIOR_LABELS,columns=['Non Parametric','Parametric'])
+p_values_Spearman = pd.DataFrame(index=BEHAVIOR_LABELS,columns=['Non Parametric','Parametric'])
 
 for BEHAVIOR in BEHAVIOR_LABELS:
     for niter in tqdm(range(Niters_real), desc=BEHAVIOR):
@@ -108,12 +111,20 @@ for BEHAVIOR in BEHAVIOR_LABELS:
             predicted = pd.Series(real_predictions_xr.loc[BEHAVIOR,niter,:,'predicted (ridge)'].values)
         else:
             predicted = pd.Series(real_predictions_xr.loc[BEHAVIOR,niter,:,'predicted (glm)'].values)
-        accuracy_real[BEHAVIOR].loc[niter]  = observed.corr(predicted, method=ACCURACY_METRIC)
-        if ACCURACY_METRIC == 'pearson':
-            _,p_values.loc[BEHAVIOR,'Parametric'] = pearsonr(observed,predicted)
-        if ACCURACY_METRIC == 'spearman':
-            _,p_values.loc[BEHAVIOR,'Parametric'] = spearmanr(observed,predicted)
+        accuracy_real[BEHAVIOR].loc[niter]  = observed.corr(predicted, method='pearson')
+        accuracy_real_Spearman[BEHAVIOR].loc[niter]  = observed.corr(predicted, method='spearman')
+        _,p_values.loc[BEHAVIOR,'Parametric'] = pearsonr(observed,predicted)
+        _,p_values_Spearman.loc[BEHAVIOR,'Parametric'] = spearmanr(observed,predicted)
 # -
+
+median_accuracies = pd.DataFrame(columns=['Pearson R','Spearman R'], index=BEHAVIOR_LABELS)
+for BEHAVIOR in BEHAVIOR_LABELS:
+    median_accuracies.loc[BEHAVIOR,'Pearson R'] = accuracy_real[BEHAVIOR].median().values[0]
+    median_accuracies.loc[BEHAVIOR,'Spearman R'] = accuracy_real_Spearman[BEHAVIOR].median().values[0]
+
+median_accuracies.to_csv('../resources/cpm/final_avg_accuracies.csv')
+
+median_accuracies.infer_objects().round(2)
 
 # 2.2. Null data
 
@@ -137,6 +148,12 @@ for BEHAVIOR in BEHAVIOR_LABELS:
 p_values.columns.name = 'p-value'
 for BEHAVIOR in BEHAVIOR_LABELS:
     p_values.loc[BEHAVIOR,'Non Parametric'] = (((accuracy_null[BEHAVIOR] > accuracy_real[BEHAVIOR].median()).sum() + 1) / (Niters_null+1)).values[0]
+
+p_values.infer_objects().round(3)
+
+(reject_bonf, p_values['Non Parametric, FDRbh'], _, _ ) = multipletests(p_values['Non Parametric'],alpha=0.05,method='fdr_bh')
+
+p_values.infer_objects().round(3)
 
 # # 4. Generate Prediction-reporting Figures
 #
@@ -169,42 +186,6 @@ print('++ INFO: Data written to disk [%s]' % output_path)
 
 # ## 4.1. Without statistical annotations
 #
-# > **NOTE:** Prior to doing anything else, we will update some labels so that figures are consistent with the descriptions in the main text. In particular: Vigilance --> Wakefulness, Factor1 --> Thought Pattern 1, and Factor2 --> Thought Pattern 2
-
-# + active=""
-# real_df = real_df.replace('Vigilance','Wakefulness')
-# real_df = real_df.replace('Factor1','Thought Pattern 1')
-# real_df = real_df.replace('Factor2','Thought Pattern 2')
-# null_df = null_df.replace('Vigilance','Wakefulness')
-# null_df = null_df.replace('Factor1','Thought Pattern 1')
-# null_df = null_df.replace('Factor2','Thought Pattern 2')
-
-# + active=""
-# accuracy_real['Wakefulness'] = accuracy_real['Vigilance']
-# accuracy_null['Wakefulness'] = accuracy_null['Vigilance']
-# accuracy_real.pop('Vigilance')
-# accuracy_null.pop('Vigilance');
-
-# + active=""
-# accuracy_real['Thought Pattern 1'] = accuracy_real['Factor1']
-# accuracy_null['Thought Pattern 1'] = accuracy_null['Factor1']
-# accuracy_real.pop('Factor1')
-# accuracy_null.pop('Factor1');
-
-# + active=""
-# accuracy_real['Thought Pattern 2'] = accuracy_real['Factor2']
-# accuracy_null['Thought Pattern 2'] = accuracy_null['Factor2']
-# accuracy_real.pop('Factor2')
-# accuracy_null.pop('Factor2');
-
-# + active=""
-# p_values = p_values.reset_index().replace('Vigilance','Wakefulness').set_index('index')
-# p_values = p_values.reset_index().replace('Factor1','Thought Pattern 1').set_index('index')
-# p_values = p_values.reset_index().replace('Factor2','Thought Pattern 2').set_index('index')
-# BEHAVIOR_LIST = list(real_df['Question'].unique())
-# new_coords = [b if b != 'Vigilance' else 'Wakefulness' for b in real_predictions_xr.coords['Behavior'].values]
-# real_predictions_xr = real_predictions_xr.assign_coords(Behavior=new_coords)
-# -
 
 median_width = 0.4
 sns.set(style='whitegrid')
@@ -218,7 +199,7 @@ for tick, text in zip(ax.get_xticks(), ax.get_xticklabels()):
     median_val = accuracy_real[question].median().values[0]
     ax.plot([tick-median_width/2, tick+median_width/2],[median_val,median_val], lw=4, color='k')
 ax.set_ylim(-.3,.4)
-ax.set_ylabel('R (Observed,Predicted)');
+ax.set_ylabel('Prediction Accuracy: R(Observed,Predicted)');
 ax.set_xlabel('SNYCQ Item')
 
 # ## 4.2. With Statistical Annotations
@@ -249,7 +230,7 @@ for tick, text in zip(ax.get_xticks(), ax.get_xticklabels()):
     ax.annotate(annot, xy=(tick, max_val+0.02), ha='center', fontsize=15)
     
 ax.set_ylim(-.3,.4)
-ax.set_ylabel('R (Observed,Predicted)');
+ax.set_ylabel('Prediction Accuracy: R(Observed,Predicted)');
 ax.set_xlabel('SNYCQ Item')
 # -
 
@@ -284,7 +265,7 @@ for tick, text in zip(ax[0].get_xticks(), ax[0].get_xticklabels()):
     ax[0].annotate(annot, xy=(tick, max_val+0.02), ha='center', fontsize=15)
     
 ax[0].set_ylim(-.3,.4)
-ax[0].set_ylabel('R (Observed,Predicted)');
+ax[0].set_ylabel('Prediction Accuracy: R(Observed,Predicted)');
 ax[0].set_xlabel('')
 
 # Factors
@@ -312,7 +293,7 @@ for tick, text in zip(ax[1].get_xticks(), ax[1].get_xticklabels()):
     ax[1].annotate(annot, xy=(tick, max_val+0.02), ha='center', fontsize=15)
 ax[1].set_xticklabels(['Pattern 1','Pattern 2'])
 ax[1].set_ylim(-.3,.4)
-ax[1].set_ylabel('R (Observed,Predicted)');
+ax[1].set_ylabel('Prediction Accuracy: R(Observed,Predicted)');
 ax[1].set_xlabel('Thought Patterns')
 
 # Individual Iterms
@@ -343,7 +324,7 @@ for tick, text in zip(ax[2].get_xticks(), ax[2].get_xticklabels()):
     ax[2].annotate(annot, xy=(tick, max_val+0.02), ha='center', fontsize=15)
     
 ax[2].set_ylim(-.3,.4)
-ax[2].set_ylabel('R (Observed,Predicted)');
+ax[2].set_ylabel('Prediction Accuracy: R(Observed,Predicted)');
 ax[2].set_xlabel('SNYC Questionnaire: Form and Content of Thoughts')
 plt.tight_layout()
 # -
@@ -468,3 +449,5 @@ for BEHAVIOR in BEHAVIOR_LABELS_DICT.values():
 
 plt.tight_layout()
 fig.savefig('./figures/S17_CPM_subject_aware-ScatterPlots.png')
+
+
