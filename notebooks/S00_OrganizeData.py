@@ -6,11 +6,11 @@
 #       extension: .py
 #       format_name: light
 #       format_version: '1.5'
-#       jupytext_version: 1.14.4
+#       jupytext_version: 1.15.2
 #   kernelspec:
-#     display_name: FC Introspection (Jan 2023)
+#     display_name: FC Instrospection py 3.10 | 2023b
 #     language: python
-#     name: fc_introspection
+#     name: fc_introspection_2023b_py310
 # ---
 
 # # Dataset Description
@@ -106,11 +106,10 @@ orig_files_dir      = osp.join(ORIG_BEHAV_DIR,'behavioral_data_MPILMBB','phenoty
 # ===========
 snycq_data_path = osp.join(orig_files_dir,'SNYCQ.tsv')
 snycq_json_path = osp.join(orig_files_dir,'SNYCQ.json')
+# -
 
-# + [markdown] tags=[]
 # ***
 # ## 3. Check basic Information in the sNYCQ downloaded files 
-# -
 
 print('++ Basic Information:')
 print('++ =================')
@@ -207,7 +206,6 @@ if not osp.exists(PROC_SNYCQ_DIR):
 print ("++ INFO: Saving snycq_data to disk [%s]." % ORIG_SNYCQ_PATH)
 snycq_data.to_csv(ORIG_SNYCQ_PATH)
 
-# + [markdown] tags=[]
 # ***
 #
 # ## 8. Write to disk a list of subjects with at least one valid rest + SNYCQ run
@@ -217,7 +215,6 @@ snycq_data.to_csv(ORIG_SNYCQ_PATH)
 # It is only for these subjects that we will attempt the pre-processing of their anatomical and functional data. 
 #
 # Those analyses may fail for a subset of them (e.g., missing data, freesurfer errors). We will remove the entries for these "bad" scans from the SNYCQ dataframe in a later notebook prior to any analyses of the SNYCQ data.
-# -
 
 # List of subjects with at least one resting-state run that has sNYCQ
 # For these subjects, I will need to run the structural pre-processing pipeline
@@ -260,5 +257,3 @@ print(' + Number of subjects with 2 anatomicals: %d' % anat_loc_df[anat_loc_df.d
 anat_loc_df[anat_loc_df.drop('anat_path',axis=1).sum(axis=1)==2]
 print('++ INFO: This information is now available at [%s]' % ANAT_PATHINFO_PATH)
 anat_loc_df.to_csv(ANAT_PATHINFO_PATH)
-
-

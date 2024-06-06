@@ -536,6 +536,3 @@ age_distributions.loc[age_distributions['Scan Set']=='Surr-Neg-Self','color'] = 
 age_distributions = age_distributions.infer_objects()
 
 age_distributions.set_index('Scan Set').loc[['Surr-Neg-Self','Image-Pos-Others']].reset_index().sort_values(by='Age Range').hvplot(kind='bar',x='Scan Set',by='Age Range',fontsize={'xticks':12,'yticks':15,'xlabel':12,'ylabel':15,'legend':12},width=600, height=250,  stacked=False, grid=False, xlabel='', color='color', alpha=0.5).opts(xrotation=90, toolbar=None)
-
-
-

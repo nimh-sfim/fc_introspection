@@ -94,30 +94,6 @@ for sbj,run in tqdm(scan_list):
     all_sfc_R.loc[sbj,run,:,:] = netcc
     all_sfc_Z.loc[sbj,run,:,:] = netcc.apply(np.arctanh)
 
-# + active=""
-# # Create empty Xr Data Array to hold all FC matrices
-# all_sfc_R = xr.DataArray(dims=['Scan','ROI1','ROI2'], 
-#                          coords={'Scan':[sbj+'|'+run for sbj,run in scan_list],
-#                                'ROI1':roi_info['ROI_Name'].values,
-#                                'ROI2':roi_info['ROI_Name'].values})
-# all_sfc_Z = xr.DataArray(dims=['Scan','ROI1','ROI2'], 
-#                          coords={'Scan':[sbj+'|'+run for sbj,run in scan_list],
-#                                'ROI1':roi_info['ROI_Name'].values,
-#                                'ROI2':roi_info['ROI_Name'].values})
-
-# + active=""
-# %%time
-# all_rois = list(roi_info['ROI_Name'].values)
-# # Load all matrices
-# for sbj,run in tqdm(scan_list):
-#     _,_,_,_,run_num,_,run_acq = run.split('-')
-#     netcc_path = osp.join(DATA_DIR,'PrcsData',sbj,'preprocessed','func','pb06_staticFC','{run_acq}_run-{run_num}.{ATLAS_NAME}_000.netcc'.format(run_acq = run_acq, run_num = run_num, ATLAS_NAME = FB_400ROI_ATLAS_NAME))
-#     netcc      = load_netcc(netcc_path)
-#     this_scan_rois = [ item.strip().strip('7Networks_') for item in list(netcc.columns)]
-#     all_sfc_R.loc[sbj+'|'+run,:,:] = netcc
-#     all_sfc_Z.loc[sbj+'|'+run,:,:] = netcc.apply(np.arctanh)
-# -
-
 # # 4. Compute the average matrix for the whole sample
 #
 # To compute the sample mean, we first Fisher's transform each individual matrix, average those, and do the inverse transform of the average

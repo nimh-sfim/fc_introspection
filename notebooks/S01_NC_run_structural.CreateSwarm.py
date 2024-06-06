@@ -6,11 +6,11 @@
 #       extension: .py
 #       format_name: light
 #       format_version: '1.5'
-#       jupytext_version: 1.14.4
+#       jupytext_version: 1.15.2
 #   kernelspec:
-#     display_name: FC Introspection (Jan 2023)
+#     display_name: FC Instrospection py 3.10 | 2023b
 #     language: python
-#     name: fc_introspection
+#     name: fc_introspection_2023b_py310
 # ---
 
 # # Description - Create Swarm File to run structural pipeline on NC dataset
@@ -64,10 +64,8 @@ if not osp.exists(logdir_path):
     os.mkdir(logdir_path)
     print("++ INFO: Log folder created [%s]" % logdir_path)
 
-# + [markdown] tags=[]
 # ***
 # # 3. Create Swarm File
-# -
 
 # This will create a swarm file with one line call to S01_NC_run_structural.sh per subject. The inputs to that bash script are:
 #
@@ -96,3 +94,5 @@ for sbj,row in anat_info.iterrows():
                                                                                                                                              scripts_folder=SCRIPTS_DIR))
     swarm_file.write('\n')
 swarm_file.close()
+
+

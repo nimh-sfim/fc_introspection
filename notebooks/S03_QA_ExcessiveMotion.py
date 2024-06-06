@@ -6,11 +6,11 @@
 #       extension: .py
 #       format_name: light
 #       format_version: '1.5'
-#       jupytext_version: 1.14.4
+#       jupytext_version: 1.15.2
 #   kernelspec:
-#     display_name: FC Introspection (Jan 2023)
+#     display_name: FC Instrospection py 3.10 | 2023b
 #     language: python
-#     name: fc_introspection
+#     name: fc_introspection_2023b_py310
 # ---
 
 # # Description
@@ -107,5 +107,3 @@ motion_confound_cpm.name = 'Mean Rel Motion'
 motion_confound_cpm_path = osp.join(RESOURCES_DINFO_DIR,'motion_confounds.csv')
 motion_confound_cpm.to_csv(motion_confound_cpm_path)
 print('++ INFO: motion confounds saved to disk [%s]' % motion_confound_cpm_path)
-
-

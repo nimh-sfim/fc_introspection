@@ -8,14 +8,14 @@
 #       format_version: '1.5'
 #       jupytext_version: 1.15.2
 #   kernelspec:
-#     display_name: FC Instrospection (2023 | 3.10)
+#     display_name: FC Instrospection py 3.10 | 2023b
 #     language: python
-#     name: fc_introspection_2023_py310
+#     name: fc_introspection_2023b_py310
 # ---
 
 # # Description - Exploration of NBS Results
 #
-# This notebook takes the outputs from running NBS and plots then for interpretation
+# This notebook takes the outputs from running NBS and plots then for interpretation. It was used to generate the Circos plots of interest for NBS models
 
 # +
 import warnings
@@ -46,7 +46,7 @@ print('++ INFO: Second Port available: %d' % port_tunnel)
 
 SOLUTION      = 'CL02'
 THRESHOLD     = 'NBS_3p1'
-DESIGN_MATRIX = 'SbjAware' #'Basic'
+DESIGN_MATRIX = 'SbjAware'
 NBS_CONTRASTS = ['Image-Pos-Others_gt_Surr-Neg-Self','Surr-Neg-Self_gt_Image-Pos-Others']
 
 # # 2. Load information about the Atlas and ROI needed for plotting
@@ -80,6 +80,8 @@ for contrast in NBS_CONTRASTS:
                                      index   = roi_info.set_index(['Hemisphere','Network','ROI_Name','ROI_ID','RGB']).index, 
                                      columns = roi_info.set_index(['Hemisphere','Network','ROI_Name','ROI_ID','RGB']).index)
         print('++ WARTNING: No results available for %s' % contrast)
+
+data['Surr-Neg-Self_gt_Image-Pos-Others'].sum().sum()
 
 data['Both'] = data['Image-Pos-Others_gt_Surr-Neg-Self'] - data['Surr-Neg-Self_gt_Image-Pos-Others']
 
@@ -118,11 +120,3 @@ print('++ INFO [Surr-Neg-Self > Image-Pos-Others] R-L Conns: %d' % f2GTf1_LR)
 print('++ --------------------------------------------------------')
 f2GTf1_fcLI  = (f2GTf1_LL - f2GTf1_RR) / (f2GTf1_LL + f2GTf1_RR)
 print('++ INFO [Surr-Neg-Self > Image-Pos-Others] fcLI:      %.2f' % f2GTf1_fcLI)
-
-data.keys()
-
-from statsmodels.stats.multitest import multipletests
-
-multipletests([0.009, 5.6e-5, 0.0000, 0.00],alpha=0.05, method='bonferroni')
-
-

@@ -6,7 +6,7 @@
 #       extension: .py
 #       format_name: light
 #       format_version: '1.5'
-#       jupytext_version: 1.14.4
+#       jupytext_version: 1.15.2
 #   kernelspec:
 #     display_name: FC Instrospection (2023 | 3.10)
 #     language: python
@@ -189,12 +189,9 @@ confound_df.head(5)
 # Number of iterations = 50
 # Number of folds = 10
 
-# + [markdown] tags=[]
 # # 3. Results for full confound modeling
 
-# + tags=[]
 stats, train_err_list, valid_err_list = load_errlist('./mlt/output/biowulf/stats_full_data.csv')
-# -
 
 # Print number of missing --> For some combinations of (d, b_W, b_Q), in some iterations no folds completed. Why?
 N_expected = 4 * 6 * 6 * 50 * 10
@@ -232,3 +229,5 @@ plot = sns.lineplot(data=a,y='error',x='bw', hue='bq', ax=ax)
 ax.legend(loc='upper left',ncol=2, title=r"$\beta_{Q}$")
 ax.set_ylabel('Validation Error')
 ax.set_xlabel(r"$\beta_{W}$")
+
+

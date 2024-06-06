@@ -6,11 +6,11 @@
 #       extension: .py
 #       format_name: light
 #       format_version: '1.5'
-#       jupytext_version: 1.14.4
+#       jupytext_version: 1.15.2
 #   kernelspec:
-#     display_name: FC Introspection (Jan 2023)
+#     display_name: FC Instrospection py 3.10 | 2023b
 #     language: python
-#     name: fc_introspection
+#     name: fc_introspection_2023b_py310
 # ---
 
 # # Description - Extract Representative ROI Timseries
@@ -45,9 +45,7 @@ print('++ INFO: user working now --> %s' % username)
 
 sbj_list, scan_list, SNYCQ_data = get_sbj_scan_list('post_motion')
 
-# + [markdown] tags=[]
 # 3. Create output folder for static FC matrices
-# -
 
 for sbj in sbj_list:
     output_path = osp.join(DATA_DIR,'PrcsData',sbj,'preprocessed','func','pb06_staticFC')
@@ -92,7 +90,3 @@ for sbj,run in scan_list:
 swarm_file.close()
 # -
 print(swarm_path)
-
-next(os.walk('/data/SFIMJGC_Introspec/2023_fc_introspection/code/fc_introspection/resources/cpm/swarm_outputs/real/Schaefer2018_200Parcels_7Networks_AAL2/subject_aware/conf_not_residualized/spearman_sum/'))[1]
-
-

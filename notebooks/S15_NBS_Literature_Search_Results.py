@@ -8,20 +8,25 @@
 #       format_version: '1.5'
 #       jupytext_version: 1.15.2
 #   kernelspec:
-#     display_name: FC Instrospection (2023 | 3.10)
+#     display_name: FC Instrospection py 3.10 | 2023b
 #     language: python
-#     name: fc_introspection_2023_py310
+#     name: fc_introspection_2023b_py310
 # ---
 
 # # Description
 #
 # This notebook creates the figure that use to show how our results relate to prior work that has used NBS to look for significant differences in connectivity between clinical and healthy populations.
 
+# +
 import pandas as pd
 import numpy as np
 import hvplot.pandas
 import seaborn as sns
 import matplotlib.pyplot as plt
+
+import warnings
+warnings.simplefilter(action='ignore', category=FutureWarning)
+# -
 
 nbs_lit_search_path = '../resources/nbs_literature_search/NBS_Papers_Top50.csv'
 

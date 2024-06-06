@@ -6,11 +6,11 @@
 #       extension: .py
 #       format_name: light
 #       format_version: '1.5'
-#       jupytext_version: 1.14.4
+#       jupytext_version: 1.15.2
 #   kernelspec:
-#     display_name: FC Introspection (Jan 2023)
+#     display_name: FC Instrospection py 3.10 | 2023b
 #     language: python
-#     name: fc_introspection
+#     name: fc_introspection_2023b_py310
 # ---
 
 # # Description
@@ -18,6 +18,7 @@
 # This notebook performs an initial exploration of the self-reports associated with the resting-state scans. We will look at things like the distribution of responses across scans, the correlation between responses to the different questions and few similar things.
 #
 
+# +
 import pandas as pd
 import numpy as np
 import panel as pn
@@ -25,6 +26,10 @@ import seaborn as sns
 import matplotlib.pyplot as plt
 import hvplot.pandas
 from IPython import display
+
+import warnings
+warnings.simplefilter(action='ignore', category=FutureWarning)
+# -
 
 from utils.basics import PROC_SNYCQ_DIR, get_sbj_scan_list
 from utils.basics import SNYCQ_Questions, SNYCQ_Question_type
@@ -57,9 +62,7 @@ print(SNYCQ.isna().sum())
 #
 # ## 1.1. Plot distribution of answers per question
 
-# + tags=[]
 plot_anwers_distribution_per_question(SNYCQ, figsize=(10,4), legend_fontsize=10)
-# -
 
 # ## 1.2. Plot the answers as a heatmap
 
@@ -83,7 +86,7 @@ x_tick_labels = ['1','100','200','300','400', str(Nscans)]
 x_ticks_info  = list(tuple(zip(x_ticks,x_tick_labels)))
 f_wakefulness = wakefulness_to_plot.hvplot.heatmap(width=100, height=900, cmap='viridis', yticks= x_ticks_info, fontscale=1.5, xlabel='', ylabel='Scans', title='').opts(xrotation=90, colorbar=False, toolbar=None)
 
-pn.Row(f_wakefulness,f_data).save('./figures/S10_M_matrix.png')
+pn.Row(f_wakefulness,f_data)
 
 display.Image('./figures/S10_M_matrix.png')
 
@@ -122,16 +125,11 @@ x_ticks       = [0, 99, 199, 299, 399, Nscans-1]
 x_tick_labels = ['1','100','200','300','400', str(Nscans)]
 x_ticks_info  = list(tuple(zip(x_ticks,x_tick_labels)))
 f = data_to_plot.hvplot.heatmap(width=400, height=800, cmap='viridis', yticks= x_ticks_info, fontscale=1.5, xlabel='Questions', ylabel='Scans', title='').opts(xrotation=90, colorbar_opts={'title':'Response:'}, toolbar=None)
-pn.Row(f).save('./figures/S10_M_matrix_sorted.png')
+f
 
 display.Image('./figures/S10_M_matrix_sorted.png')
 
 # ## 1.4. Plot the distribution of answers per question
-
-g = sns.PairGrid(SNYCQ[sorted_questions], diag_sharey=False, height=1)
-g.map_upper(sns.scatterplot, s=5)
-g.map_lower(sns.kdeplot)
-g.map_diag(sns.kdeplot, lw=1)
 
 layout = None
 for q in SNYCQ.columns:
@@ -141,6 +139,6 @@ for q in SNYCQ.columns:
     else:
         layout = layout + plot
 layout = layout.cols(3).opts(toolbar=None)
-pn.Row(layout).save('./figures/S10_SNYCQ_AnswerDistribution.png')
+layout
 
 display.Image('./figures/S10_SNYCQ_AnswerDistribution.png')
