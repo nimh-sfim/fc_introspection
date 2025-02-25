@@ -44,7 +44,7 @@ def main():
     scan_idx = [sbj+'.'+run for (sbj,run) in scan_list] 
     
     # Load reference file
-    REF_TARGET = 'Images'
+    REF_TARGET = 'AvgExp'
     ref_path = osp.join(opts.input_path,REF_TARGET,'cpm_{b}_rep-{r}.pkl'.format(b=REF_TARGET,r=str(1).zfill(5)))
     with open(ref_path,'rb') as f:
         data = pickle.load(f)
