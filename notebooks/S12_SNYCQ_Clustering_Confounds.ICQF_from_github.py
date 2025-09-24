@@ -8,9 +8,9 @@
 #       format_version: '1.5'
 #       jupytext_version: 1.16.1
 #   kernelspec:
-#     display_name: FC Instrospection py 3.10 | 2023b
+#     display_name: FC Introspection py 3.10 | 2023b | Cython
 #     language: python
-#     name: fc_introspection_2023b_py310
+#     name: fc_introspection_2023b_py310_cython
 # ---
 
 # # Description
@@ -39,11 +39,6 @@ import matplotlib.pyplot as plt
 from textwrap import wrap
 import bokeh
 
-# allows visualisation in notebook
-from bokeh.io import output_notebook
-from bokeh.resources import INLINE
-output_notebook(INLINE)
-
 import warnings
 warnings.simplefilter(action='ignore', category=FutureWarning)
 
@@ -57,37 +52,17 @@ font_dict = {'family' : 'arial',
         'size'   : 14}
 rc('font', **font_dict)
 
-from dataclasses import dataclass
-
-
-@dataclass
-class matrix_class:
-
-    M : np.ndarray # (column)-normalized data matrix
-    M_raw : np.ndarray # raw data matrix
-    confound : np.ndarray # normalized confounder matrix
-    confound_raw : np.ndarray # raw confounder matrix
-    nan_mask : np.ndarray # mask matrix for missing entires (0=missing, 1=available)
-    row_idx : np.ndarray # global row index (for multiple data matrices)
-    col_idx : np.ndarray # global column index (for multiple data matrices)
-    mask : np.ndarray # global mask (for multiple data matrices)
-    dataname : str # dataname
-    subjlist : list # information on subjects (row information)
-    itemlist : list # information on items (column information)
-    W : np.ndarray # subject embedding (recall M = [W, C]Q^T)
-    Q : np.ndarray # item embedding (recall M = [W, C]Q^T)
-    C : np.ndarray # confounder matrix
-    Qc : np.ndarray # confounders' loadings (recall Q = [RQ, CQ])
-    Z : np.ndarray # auxiliary Z=WQ^T (ADMM)
-    aZ : np.ndarray # auxiliary variables (ADMM)
-
-
 import sys
-sys.path.append('./mlt/')
-from method.ICQF.ICQF import ICQF
+sys.path.append('../../ICQF/')
+
+from src.data_class import matrix_class
+from src.ICQF import ICQF
 
 from utils.basics import get_sbj_scan_list, SNYCQ_Questions, SNYCQ_Question_type, SNYCQ_CLUSTERS_INFO_PATH, DATA_DIR, PRJ_DIR, SNYCQ_W_PATH, SNYCQ_Q_PATH
 from utils.SNYCQ_NMF_Extra import plot_Q_bars, cluster_scans, plot_W, plot_W_scatter, plot_P,plot_W_heatmap
+
+SNYCQ_Q_PATH='/data/SFIMJGC_Introspec/2023_fc_introspection/code/fc_introspection/resources/snycq/SNYCQ_Q_github.csv'
+SNYCQ_W_PATH='/data/SFIMJGC_Introspec/2023_fc_introspection/code/fc_introspection/resources/snycq/SNYCQ_W_github.csv'
 
 # # 1. Load list of Scans, Subjects and the SNYCQ dataframe
 
@@ -246,10 +221,20 @@ pn.Row(f)
 #
 # The inputs to the clustering algorithm are: 1) matrix ```W``` and 2) ```N_CLUSTERS=3```
 
+# +
+#N_CLUSTERS = 3
+#cluster_ids = cluster_scans(W, n_clusters=N_CLUSTERS)
+#cluster_ids = cluster_ids.astype(int)
+#print('++ INFO: Number of clusters = %d' % int(cluster_ids.max()+1))
+
+from sklearn.cluster import KMeans
 N_CLUSTERS = 3
-cluster_ids = cluster_scans(W, n_clusters=N_CLUSTERS)
-cluster_ids = cluster_ids.astype(int)
+km = KMeans(n_clusters=N_CLUSTERS)
+km.fit(W)
+cluster_ids = km.labels_.astype(int)
 print('++ INFO: Number of clusters = %d' % int(cluster_ids.max()+1))
+
+# -
 
 # We save the clustering results in a pandas Dataframe with consistent indexing in terms of subject and scan ID
 
@@ -297,6 +282,8 @@ f = plot_W_scatter(W, clusters_info=clusters_info, plot_kde=False, plot_hist=Fal
                                                                                                                                    (0.17254901960784313, 0.6274509803921569, 0.17254901960784313),])
 f.get_axes()[0].grid('on')
 f
+
+SNYCQ_CLUSTERS_INFO_PATH = '/data/SFIMJGC_Introspec/2023_fc_introspection/code/fc_introspection/resources/snycq/SNYCQ_clusters_info_github.csv'
 
 clusters_info.to_csv(SNYCQ_CLUSTERS_INFO_PATH)
 print('++ INFO: Clustering Membership Info saved to [%s]' % SNYCQ_CLUSTERS_INFO_PATH)
@@ -393,7 +380,7 @@ labels=final_counts.index
 labels = [ '\n'.join(wrap(l, 15)) for l in labels ]
 f = plt.pie(final_counts, colors=sns.color_palette("ch:start=.2,rot=-.3"), labels=labels,autopct='%.0f%%');
 plt.tight_layout()
-plt.savefig('./figures/S12_Pie_Scans_per_Subject.png',bbox_inches='tight')
+plt.savefig('./figures/S12_Pie_Scans_per_Subject_github.png',bbox_inches='tight')
 
 # ***
 #
