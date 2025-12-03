@@ -5,13 +5,13 @@ clear all
 % ------------------------------------
 addpath('/opt/matlab/conn')
 addpath('/opt/matlab/spm12')
-contrast = 'Surr-Neg-Self_gt_Image-Pos-Others';
+contrast = 'SetA_gt_SetB';
 pos_edges_color = [237, 125, 49]/255;
 neg_edges_color = [68, 114, 196]/255;
-if contrast == 'Image-Pos-Others_gt_Surr-Neg-Self'
-    edg_color = pos_edges_color
+if contrast == 'SetA_gt_SetB'
+    edg_color = [0.0, 0.0, 0.0];
 end
-if contrast == 'Surr-Neg-Self_gt_Image-Pos-Others'
+if contrast == 'SetB_gt_SetA'
     edg_color = [0.0, 0.0, 0.0];%neg_edges_color
 end
 
@@ -19,7 +19,7 @@ end
 % ------------------------
 disp('++ Load Connectivity Matrix')
 tic
-fc_file  = ['../resources/conn/NBS_SbjAware_NBS_3p1_',contrast,'.txt']
+fc_file  = ['../resources/conn/NBS_',contrast,'.txt']
 
 fc = load(fc_file);
 N_conns = sum(sum(fc))/2;
