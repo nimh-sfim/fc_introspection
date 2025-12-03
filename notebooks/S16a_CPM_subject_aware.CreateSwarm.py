@@ -1,12 +1,12 @@
 # ---
 # jupyter:
 #   jupytext:
-#     formats: ipynb,py:light
+#     formats: ipynb,py
 #     text_representation:
 #       extension: .py
 #       format_name: light
 #       format_version: '1.5'
-#       jupytext_version: 1.15.2
+#       jupytext_version: 1.16.1
 #   kernelspec:
 #     display_name: FC Instrospection py 3.10 | 2023b
 #     language: python
@@ -64,12 +64,16 @@ sbj_list, scan_list, snycq_df = get_sbj_scan_list(when='post_motion', return_sny
 
 # 3. Add Factors
 
-factorization_path = './mlt/output/factorization/factorization_fulldata_confound.npz'
-factorization_results = np.load(factorization_path)
-W = pd.DataFrame(factorization_results['W'],index=snycq_df.index, columns=['Factor1', 'Factor2'])
+W = pd.read_csv('../resources/icqf/W.csv',index_col=[0,1])
+W.columns = [c.replace(' ','') for c in W.columns]
+W.head(3)
 
-behav_df = pd.concat([snycq_df,W],axis=1)
+behav_df = pd.concat([snycq_df.loc[W.index,:],W],axis=1)
 behav_df.head(5)
+
+# We update scan list to remove the 2 outliers
+scan_list = behav_df.index 
+len(scan_list)
 
 # 4. Get list of all variables to predict
 
@@ -93,6 +97,12 @@ out_path = osp.join(RESOURCES_CPM_DIR,'behav_data.csv')
 behav_df.to_csv(out_path)
 print('++ INFO: Behavioral data saved to disk [%s]' % out_path)
 
+# 8. Save a version of motion parameters with only the non-outlier scans
+
+mot_path = osp.join(RESOURCES_DINFO_DIR,'motion_confounds.csv')
+mot_data = pd.read_csv(mot_path, index_col=[0,1])  
+mot_data.loc[W.index].to_csv(osp.join(RESOURCES_CPM_DIR,'confounds.csv'))
+
 #
 # ## 1.2. Create Swarm Jobs for the real data
 
@@ -114,9 +124,11 @@ if not osp.exists(logs_folder):
     print('++ INFO: New folder for log files created [%s]' % logs_folder)
 
 for TARGET in targets:    
-    swarm_path[TARGET]  = osp.join(swarm_folder,'S16_CPM-{atlas}-real-{sm}-{conf}-{mt}-{target}.SWARM.sh'.format(atlas=ATLAS_NAME,sm=SPLIT_MODE,conf=CONFOUNDS,mt=MODEL_TYPE, target=TARGET))
+    swarm_path[TARGET]  = osp.join(swarm_folder,'S16_CPM-{atlas}-real-{sm}-{conf}-{mt}-{target}.SWARM.sh'.format(atlas=ATLAS_NAME,sm=SPLIT_MODE,conf=CONFOUNDS,mt=MODEL_TYPE, target=TARGET.replace(' ','')))
     logdir_path[TARGET] = osp.join(logs_folder, 'S16_CPM-{atlas}-real-{sm}-{conf}-{mt}-{target}.logs'.format(atlas=ATLAS_NAME,sm=SPLIT_MODE,conf=CONFOUNDS,mt=MODEL_TYPE, target=TARGET))
 # -
+
+swarm_folder
 
 # create specific folders if needed
 # ======================================
@@ -142,7 +154,7 @@ for TARGET in targets:
         swarm_file.write("export BEHAV_PATH={behav_path} FC_PATH={fc_path} OUT_DIR={output_dir} BEHAVIOR={behavior} NUM_FOLDS={k} NUM_ITER={n_iter} CORR_TYPE={corr_type} E_SUMMARY_METRIC={e_summary_metric} E_THR_R={e_thr_r} E_THR_P={e_thr_p} SPLIT_MODE={split_mode} VERBOSE=True RANDOMIZE_BEHAVIOR=False CONFOUNDS={confounds} CONFOUNDS_PATH={confounds_path}; sh {scripts_folder}/S16_cpm_batch.sh".format(scripts_folder = SCRIPTS_DIR,
                            behav_path       = osp.join(RESOURCES_CPM_DIR,'behav_data.csv'),
                            fc_path          = osp.join(RESOURCES_CPM_DIR,f'fc_data_{ATLAS_NAME}.csv'),
-                           confounds_path   = osp.join(RESOURCES_DINFO_DIR,'motion_confounds.csv'),                        
+                           confounds_path   = osp.join(RESOURCES_CPM_DIR,'confounds.csv'),                        
                            output_dir       = out_dir,
                            behavior         = TARGET,
                            k                = 10,
@@ -155,6 +167,7 @@ for TARGET in targets:
                            confounds        = CONFOUNDS == 'conf_residualized'))
         swarm_file.write('\n')
     swarm_file.close()
+    print(swarm_file)
 
 # Once all the jobs have successfully completed, you should run the following command to compile all the outputs into a single file.
 #
@@ -169,6 +182,8 @@ for TARGET in targets:
 # ```
 
 # ## 1.3. Create Swarm jobs for the Null Distributions
+
+swarm_folder
 
 for TARGET in targets:    
     swarm_path[TARGET]  = osp.join(swarm_folder,'S16_CPM-{atlas}-null-{sm}-{conf}-{mt}-{target}.SWARM.sh'.format(atlas=ATLAS_NAME,sm=SPLIT_MODE,conf=CONFOUNDS,mt=MODEL_TYPE, target=TARGET))
@@ -197,7 +212,7 @@ for TARGET in targets:
         swarm_file.write("export BEHAV_PATH={behav_path} FC_PATH={fc_path} OUT_DIR={output_dir} BEHAVIOR={behavior} NUM_FOLDS={k} NUM_ITER={n_iter} CORR_TYPE={corr_type} E_SUMMARY_METRIC={e_summary_metric} E_THR_R={e_thr_r} E_THR_P={e_thr_p} SPLIT_MODE={split_mode} VERBOSE=True RANDOMIZE_BEHAVIOR=True CONFOUNDS={confounds} CONFOUNDS_PATH={confounds_path}; sh {scripts_folder}/S16_cpm_batch.sh".format(scripts_folder = SCRIPTS_DIR,
                            behav_path       = osp.join(RESOURCES_CPM_DIR,'behav_data.csv'),
                            fc_path          = osp.join(RESOURCES_CPM_DIR,f'fc_data_{ATLAS_NAME}.csv'),
-                           confounds_path   = osp.join(RESOURCES_DINFO_DIR,'motion_confounds.csv'), 
+                           confounds_path   = osp.join(RESOURCES_CPM_DIR,'confounds.csv'), 
                            output_dir       = out_dir,
                            behavior         = TARGET,
                            k                = 10,
@@ -211,6 +226,17 @@ for TARGET in targets:
         swarm_file.write('\n')
     swarm_file.close()
 
+# Once all the jobs have successfully completed, you should run the following command to compile all the outputs into a single file.
+#
+# ```bash
+# conda activate fc_introspection_2023_py310
+#
+# # Compile together the results over the 100 real permutations
+# python /data/SFIMJGC_Introspec/2023_fc_introspection/code/fc_introspection/notebooks/S16b_GatherSwarmResults.py \
+#    -i /data/SFIMJGC_Introspec/2023_fc_introspection/code/fc_introspection/resources/cpm/swarm_outputs/null/Schaefer2018_400Parcels_7Networks_AAL2/subject_aware/conf_residualized/pearson_sum/ \
+#    -o /data/SFIMJGC_Introspec/2023_fc_introspection/code/fc_introspection/resources/cpm/null-Schaefer2018_400Parcels_7Networks_AAL2-subject_aware-conf_residualized-pearson_sum.pkl \
+#    -n 10000 -T -t Factor1
+
 # ## 1.4 Command Lines to load everything into a single dataframe
 
 # ```bash
@@ -223,5 +249,5 @@ for TARGET in targets:
 #
 # python ./S16b_GatherSwarmResults.py  -i /data/SFIMJGC_Introspec/2023_fc_introspection/code/fc_introspection/resources/cpm/swarm_outputs/real/Schaefer2018_400Parcels_7Networks_AAL2/subject_aware/conf_not_residualized/pearson_sum/ -o /data/SFIMJGC_Introspec/2023_fc_introspection/code/fc_introspection/resources/cpm/real-Schaefer2018_400Parcels_7Networks_AAL2-subject_aware-conf_not_residualized-pearson_sum.pkl -n 100 -c pearson
 #
-# python ./S16b_GatherSwarmResults.py  -i /data/SFIMJGC_Introspec/2023_fc_introspection/code/fc_introspection/resources/cpm/swarm_outputs/null/Schaefer2018_400Parcels_7Networks_AAL2/subject_aware/conf_not_residualized/pearson_sum/ -o /data/SFIMJGC_Introspec/2023_fc_introspection/code/fc_introspection/resources/cpm/null-Schaefer2018_400Parcels_7Networks_AAL2-subject_aware-conf_not_residualized-pearson_sum.pkl -n 10000 -c pearson
+# python /data/SFIMJGC_Introspec/2023_fc_introspection/code/fc_introspection/notebooks/S16b_GatherSwarmResults.py  -i /data/SFIMJGC_Introspec/2023_fc_introspection/code/fc_introspection/resources/cpm/swarm_outputs/null/Schaefer2018_400Parcels_7Networks_AAL2/subject_aware/conf_not_residualized/pearson_sum/ -o /data/SFIMJGC_Introspec/2023_fc_introspection/code/fc_introspection/resources/cpm/null-Schaefer2018_400Parcels_7Networks_AAL2-subject_aware-conf_not_residualized-pearson_sum.pkl -n 10000 -c pearson
 # ```
