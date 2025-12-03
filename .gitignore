@@ -32,3 +32,5 @@ notebooks/mlt/output/
 notebooks/mlt/method/ICQF/__pycache__/
 resources/cpm_Sept2025/
 resources/conn/AI/
+notebooks/processed_data.csv
+notebooks/snycq_clusters.csv
