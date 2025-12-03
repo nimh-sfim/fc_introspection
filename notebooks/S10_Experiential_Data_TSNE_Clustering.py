@@ -13,6 +13,21 @@
 #     name: fc_introspection_2023b_py310
 # ---
 
+# # Description
+#
+# This notebook contains the following analytical steps associated with the in-scanner experience data
+#
+# 1. Data scaling: this is accomplished using skicit-learn [```RobustScaler```](https://scikit-learn.org/stable/modules/generated/sklearn.preprocessing.RobustScaler.html)
+#
+# 2. Outlier detection
+#
+# 3. Creates figure looking a potential correlations between sNYCQ items
+#
+# 4. Dimensionality reduction with T-SNE
+#
+# 5. Clustering analysis in original 11D space 
+
+# +
 from utils.basics import get_sbj_scan_list, DATA_DIR, ORIG_SNYCQ_PATH, RESOURCES_DINFO_DIR, RESOURCES_SNYCQ_DIR, ORIG_DEMO_PATH
 from textwrap import wrap
 import os.path as osp
@@ -22,6 +37,8 @@ import holoviews as hv
 import seaborn as sns
 from tqdm.notebook import  tqdm
 
+import warnings
+warnings.simplefilter(action='ignore', category=FutureWarning)
 
 # +
 import numpy as np
@@ -29,6 +46,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import plotly.graph_objects as go
 import panel as pn
+from scipy.stats import pearsonr
 
 from sklearn.preprocessing import RobustScaler
 from sklearn.covariance import MinCovDet
@@ -37,7 +55,101 @@ from sklearn.cluster import KMeans
 from sklearn.metrics import silhouette_score, davies_bouldin_score, calinski_harabasz_score, adjusted_rand_score
 from sklearn.manifold import TSNE, trustworthiness
 from sklearn.linear_model import LinearRegression
+
+
 # -
+
+# This function allows to take a hvplot.hatmap and then modify it to mark significant celss with a bold black edge.
+
+def show_correlations_with_statistics(data_val, data_pval=None, pval_thr=0.05,
+                 clabel=None, height=700, width=700,
+                 cmap='RdBu_r', fontscale=1, clim=(-.7, .7)):
+
+    # ---------- Hook to draw black rectangles on significant cells ----------
+    def highlight_cell_hook(plot, element):
+        fig = plot.state  # bokeh Figure
+        # draw a transparent rect with black border for every "True" cell
+        for _, row in data_pval_indexed_long.iterrows():
+            if row['pval']:  # True if significant
+                # +0.5 because HeatMap cell centers are at integer+0.5
+                highlight_x = row['col'] + 0.5
+                highlight_y = row['index'] + 0.5
+                fig.rect(x=highlight_x, y=highlight_y,
+                         width=1, height=1,
+                         line_color='black', line_width=2,
+                         fill_alpha=0, name='highlight')
+
+    # ---------- Make sure index/col names and value name exist ----------
+    if data_val.columns.name is None:
+        data_val.columns.name = 'col'
+    if data_val.index.name is None:
+        data_val.index.name = 'index'
+    if data_val.name is None:
+        data_val.name = 'value'
+
+    # ---------- Build long-form data for HeatMap ----------
+    data_val_long = (
+        data_val
+        .melt(ignore_index=False,
+              var_name=data_val.columns.name,
+              value_name=data_val.name)
+        .reset_index()
+    )
+    data_val_long = data_val_long[
+        [data_val.columns.name, data_val.index.name, data_val.name]
+    ]
+
+    data_val_heatmap = hv.HeatMap(data_val_long).opts(
+        tools=['hover'],
+        height=height, width=width,
+        fontscale=fontscale,
+        cmap=cmap, clim=clim,
+        line_color='k', line_width=.1,
+        xrotation=45,
+        colorbar=True,
+        clabel=clabel
+    ).opts(aspect='square')
+
+    labels = hv.Labels(data_val_heatmap).opts(text_color='k')
+    # ---------- If no p-values or threshold, just return the heatmap ----------
+    if (data_pval is None) or (pval_thr is None):
+        return data_val_heatmap * labels
+
+    # ---------- Prepare p-value boolean mask in integer coords ----------
+    # True = significant (p < threshold)
+    sig_bool = (data_pval < pval_thr)
+
+    # Reset indices/cols to integer positions = plotting coordinates
+    data_pval_indexed = (
+        sig_bool
+        .reset_index(drop=True)   # rows -> 0..n-1
+        .T.reset_index(drop=True) # cols -> 0..n-1
+        .T
+    )
+    data_pval_indexed.columns.name = data_val.columns.name
+    data_pval_indexed.index.name   = data_val.index.name
+    data_pval_indexed.name         = 'pval'
+
+    # Long form: columns: ['col','index','pval'] where pval is boolean
+    global data_pval_indexed_long   # so hook can see it
+    data_pval_indexed_long = (
+        data_pval_indexed
+        .melt(ignore_index=False,
+              var_name=data_pval_indexed.columns.name,
+              value_name=data_pval_indexed.name)
+        .reset_index()
+    )
+    data_pval_indexed_long = data_pval_indexed_long[
+        [data_pval_indexed.columns.name, data_pval_indexed.index.name, data_pval_indexed.name]
+    ]
+    data_pval_indexed_long.columns = ['col', 'index', 'pval']
+
+    # ---------- Attach hook to draw black outlines ----------
+    data_val_heatmap_highlighted = data_val_heatmap.opts(hooks=[highlight_cell_hook]) * labels
+
+    return data_val_heatmap_highlighted
+
+
 
 # Configurations for outlier detection, ambigous clusters and random seed
 
@@ -45,7 +157,10 @@ OUTLIER_Q = 0.997          # robust cutoff on squared Mahalanobis distances
 AMBIG_THRESH = 0.8         # ambiguous if max(prob) < 0.8
 RANDOM_STATE = 42
 
-# # 1. Load the SNYCQ data
+# ***
+# # 1. Load In-scanner Experience Data (SNYCQ)
+#
+# We load this data only for the scans that have passed our QA for the imaging data
 
 SBJs, SCANs, SNYCQ_wVigilance = get_sbj_scan_list(when='post_motion', return_snycq=True)
 SNYCQ              = SNYCQ_wVigilance.drop('Vigilance',axis=1)
@@ -53,6 +168,7 @@ Nscans, Nquestions = SNYCQ.shape
 print(SNYCQ.shape)
 SNYCQ_items        = SNYCQ.columns
 
+# ***
 # # 2. Data Scaling
 # Answers to all questions, except wakefulness, were scaled using scikit-learn ```RobustScaler```. This scaler object removes the median and scales the data by the inter-quantile range. This form of scaling was performed to avoid excessive influence of outliers in the scaling process. 
 #
@@ -62,8 +178,11 @@ idx         = X_raw_df.index
 X_scaled    = RobustScaler().fit_transform(X_raw_df.values)
 X_scaled_df = pd.DataFrame(X_scaled,index=idx, columns=X_raw_df.columns)
 
+# We look at the distributions of the sNYCQ data before and after scaling
+
 X_raw_df.hvplot.hist(title='SNYC-Q pre scaling') + X_scaled_df.hvplot.hist(title='SNYC-Q post scaling', shared_axes=False)
 
+# ***
 # # 3. Outlier Detection
 #
 # We relied on the Mahalanobis distance of each scan to the sample's mean in order to detect outlier scans. We set the threshold to the top 3% quantile
@@ -81,34 +200,116 @@ keep = md2 < thr
 md2_df = pd.DataFrame(md2, index=idx)
 md2_df.hvplot(hover_cols=['Subject','Run'], title='Mahalanobis ditance',ylabel='Mahalanobis distance') *hv.HLine(thr).opts(line_width=0.5, line_dash='dashed', line_color='k')
 
-# Now that we now who the outlier scans are, we create a new version of the data where those scans have been removed
+# Now that we have identified two outlier scans, we create a new version of the data where those scans have been removed (e.g., ```X_$$$$_kept```)
 
 idx_kept          = idx[keep] 
 X_scaled_kept_df  = X_scaled_df.loc[idx_kept]   # Scaled data for scans not marked as outliers
 X_raw_kept_df     = X_raw_df.loc[idx_kept]      # Original data for scans not marked as outliers
 print(f"[Outliers] Flagged {(~keep).sum()} / {len(md2)}; keeping {keep.sum()}")
 
-# # 3. Correlation between SNYCQ items
+# # 4. Correlation between SNYCQ items
 #
 # To explore the structure of in-scanner experience reports, we first computed the Pearson’s correlation between the 11 in-scanner experience items.
 
 # +
+
+# Compute correlation matrix
 X_raw_kept_corr_df = X_raw_kept_df.corr()
-clustergrid        = sns.clustermap(X_raw_kept_corr_df)
+
+
+# +
+
+# Estimate  P-value matrix (Pearson)
+cols    = X_raw_kept_df.columns
+pval_df = pd.DataFrame(np.zeros((len(cols), len(cols))),
+                       index=cols, columns=cols)
+
+for i, c1 in enumerate(cols):
+    for j, c2 in enumerate(cols):
+        if i <= j:
+            r, p = pearsonr(X_raw_kept_df[c1], X_raw_kept_df[c2])
+            pval_df.loc[c1, c2] = p
+            pval_df.loc[c2, c1] = p
+
+
+# +
+
+# Get clustering order from seaborn
+clustergrid = sns.clustermap(X_raw_kept_corr_df)
 plt.close()
 
-# Get the reordered row indices
-row_order          = clustergrid.dendrogram_row.reordered_ind
-index_order        = X_raw_kept_corr_df.index[row_order]
+row_order = clustergrid.dendrogram_row.reordered_ind
+ordered   = X_raw_kept_corr_df.index[row_order]
 
-# Create interactive heatmap usin the sorting that seaborn did for us
-heatmap = X_raw_kept_corr_df.loc[index_order,index_order].round(1).hvplot.heatmap(clim=(-.7,.7),cmap='RdBu_r',aspect='square', frame_width=500,fontscale=1.5).opts(xrotation=45, clabel='Pearson Correation')
-myplot  = heatmap * hv.Labels(heatmap).opts(text_color='k')
-myplot
+corr_ord = X_raw_kept_corr_df.round(2).loc[ordered, ordered]
+pval_ord = pval_df.loc[ordered, ordered]
 
 
+# +
+
+# Make sure names exist (used by show_results)
+corr_ord.index.name   = 'index'
+corr_ord.columns.name = 'col'
+corr_ord.name         = 'corr'
+
+pval_ord.index.name   = 'index'
+pval_ord.columns.name = 'col'
+pval_ord.name         = 'pval'
 # -
 
+# Calcualte the number of unique entries to do Bonferroni correction
+n_comps = corr_ord.shape[0]*(corr_ord.shape[0]-1)/2
+
+
+# +
+
+# Plot: correlation heatmap with bold black outline for pBonf < 0.05
+plot = show_correlations_with_statistics(
+    data_val=corr_ord,
+    data_pval=pval_ord,
+    pval_thr=0.05/n_comps,
+    clabel='Pearson correlation',
+    height=700,
+    width=800,
+    cmap='RdBu_r',
+    fontscale=1.5,
+    clim=(-0.7, 0.7)
+)
+
+plot
+
+
+
+# + vscode={"languageId": "raw"} active=""
+# X_raw_kept_corr_df = X_raw_kept_df.corr()
+# clustergrid        = sns.clustermap(X_raw_kept_corr_df)
+# plt.close()
+#
+# # Get the reordered row indices
+# row_order          = clustergrid.dendrogram_row.reordered_ind
+# index_order        = X_raw_kept_corr_df.index[row_order]
+#
+# # Create interactive heatmap usin the sorting that seaborn did for us
+# heatmap = X_raw_kept_corr_df.loc[index_order,index_order].round(2).hvplot.heatmap(clim=(-.7,.7),cmap='RdBu_r',aspect='square', frame_width=500,fontscale=1.5).opts(xrotation=45, clabel='Pearson Correation')
+# myplot  = heatmap * hv.Labels(heatmap).opts(text_color='k')
+# myplot
+
+# + vscode={"languageId": "raw"} active=""
+# X_scaled_kept_corr_df = X_scaled_kept_df.corr()
+# clustergrid           = sns.clustermap(X_scaled_kept_corr_df)
+# plt.close()
+#
+# # Get the reordered row indices
+# row_order          = clustergrid.dendrogram_row.reordered_ind
+# index_order        = X_scaled_kept_corr_df.index[row_order]
+#
+# # Create interactive heatmap usin the sorting that seaborn did for us
+# heatmap = X_scaled_kept_corr_df.loc[index_order,index_order].round(2).hvplot.heatmap(clim=(-.7,.7),cmap='RdBu_r',aspect='square', frame_width=500,fontscale=1.5).opts(xrotation=45, clabel='Pearson Correation')
+# myplot  = heatmap * hv.Labels(heatmap).opts(text_color='k')
+# myplot
+# -
+
+# ***
 # # 4. Dimensionality Reduction with T-SNE
 # ## 4.1. Hyper-parameter Optimization
 # Two key hyper-parameters of the T-SNE algorithm are dimensionality and perplexity. We relied on trustworthiness [REF]—an estimate of how well a given embedding preserves local distances—to select these two hyper-parameters on a data-driven manner. The explored hyper-parameter space was: 
@@ -164,7 +365,7 @@ else:
     emb = pd.DataFrame(Y, index=idx_kept, columns=["TSNE1", "TSNE2","TSNE3"])
 
 
-# ## 4.3. Compute Bipolar Arrows
+# ## 4.3. Compute Biplot Arrows inidicating directions of maximal variance for each SNYCQ item
 #
 # To aid with the interpretation of how T-SNE dimensions relate to the original items in the SNYC survey, we modeled each of the SNYCQ items as a linear function of the three T-SNE coordinates. We then used these coefficients to draw biplot arrows depicting the directions of maximal change for each SNYCQ item in the 3D T-NSE embedding space.
 
@@ -208,13 +409,14 @@ tsne_arrows['beta_z'] = tsne_arrows['beta_z'] * 5
 
 # Create a new DF with both th original values and the dimensions in T-SNE (for plotting purposes)
 emb_plus = pd.concat([emb, X_raw_kept_df], axis=1)
-print(emb_plus.shape)
+
 
 # +
-tsne_camera_object = dict(center=dict( x=6.661338147750939e-16, y=-1.942890293094024e-16, z=8.881784197001252e-16 ),
-                    eye=dict( x=-1.5176226342505497, y=0.4505864572659788, z=-1.6428294069570146),
-                    up=dict(x= -0.7264163680411282, y= 0.05191238226958195, z= 0.6852914451596732))
-
+tsne_camera_object = dict(
+    center=dict(x=6.661338147750939e-16, y=-1.942890293094024e-16, z=8.881784197001252e-16),
+    eye=dict(x=0.4505864572659788, y=1.5176226342505497, z=-1.6428294069570146),
+    up=dict(x=-0.7264163680411282, y=0.05191238226958195, z=0.6852914451596732)
+)
 # Create the scatter trace
 scatter_trace = go.Scatter3d(
     x=emb_plus['TSNE1'],
@@ -295,7 +497,10 @@ fig.show()
 
 # -
 
-# # 5. Clustering
+# *** 
+# # 5. Clustering Analyses
+#
+# ## 5.1 Apply K-means and Gaussian Mixture Modeling to the data (K=2)
 #
 # To separate scans into two sets with well-differentiated inner-experience, we decided to apply two different clustering algorithms to the in-experience data (11 questions) following robust scaling. To be clear, clustering was performed in the original 11D space, not the low dimensional space generated by T-SNE. Working with two different clustering methods allows to evaluate the robustness of results against clustering technique.
 #
@@ -313,14 +518,22 @@ km = KMeans(n_clusters=K, random_state=RANDOM_STATE, n_init=10).fit(X_scaled_kep
 labels_km = km.predict(X_scaled_kept_df.values)
 # -
 
-# ## 5.1. Cluster method comparison with ARI and Silhouette Index
+# ## 5.2. Cluster method comparison with ARI and Silhouette Index
+#
+# We now check for the consistency of the clustering results across both methods using the Asjusted Rand Index (ARI), and also for their quality, separately, using the Silhouette Index (SI)
+#
+# 1. Compute the SI for each clustering result
 
-# +
 sil_gmm = silhouette_score(X_scaled_kept_df.values, labels_gmm)
 sil_km  = silhouette_score(X_scaled_kept_df.values, labels_km)
 
+# 2. Compute the ARI comparing both methods
+
 ari_km_gmm = adjusted_rand_score(labels_km, labels_gmm)
 
+# 3. Print the computed statistics
+
+# +
 print(f"[GMM k=2 sph] silhouette={sil_gmm:.3f}")
 print(f"[K-M k=2    ] silhouette={sil_km:.3f}")
 
@@ -329,7 +542,9 @@ print(f"[Sizes] GMM clusters: {np.bincount(labels_gmm)}")
 
 # -
 
-# ## 5.2. Bootstraing Analysis for GMM
+# Based on the SI, we decided to move forward with the GMM solustion, which we explore in further detail.
+
+# ## 5.3. Bootstraing Analysis for GMM
 
 # +
 def subsample_labels(model, X, frac=0.8, seed=0):
@@ -364,15 +579,21 @@ gm_mean_ari, gm_sd_ari = bootstrap_ari(gm, X_scaled_kept_df.values, n_runs=20, f
 print("Bootstrap ARI (GMM) mean±sd:    %.2f +/- %.2f" %(gm_mean_ari, gm_sd_ari))
 # -
 
-# ## 5.3. Detection of scans with ambigous cluster membership
+# ***
+# ## 5.4. Detection of scans with ambigous cluster membership
+#
+# One additional bonus of GMM over K-means is that GMM not being a hard clustering algorithm, it outputs cluster membershup probabilities. We will use these to detect scans with ambiguous membership. Such scans will not be included in the population differences analyses later on.
 
 proba_df = pd.DataFrame(proba, index=idx_kept, columns=['P(c1)','P(c2)'])
-proba_df.hvplot.hist('P(c1)')
+proba_df.hvplot.hist('P(c1)', title='Probability Distribution for Membership in Cluster 1')
 
 # store probabilities & an ambiguity flag
 p1        = proba[:, 1]
 ambiguity = np.maximum(1 - p1, p1) < (AMBIG_THRESH)
 
+# Save final cluster/sets labels in a new pandas dataframe: ```group_info_df```
+
+# Store that information with clear labels in a pandas Dataframe
 group_info_df = pd.DataFrame(index=idx_kept, columns=['Set Label', 'Group Probability'])
 for i,scan in enumerate(idx_kept):
     if ambiguity[i]:
@@ -387,7 +608,18 @@ for i,scan in enumerate(idx_kept):
             group_info_df.loc[scan,"Group Probability"] = 1 - p1[i]
 group_info_df['Set Label'].value_counts()
 
+# Add cluster membership information to the TSNE embedding information, and save two versions to disk: one with the original SNYCQ items, one with their scaled values.
+
+# +
 emb_plus = pd.concat([emb_plus, group_info_df], axis=1)
+emb_plus.to_csv(osp.join(RESOURCES_SNYCQ_DIR, 'SNYCQ_tsne_embeddings_plus.csv'))
+
+emb_plus_scaled = pd.concat([emb, X_scaled_kept_df, group_info_df], axis=1)
+emb_plus_scaled.to_csv(osp.join(RESOURCES_SNYCQ_DIR, 'SNYCQ_tsne_embeddings_plus_scaled.csv'))
+print(emb_plus_scaled.shape)
+# -
+
+# ## 5.5. Plot the T-SNE embedding again, but this time with scans colored according to set membership
 
 # +
 scatter_traces = []
@@ -458,8 +690,8 @@ fig.show()
 
 # -
 
-#
-# ## 6. See what's difference or not across groups
+# ***
+# ## 6. Explore how Sets A and B differ in terms of SNYCQ items, vigilance, head motion and basic demographics
 #
 # We will seek for potential differences across groups in the following variables:
 #
@@ -491,15 +723,6 @@ age_per_scan = age_per_scan[age_per_scan['Set Label']!='Ambiguous']
 age_counts_per_group = age_per_scan.groupby('Set Label').value_counts()
 age_counts_per_group = age_counts_per_group.infer_objects()
 
-# Add zero for bins with zero counts (needed for plotting)
-age_bins_avail = list(demographics['age (5-year bins)'].unique())
-for abin in age_bins_avail:
-    if ("Set A",abin) not in age_counts_per_group.index:
-        age_counts_per_group.loc[("Set A",abin)] = 0
-    if ("Set B",abin) not in age_counts_per_group.index:
-        age_counts_per_group.loc[("Set B",abin)] = 0
-
-
 # Prepare Dataframe for plotting with hvplot
 age_counts_per_group = age_counts_per_group.reset_index()
 age_counts_per_group.columns = ['Group','Age Range','# Scans']
@@ -511,15 +734,15 @@ age_counts_per_group = age_counts_per_group.infer_objects()
 age_counts_per_group = age_counts_per_group.sort_values(by='Age Range', ascending=True)
 # -
 
-# Compute statistics to chedk for significant differences across groups
-W, p = wilcoxon(age_counts_per_group.set_index(['Group','Age Range']).loc['A',:]['# Scans'],age_counts_per_group.set_index(['Group','Age Range']).loc['B',:]['# Scans'], alternative='two-sided', method='exact')
-if p < 0.05:
-    sig_string = 'p < 0.05'
-else:
-    sig_string = 'n.s.'
+A = age_counts_per_group.set_index(['Group','Age Range']).loc['A',:]['# Scans']
+B = age_counts_per_group.set_index(['Group','Age Range']).loc['B',:]['# Scans']
+W, w_p = wilcoxon(A,B, alternative='two-sided', method='exact')
+print('++ AGE ACROSS SETS: Wilcoxon = %.2f (p = %.2f)' % (W,w_p))
+
 
 # Generate graph that will get later added to a Grid with information about all variables
-age_bar_plot = age_counts_per_group.hvplot.bar(x='Age Range',by='Group', color='color', alpha=0.5, xlabel='Age',title=f'Wilcoxon = %.1f | {sig_string}' % W).opts(toolbar=None, xrotation=90, width=225, height=200, fontscale=.8)
+age_bar_plot = age_counts_per_group.hvplot.bar(x='Age Range',by='Group', alpha=0.5, xlabel='Age',cmap=["#1f77b4","#ff7f0e"]).opts(toolbar=None, xrotation=90, width=250, height=200, fontscale=1)
+age_bar_plot
 
 # ## 6.2. Examination of differneces in gender distribution
 
@@ -527,6 +750,10 @@ age_bar_plot = age_counts_per_group.hvplot.bar(x='Age Range',by='Group', color='
 sex_per_scan = pd.DataFrame(index=idx_kept, columns=['Set Label','Sex'])
 for sbj,run in tqdm(idx_kept):
     sex         = demographics.loc[sbj,'gender']
+    if sex == 'M': 
+        sex = 'Male'
+    else:
+        sex = 'Female'
     group_label = emb_plus.loc[(sbj,run),'Set Label']
     sex_per_scan.loc[(sbj,run),'Sex']         = sex
     sex_per_scan.loc[(sbj,run),'Set Label'] = group_label
@@ -537,23 +764,58 @@ sex_counts_per_group = sex_per_scan.groupby('Set Label').value_counts()
 sex_counts_per_group = sex_counts_per_group.infer_objects()
 sex_counts_per_group
 
-sex_bar_plot = sex_counts_per_group.hvplot.bar(stacked=True, xlabel='', legend='top_left', title='Sex Distribution', ylabel='# Scans').opts(toolbar=None, width=225, height=200)
+sex_bar_plot = sex_counts_per_group.hvplot.bar(stacked=True, xlabel='', legend='top_left', title='', ylabel='# Scans', color=['white','gray']).opts(toolbar=None, width=250, height=200, fontscale=1)
 sex_bar_plot
 
 # ## 6.3. Examination of diffrences in head motion
 
+# +
 # Load motion information for each scan
-mot_info = pd.read_csv(osp.join(RESOURCES_DINFO_DIR,'motion_confounds.csv'),index_col=['Subject','Run'])
+mot_info   = pd.read_csv(osp.join(RESOURCES_DINFO_DIR,'motion_confounds.csv'),index_col=['Subject','Run'])
+scans_in_A = emb_plus[emb_plus['Set Label'] == 'Set A'].index
+scans_in_B = emb_plus[emb_plus['Set Label'] == 'Set B'].index
+mot_A      = mot_info.loc[scans_in_A,'Mean Rel Motion'].values
+mot_B      = mot_info.loc[scans_in_B,'Mean Rel Motion'].values
 
-# ## 6.4. Examination of differences in SNYCQ items
+U, u_p     = mannwhitneyu(mot_A,mot_B,alternative='two-sided')
+print('++ AGE ACROSS SETS: Mann-Whiteney U    = %.2f (p = %.2f)' % (U,u_p))
+# -
+
+mot_A = mot_info.loc[scans_in_A,'Mean Rel Motion']
+mot_B = mot_info.loc[scans_in_B,'Mean Rel Motion']
+overlay = mot_A.hvplot.hist(label='Set A', c=group_colors['Set A'], title='', width=250, height=200, alpha=0.5, shared_axes=False, bins=20, normed=True).opts(toolbar=None) * \
+          mot_B.hvplot.hist(label='Set B', c=group_colors['Set B'], alpha=0.5, shared_axes=False, bins=20, normed=True) * \
+          mot_A.hvplot.kde(label='Set A', c=group_colors['Set A'],  alpha=0.5, shared_axes=False) * \
+          mot_B.hvplot.kde(label='Set B', c=group_colors['Set B'], alpha=0.5, shared_axes=False)
+overlay
+
+# ## 6.4 Examination of Vigilance
+#
 
 # +
-# 4) Interpretability: Cohen's d per feature
-df      = pd.concat([SNYCQ_wVigilance.loc[idx_kept], mot_info.loc[idx_kept]], axis=1)
-X       = df.values
-X_items = df.columns
-g0 = labels_gmm == 0
-g1 = labels_gmm == 1
+vigilance = SNYCQ_wVigilance['Vigilance']
+vigilance.name = 'Wakefulness'
+scans_in_A = emb_plus[emb_plus['Set Label'] == 'Set A'].index
+scans_in_B = emb_plus[emb_plus['Set Label'] == 'Set B'].index
+vigilance_A      = vigilance.loc[scans_in_A].values
+vigilance_B      = vigilance.loc[scans_in_B].values
+
+T,t_p      = ttest_ind(vigilance_A,vigilance_B,alternative='two-sided')
+print('++ VIGILANCE ACROSS SETS: Mann-Whiteney U    = %.2f (p = %.2f)' % (U,u_p))
+# -
+
+vigilance_A      = vigilance.loc[scans_in_A]
+vigilance_B      = vigilance.loc[scans_in_B]
+overlay = vigilance_A.hvplot.hist(label='Set A', c=group_colors['Set A'], title='', width=250, height=200, alpha=0.5, shared_axes=False, bins=[0,10,20,30,40,50,60,70,80,90,100], normed=True, legend=False).opts(toolbar=None) * \
+          vigilance_B.hvplot.hist(label='Set B', c=group_colors['Set B'], alpha=0.5, shared_axes=False, bins=[0,10,20,30,40,50,60,70,80,90,100], normed=True) * \
+          vigilance_A.hvplot.kde(label='Set A', c=group_colors['Set A'],  alpha=0.5, shared_axes=False) * \
+          vigilance_B.hvplot.kde(label='Set B', c=group_colors['Set B'], alpha=0.5, shared_axes=False)
+overlay.opts(show_legend=False)
+
+
+# ## 6.5. Examination of differences in SNYCQ items
+
+# +
 
 def cohens_d(x0, x1):
     m0, m1 = np.nanmean(x0), np.nanmean(x1)
@@ -562,193 +824,198 @@ def cohens_d(x0, x1):
     sp = np.sqrt(((n0-1)*s0**2 + (n1-1)*s1**2) / (n0 + n1 - 2))
     return (m1 - m0) / sp if sp > 0 else np.nan
 
-d_vals = []
-for j, f in enumerate(X_items):
-    d = cohens_d(X[g0, j], X[g1, j])
-    u, p = mannwhitneyu(X[g0, j], X[g1, j],alternative='two-sided')
-    m0, m1 = np.nanmean(X[g0, j]), np.nanmean(X[g1, j])
-    d_vals.append((f, d, u, p, m0, m1))
+def calculate_stats_per_set(df, items, label_col='Set Label', method="bootstrap",  # "bootstrap" or "analytic"
+                            B=2000,              # bootstrap reps
+                            ci=95,random_state=123):
+    
+    rng = np.random.default_rng(random_state)
+    alpha_low = (100 - ci) / 2.0
+    alpha_high = 100 - alpha_low
 
-d_df = pd.DataFrame(d_vals, columns=["feature", "cohens_d (1-0)", "MannWhiney U", "p_value", "men_set_a", "men_set_b"]) \
-       .sort_values("cohens_d (1-0)", key=lambda s: s.abs(), ascending=False)
+    out = []
+    for f in items:
+        x0 = df.loc[df[label_col] == "Set A", f].dropna().values
+        x1 = df.loc[df[label_col] == "Set B", f].dropna().values
+        m0 = float(np.mean(x0)) if x0.size else np.nan
+        m1 = float(np.mean(x1)) if x1.size else np.nan
+        d  = cohens_d(x0,x1) 
+        u, p = mannwhitneyu(x0,x1,alternative='two-sided')
+        if method == "bootstrap":
+            # nonparametric bootstrap of the mean per cluster
+            if x0.size >= 2:
+                boots0 = [np.mean(x0[rng.integers(0, x0.size, x0.size)]) for _ in range(B)]
+                lo0, hi0 = np.percentile(boots0, [alpha_low, alpha_high])
+            else:
+                lo0 = hi0 = np.nan
 
-print("\nTop features by |Cohen's d| (group separation):")
-print(d_df.to_string(index=False, float_format=lambda v: f"{v:0.3f}"))
+            if x1.size >= 2:
+                boots1 = [np.mean(x1[rng.integers(0, x1.size, x1.size)]) for _ in range(B)]
+                lo1, hi1 = np.percentile(boots1, [alpha_low, alpha_high])
+            else:
+                lo1 = hi1 = np.nan
 
-# +
-group_a_scans = group_info_df.reset_index().set_index('Set Label').loc['Set A'].set_index(['Subject','Run']).index
-group_b_scans = group_info_df.reset_index().set_index('Set Label').loc['Set B'].set_index(['Subject','Run']).index
+        elif method == "analytic":
+            # mean ± z * SE; SE = s / sqrt(n)
+            z = 1.96 if ci == 95 else None
+            if z is None:
+                from scipy.stats import norm
+                z = float(norm.ppf(0.5 + ci/200.0))
+            if x0.size >= 2:
+                se0 = float(np.std(x0, ddof=1) / np.sqrt(x0.size))
+                lo0, hi0 = m0 - z*se0, m0 + z*se0
+            else:
+                lo0 = hi0 = np.nan
+            if x1.size >= 2:
+                se1 = float(np.std(x1, ddof=1) / np.sqrt(x1.size))
+                lo1, hi1 = m1 - z*se1, m1 + z*se1
+            else:
+                lo1 = hi1 = np.nan
+        else:
+            raise ValueError("method must be 'bootstrap' or 'analytic'.")
 
-items = list(d_df.set_index(["feature"]).abs().sort_values(by="cohens_d (1-0)", ascending=False).index)
+        out.append((f, d, u,p, m0, lo0, hi0, m1, lo1, hi1))
+
+    out_df = pd.DataFrame(out, columns=["Item", "d(Set B - Set A)", "MW (U)","MW (p)","Set A (mean)", "lo (Set A)", "hi (Set A)", "Set B (mean)", "lo (Set B)", "hi (Set B)"]).set_index("Item")
+    return out_df
+
+
+
 # -
 
-layout = pn.GridBox(ncols=3)
-for item in items:
-    this_pval = d_df.set_index('feature').loc[item]["p_value"]
-    if this_pval > 0.05:
-        title = "Cohen d=%.2f | n.s." % d_df.set_index('feature').loc[item]["cohens_d (1-0)"]
+non_ambiguous_scans = emb_plus[emb_plus['Set Label']!='Ambiguous'].index
+data_items          = SNYCQ_wVigilance.loc[non_ambiguous_scans,:]
+data_labels         = emb_plus.loc[non_ambiguous_scans,'Set Label']
+data                = pd.concat([data_items,data_labels],axis=1)
+stats_per_set       = calculate_stats_per_set(data,[c for c in data_items.columns if c !='Vigilance'],'Set Label')
+stats_per_set.sort_values(by="d(Set B - Set A)", ascending=False).round(2)[['Set A (mean)','Set B (mean)','d(Set B - Set A)','MW (U)','MW (p)']]
+
+layout                = pn.GridBox(ncols=4)
+items_in_descending_d = stats_per_set.sort_values(by="d(Set B - Set A)", ascending=False).index
+set_a_scans = emb_plus[emb_plus['Set Label']=='Set A'].index
+set_b_scans = emb_plus[emb_plus['Set Label']=='Set B'].index
+for item in items_in_descending_d:
+    bins = [0,10,20,30,40,50,60,70,80,90,100]
+    this_pval = stats_per_set.loc[item,"MW (p)"]
+    if this_pval >= 0.01:
+        title = "Cohen d=%.2f | n.s." % stats_per_set.loc[item]["d(Set B - Set A)"]
     else:
-        title = "Cohen d=%.2f | p < 0.05" % d_df.set_index('feature').loc[item]["cohens_d (1-0)"] 
-    if item != "Mean Rel Motion":
-        bins = [0,10,20,30,40,50,60,70,80,90,100]
-    else:
-        bins = 20
-    overlay = df.loc[group_a_scans,item].hvplot.hist(label='Set A', c=group_colors['Set A'], title=title, width=225, height=200, alpha=0.5, shared_axes=False, bins=bins, normed=True) * \
-              df.loc[group_b_scans,item].hvplot.hist(label='Set B', c=group_colors['Set B'], alpha=0.5, shared_axes=False, bins=bins, normed=True) * \
-              df.loc[group_a_scans,item].hvplot.kde(label='Set A', c=group_colors['Set A'], title=title, width=300, height=200, alpha=0.5, shared_axes=False) * \
-              df.loc[group_b_scans,item].hvplot.kde(label='Set B', c=group_colors['Set B'], alpha=0.5, shared_axes=False)
+        title = "Cohen d=%.2f | p < 0.01" % stats_per_set.loc[item]["d(Set B - Set A)"] 
+    overlay = SNYCQ.loc[set_a_scans,item].hvplot.hist(label='Set A', c=group_colors['Set A'], title=title, width=225, height=200, alpha=0.5, shared_axes=False, bins=bins, normed=True) * \
+              SNYCQ.loc[set_b_scans,item].hvplot.hist(label='Set B', c=group_colors['Set B'], alpha=0.5, shared_axes=False, bins=bins, normed=True) * \
+              SNYCQ.loc[set_a_scans,item].hvplot.kde(label='Set A', c=group_colors['Set A'], title=title, width=300, height=200, alpha=0.5, shared_axes=False) * \
+              SNYCQ.loc[set_b_scans,item].hvplot.kde(label='Set B', c=group_colors['Set B'], alpha=0.5, shared_axes=False)
     overlay = overlay.opts(show_legend=False,shared_axes=False, toolbar=None)
     layout.append(overlay)
-layout.append(age_bar_plot)
-layout.append(sex_bar_plot)
 layout
 
-# +
-from scipy.stats import norm
-# --------- 1) Build Cohen's d summary table from SNYCQ ----------
-def cohens_d_ci_boot(x0, x1, B=2000, random_state=123):
-    """Bootstrap 95% CI for Cohen's d (cluster1 - cluster0)."""
-    rng = np.random.default_rng(random_state)
-    x0 = np.asarray(x0); x1 = np.asarray(x1)
-    x0 = x0[np.isfinite(x0)]; x1 = x1[np.isfinite(x1)]
-    n0, n1 = len(x0), len(x1)
-    if n0 < 2 or n1 < 2:
-        return np.nan, np.nan
-    d_boot = []
-    for _ in range(B):
-        b0 = x0[rng.integers(0, n0, n0)]
-        b1 = x1[rng.integers(0, n1, n1)]
-        m0, m1 = b0.mean(), b1.mean()
-        s0, s1 = b0.std(ddof=1), b1.std(ddof=1)
-        sp = np.sqrt(((n0-1)*s0**2 + (n1-1)*s1**2) / max(n0+n1-2, 1))
-        d_boot.append((m1 - m0) / sp if sp > 0 else np.nan)
-    d_boot = np.array([v for v in d_boot if np.isfinite(v)])
-    if len(d_boot) == 0:
-        return np.nan, np.nan
-    lo, hi = np.percentile(d_boot, [2.5, 97.5])
-    return float(lo), float(hi)
 
-def make_cohens_d_summary(SNYCQ, SNYCQ_items, label_col="Set Label", B=2000, random_state=123):
-    """Return a DataFrame with d, CI, r, AUC, and per-cluster means for each feature."""
-    # keep rows with binary labels {0,1}
-    df = SNYCQ[SNYCQ['Set Label']!='Ambiguous']
-    assert set(df[label_col].unique()) <= {'Set A','Set B'}, "Labels must be binary (Set A/Set B)."
+# Provide the same information in more concise manner in the form of a radar plot
 
-    rows = []
-    for f in SNYCQ_items:
-        x0 = df.loc[df[label_col] == 'Set A', f].values
-        x1 = df.loc[df[label_col] == 'Set B', f].values
-        m0, m1 = np.nanmean(x0), np.nanmean(x1)
-        s0, s1 = np.nanstd(x0, ddof=1), np.nanstd(x1, ddof=1)
-        n0, n1 = np.sum(~np.isnan(x0)), np.sum(~np.isnan(x1))
-        sp = np.sqrt(((n0-1)*s0**2 + (n1-1)*s1**2) / max(n0+n1-2, 1))
-        d = (m1 - m0) / sp if sp > 0 else np.nan
-        # Translations
-        r = d / np.sqrt(d**2 + 4) if np.isfinite(d) else np.nan
-        auc = norm.cdf(d / np.sqrt(2)) if np.isfinite(d) else np.nan
-        # Bootstrap CI
-        lo, hi = cohens_d_ci_boot(x0, x1, B=B, random_state=random_state)
-        rows.append((f, d, lo, hi, r, auc, m0, m1))
+# --------- 2) Radar plot with shaded CIs ----------
+def plot_radar_means_with_ci(
+    stats_df,               # output of cluster_means_ci (indexed by feature)
+    order=None,             # optional ordering of features
+    title="Per-cluster item means (with 95% CI)",
+    ci_label="95% CI"
+):
+    """
+    Draws radar with Cluster 0 & 1 mean lines and shaded CI bands.
+    """
+    # order features
+    if order is None:
+        features = list(stats_df.index)
+    else:
+        features = list(order)
+        stats_df = stats_df.loc[features]
 
-    d_plus = pd.DataFrame(rows, columns=[
-        "feature", "d (1-0)", "d_CI_low", "d_CI_high",
-        "r_approx", "AUC_approx", "mean_cluster0", "mean_cluster1"
-    ])
-    return d_plus
-
-# --------- 3) Radar chart of per-cluster means ----------
-def plot_radar_means(d_plus, order=None, savepath=None):
-    df = d_plus.copy()
-    df.set_index(['feature'], inplace=True)
-    features = order if order is not None else df["feature"].tolist()
-    df = df.loc[features]
-
+    # angles for axes + close the loop
     angles = np.linspace(0, 2*np.pi, len(features), endpoint=False).tolist()
     angles += angles[:1]
-    vals0 = df["mean_cluster0"].tolist(); vals0 += vals0[:1]
-    vals1 = df["mean_cluster1"].tolist(); vals1 += vals1[:1]
 
+    # extract arrays and close loops
+    m0 = stats_df["Set A (mean)"].to_numpy().tolist(); m0 += m0[:1]
+    m1 = stats_df["Set B (mean)"].to_numpy().tolist(); m1 += m1[:1]
+    lo0 = stats_df["lo (Set A)"].to_numpy().tolist(); lo0 += lo0[:1]
+    hi0 = stats_df["hi (Set A)"].to_numpy().tolist(); hi0 += hi0[:1]
+    lo1 = stats_df["lo (Set B)"].to_numpy().tolist(); lo1 += lo1[:1]
+    hi1 = stats_df["hi (Set B)"].to_numpy().tolist(); hi1 += hi1[:1]
+
+    # limits based on CI envelopes
+    all_vals = np.array((lo0 + hi0 + lo1 + hi1), dtype=float)
+    finite_vals = all_vals[np.isfinite(all_vals)]
+    if finite_vals.size:
+        rmin, rmax = float(np.nanmin(finite_vals)), float(np.nanmax(finite_vals))
+    else:
+        rmin, rmax = 0.0, 1.0
+    pad = max(1.0, 0.05 * (rmax - rmin))
+
+    # plot
     plt.figure(figsize=(7, 7))
     ax = plt.subplot(111, polar=True)
-    ax.plot(angles, vals0, linewidth=2, label="Cluster 0")
-    ax.plot(angles, vals1, linewidth=2, label="Cluster 1")
-    ax.set_xticks(angles[:-1]); ax.set_xticklabels(features)
 
-    all_vals = np.array(df[["mean_cluster0","mean_cluster1"]]).flatten()
-    rmin, rmax = float(np.min(all_vals)), float(np.max(all_vals))
-    pad = max(1.0, 0.05*(rmax - rmin))
+    # mean lines
+    l0, = ax.plot(angles, m0, linewidth=2, label="Set A")
+    l1, = ax.plot(angles, m1, linewidth=2, label="Set B")
+
+    # shaded CI polygons (build as upper path + reversed lower path)
+    # cluster 0
+    ang_np = np.array(angles)
+    poly0_ang = np.concatenate([ang_np, ang_np[::-1]])
+    poly0_rad = np.concatenate([np.array(hi0), np.array(lo0)[::-1]])
+    s0 = ax.fill(poly0_ang, poly0_rad, alpha=0.15, label=f"Set A {ci_label}")
+
+    # cluster 1
+    poly1_ang = np.concatenate([ang_np, ang_np[::-1]])
+    poly1_rad = np.concatenate([np.array(hi1), np.array(lo1)[::-1]])
+    s1 = ax.fill(poly1_ang, poly1_rad, alpha=0.15, label=f"Set B {ci_label}")
+
+    # axes & labels
+    ax.set_xticks(angles[:-1])
+    ax.set_xticklabels(features)
     ax.set_ylim(rmin - pad, rmax + pad)
-
-    ax.set_title("Per-cluster item means (radar)")
+    ax.set_title(title)
     ax.legend(loc="upper right", bbox_to_anchor=(1.25, 1.1))
+
     plt.tight_layout()
-    if savepath:
-        plt.savefig(savepath, dpi=150, bbox_inches="tight")
     plt.show()
 
 
-
-# -
-
-list(d_plus.sort_values(by="d (1-0)", ascending=False)['feature'])
-
-d_plus = make_cohens_d_summary(emb_plus, SNYCQ_items)
-plot_radar_means(d_plus, order=list(d_plus.sort_values(by="d (1-0)", ascending=False)['feature']))
+# Plot (keep your preferred order of spokes)
+plot_radar_means_with_ci(stats_per_set, order=list(items_in_descending_d),
+                          title="SNYCQ per-cluster means with 95% CI")
 
 # ***
-# # 8. How often scans fall in the same cluster
 #
-# First, we count how many scans we have per subject and keep that information on a pandas Series object
+# # Distribution of SNYCQ values (Supplementary Figure 1)
 
-outlier_scans = [i for i in SNYCQ.index if i not in idx_kept]
-print(outlier_scans)
+layout = None
+for q in SNYCQ.columns:
+    plot = SNYCQ[q].reset_index(drop=True).hvplot.hist(bins=np.linspace(0,100,20), width=250, height=200, normed=True, ylabel='Density', fontsize=12) * SNYCQ[q].reset_index(drop=True).hvplot.kde()
+    if layout is None:
+        layout = plot
+    else:
+        layout = layout + plot
+layout = layout.cols(3).opts(toolbar=None)
+layout
 
-SNYCQ = SNYCQ.drop(outlier_scans)
-SCANs = SNYCQ.index
-SNYCQ.shape
+# Alternative version
 
-SBJs        = list(idx_kept.get_level_values('Subject').unique())
-N_MIN_SCANS = 2
-scans_per_subject = pd.Series(index=SBJs, dtype=int)
-for sbj in scans_per_subject.index:
-    aux                    = SNYCQ.loc[sbj,:]
-    scans_per_subject[sbj] = aux.shape[0]
-sbjs_sel_scans = list(scans_per_subject[scans_per_subject > N_MIN_SCANS].index)
-assert scans_per_subject.sum() == len(SCANs)
+# +
+sns.set_theme(style="whitegrid")
+fig, ax = plt.subplots(figsize=(10,6))
 
-Nsbjs_total       = len(SNYCQ.index.get_level_values('Subject').unique())
-Nsbjs_sel_scans   = len(sbjs_sel_scans)
-print('++ INFO: Number of subjects in these analyses    : %d subjects' % Nsbjs_total)
-print('++ INFO: Number of subjects with 3 or more scans : %d subjects' % Nsbjs_sel_scans)
+sns.boxplot(
+    data=SNYCQ_wVigilance,
+    color='lightgray',
+    ax=ax
+)
 
+ax.set_ylabel('Scores')
+ax.set_xlabel('Items')
 
-# Now, for each participant with 3 or more scans, we check for three possible configurations:
-#
-# 1. All scans in the same set
-# 2. All scans, except 1, in the same set.
-# 3. Any other combination across the three sets
+# Rotate x-tick labels 45 degrees
+plt.setp(ax.get_xticklabels(), rotation=45, ha='right')
 
-def count_scans_per_group(sbjs,cluster_info):
-    # Extract from cluster_info structure the entries for scans with 2 or more scans
-    df = pd.DataFrame(0, index=sbjs, columns=['All scans in same set','All except one scan in same set','Other configurations'], dtype=int)
-    aux = cluster_info.loc[sbjs,'Set Label']
-    n_scans = aux.shape[0]
-    for sbj in aux.index.get_level_values('Subject'):
-        auxx = aux.loc[sbj,:]
-        auxx_max = auxx.value_counts().max()
-        if auxx_max == 4:
-            df.loc[sbj,'All scans in same set'] = 1
-        elif auxx_max == (auxx.shape[0]-1):
-            df.loc[sbj,'All except one scan in same set'] = 1
-        else:
-            df.loc[sbj,'Other configurations'] = 1
-    return df.sum()
-
-
-import seaborn as sns
-fig,axs = plt.subplots(1,1,figsize=(7,7))
-final_counts = count_scans_per_group(sbjs_sel_scans, emb_plus)
-labels       = final_counts.index
-labels       = [ '\n'.join(wrap(l, 15)) for l in labels ]
-f            = axs.pie(final_counts, colors=sns.color_palette("ch:start=.2,rot=-.3"), labels=labels,autopct='%.0f%%');
 plt.tight_layout()
+plt.show()
+
