@@ -6,7 +6,7 @@
 #       extension: .py
 #       format_name: light
 #       format_version: '1.5'
-#       jupytext_version: 1.15.2
+#       jupytext_version: 1.16.1
 #   kernelspec:
 #     display_name: FC Instrospection py 3.10 | 2023b
 #     language: python
@@ -30,10 +30,9 @@ from utils.basics import DATA_DIR, PRJ_DIR, SCRIPTS_DIR, ATLASES_DIR
 from utils.basics import get_sbj_scan_list
 import os.path as osp
 
-#CORTICAL_ATLAS_NAME = CORTICAL_400ROI_ATLAS_NAME
-#CORTICAL_ATLAS_PATH = CORTICAL_400ROI_ATLAS_PATH
 ATLAS_NAME       = FB_400ROI_ATLAS_NAME
 ATLAS_PATH       = FB_400ROI_ATLAS_PATH
+print(ATLAS_NAME)
 
 # ***
 # 1. Retrieve user ID

@@ -34,8 +34,10 @@ PRJ_DIR              = osp.join(BIOWULF_SHARE_FOLDER,'2023_fc_introspection')
 DATA_DIR             = osp.join(BIOWULF_SHARE_FOLDER,'pdn')
 
 # Folders with original data (fmri and behav)
-ORIG_FMRI_DIR   = '/data/DSST/MPI_LEMON/ds000221-download/'
-ORIG_BEHAV_DIR  = osp.join(PRJ_DIR,'downloads','behavioral')
+LEMON_DOWNLOAD_DIR = '/data/DSST/MPI_LEMON/'
+ORIG_FMRI_DIR      = osp.join(LEMON_DOWNLOAD_DIR,'ds000221-download')
+ORIG_BEHAV_DIR     = osp.join(PRJ_DIR,'downloads','behavioral')
+ORIG_DEMO_PATH     = osp.join(ORIG_FMRI_DIR,'participants.tsv')
 
 # Code folders
 NOTEBOOKS_DIR           = osp.join(PRJ_DIR,'code','fc_introspection','notebooks')

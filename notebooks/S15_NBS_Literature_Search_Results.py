@@ -1,12 +1,12 @@
 # ---
 # jupyter:
 #   jupytext:
-#     formats: ipynb,py:light
+#     formats: ipynb,py
 #     text_representation:
 #       extension: .py
 #       format_name: light
 #       format_version: '1.5'
-#       jupytext_version: 1.15.2
+#       jupytext_version: 1.16.1
 #   kernelspec:
 #     display_name: FC Instrospection py 3.10 | 2023b
 #     language: python
@@ -42,14 +42,21 @@ nbs_lit = nbs_lit[['% Sig. Edges', '% Sig. Nodes']].copy()
 nbs_lit['% Sig. Edges'] = nbs_lit['% Sig. Edges'].str.rstrip('%').astype('float')
 nbs_lit['% Sig. Nodes'] = nbs_lit['% Sig. Nodes'].str.rstrip('%').astype('float')
 
+# +
+N_SIG_CONNS = 458
+N_SIG_NODES = 210
+
 fig, axs = plt.subplots(1,2,figsize=(8,5))
 # Percent Significant Connections in NBS analysis
 sns.boxplot(data=nbs_lit,y='% Sig. Edges', color='lightgray', ax=axs[0])
 sns.swarmplot(data=nbs_lit,y='% Sig. Edges',c ='k', s=2,ax=axs[0])
 axs[0].set_ylabel('Percentage of Significant Edges')
-axs[0].axhline(y=100*590/(380*379/2), color='r', linestyle='--', linewidth=1)
+axs[0].axhline(y=100*N_SIG_CONNS/(380*379/2), color='r', linestyle='--', linewidth=1)
 # Percentage of Significant Nodes in NBS analysis
 sns.boxplot(data=nbs_lit,y='% Sig. Nodes', color='lightgray', ax=axs[1])
 sns.swarmplot(data=nbs_lit,y='% Sig. Nodes',c ='k', s=2, ax=axs[1])
 axs[1].set_ylabel('Percentage of Nodes in Significant Edges')
-axs[1].axhline(y=100*221/380, color='r', linestyle='--', linewidth=1)
+axs[1].axhline(y=100*N_SIG_NODES/380, color='r', linestyle='--', linewidth=1)
+# -
+
+

@@ -1,12 +1,12 @@
 # ---
 # jupyter:
 #   jupytext:
-#     formats: ipynb,py:light
+#     formats: ipynb,py
 #     text_representation:
 #       extension: .py
 #       format_name: light
 #       format_version: '1.5'
-#       jupytext_version: 1.15.2
+#       jupytext_version: 1.16.1
 #   kernelspec:
 #     display_name: FC Instrospection (2023 | 3.10)
 #     language: python
@@ -149,7 +149,7 @@ p_values.columns.name = 'p-value'
 for BEHAVIOR in BEHAVIOR_LABELS:
     p_values.loc[BEHAVIOR,'Non Parametric'] = (((accuracy_null[BEHAVIOR] > accuracy_real[BEHAVIOR].median()).sum() + 1) / (Niters_null+1)).values[0]
 
-p_values.infer_objects().round(3)
+p_values.infer_objects().round(3)[['Parametric','Non Parametric','Non Parametric, FDRbh']]
 
 (reject_bonf, p_values['Non Parametric, FDRbh'], _, _ ) = multipletests(p_values['Non Parametric'],alpha=0.05,method='fdr_bh')
 

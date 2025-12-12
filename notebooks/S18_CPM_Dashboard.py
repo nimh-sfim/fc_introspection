@@ -1,12 +1,12 @@
 # ---
 # jupyter:
 #   jupytext:
-#     formats: ipynb,py:light
+#     formats: ipynb,py
 #     text_representation:
 #       extension: .py
 #       format_name: light
 #       format_version: '1.5'
-#       jupytext_version: 1.15.2
+#       jupytext_version: 1.16.1
 #   kernelspec:
 #     display_name: FC Instrospection (2023 | 3.10)
 #     language: python
@@ -17,6 +17,7 @@
 #
 # Dashboard to access results for the CPM portion of the analyses.
 
+# +
 import pandas as pd
 import os.path as osp
 from utils.basics import RESOURCES_CPM_DIR, RESOURCES_CONN_DIR
@@ -32,11 +33,18 @@ import panel as pn
 import matplotlib.pyplot as plt
 from scipy.stats import pearsonr, spearmanr
 from scipy.spatial.distance import squareform
-from utils.plotting import hvplot_fc_nwlevel, plot_as_graph, create_graph_from_matrix
+from utils.plotting import  plot_as_graph, create_graph_from_matrix, hvplot_fc_nwlevel
+#from sfim_lib.plotting.fc_matrices import hvplot_fc_nwlevel
+
 from nilearn.plotting import plot_connectome
 from nxviz.utils import node_table
 from sklearn.preprocessing import MinMaxScaler
 from IPython import display
+
+import warnings
+with warnings.catch_warnings():
+    warnings.simplefilter("ignore", category=FutureWarning)
+# -
 
 print('++ Packages versions:')
 print('hvplot version: %s' % str(hvplot.__version__))
@@ -46,7 +54,8 @@ print('pandas version: %s' % str(pd.__version__))
 from nxviz.utils import node_table
 
 import os
-port_tunnel = int(os.environ['PORT2'])
+port_tunnel = 35707
+#port_tunnel = int(os.environ['PORT2'])
 print('++ INFO: Second Port available: %d' % port_tunnel)
 
 ACCURACY_METRIC      = 'pearson'
@@ -71,9 +80,6 @@ results_path = osp.join(RESOURCES_CPM_DIR,'cpm_predictions_summary-subject_aware
 cpm_results_dict = pd.read_pickle(results_path)
 
 # +
-#with open(results_path ,'rb') as f:
-#    cpm_results_dict = pickle.load(f)
-# Extract the different variables
 null_df       = cpm_results_dict['null_df']
 real_df       = cpm_results_dict['real_df']
 accuracy_null = cpm_results_dict['accuracy_null']
@@ -146,6 +152,7 @@ get_obs_vs_pred('Images')
 # First, we just load one model as a reference to infer the number of edges. We need this to create empty datastructures that will subsequently populate
 
 ref_path = osp.join(RESOURCES_CPM_DIR,'swarm_outputs','real',ATLAS,SPLIT_MODE, CONFOUNDS,CORR_TYPE+'_'+E_SUMMARY_METRIC,'Images','cpm_Images_rep-{r}.pkl'.format(r=str(1).zfill(5)))
+print(ref_path)
 ref_data = pd.read_pickle(ref_path)
 #with open(ref_path,'rb') as f:
 #    ref_data = pickle.load(f)
@@ -276,8 +283,6 @@ cmap_neg_select  = pn.widgets.Select(name='Colormap for Negative Matrix', option
 matrix_max_count = pn.widgets.IntSlider(name='Max Num Conns:',start=10, end=300, step=5, value=100)
 menu_tab         = pn.Column(behav_select,cmap_pos_select,cmap_neg_select, matrix_max_count)
 
-menu_tab
-
 # 3. Create all elements of the dashboard
 
 circos_show_pos_cb   = pn.widgets.Checkbox(name='Show postively correlated edges', value=True)
@@ -302,7 +307,7 @@ def gather_interactive_brain_view(behavior):
 
 
 @pn.depends(behav_select, cmap_pos_select, cmap_neg_select, matrix_max_count)
-def gather_nw_matrix(behavior, pos_cmap, neg_cmap, clim_max_count, clim_min_count=0, add_net_labels=None):
+def gather_nw_matrix(behavior, pos_cmap, neg_cmap, clim_max_count, clim_min_count=0, add_net_labels=True):
     pos_count = hvplot_fc_nwlevel(model_consensus_to_plot[behavior]>0,title='Positive Correlation',mode='count', add_net_colors=True, add_net_labels=add_net_labels, cmap=pos_cmap, labels_text_color='red', clim_min=clim_min_count, clim_max=clim_max_count).opts(toolbar=None) #cmap='Reds'
     neg_count = hvplot_fc_nwlevel(model_consensus_to_plot[behavior]<0,title='Negative Correlation',mode='count', add_net_colors=True, add_net_labels=add_net_labels, cmap=neg_cmap, labels_text_color='blue', clim_min=clim_min_count, clim_max=clim_max_count).opts(toolbar=None)
     all_count = hvplot_fc_nwlevel(model_consensus_to_plot[behavior].abs(),title='Full Model',mode='count', add_net_colors=True).opts(toolbar=None)
@@ -426,11 +431,14 @@ dashboard = pn.Row(pn.Column(menu_tab, pn.Row(get_pred_plots,
 
 # ### Alternative smaller versions of the dashboard
 
-dashboard = pn.Row(pn.Column(behav_select, get_pred_plots), 
-                   pn.Column(gather_nw_matrix))
+# + vscode={"languageId": "raw"} active=""
+# dashboard = pn.Row(pn.Column(behav_select, get_pred_plots), 
+#                    pn.Column(gather_nw_matrix))
 
-dashboard = pn.Row(pn.Column(menu_tab), 
-                   pn.Column(gather_nw_matrix))
+# + vscode={"languageId": "raw"} active=""
+# dashboard = pn.Row(pn.Column(menu_tab), 
+#                    pn.Column(gather_nw_matrix))
+# -
 
 dashboard_server = dashboard.show(port=port_tunnel,open=False)
 

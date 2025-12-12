@@ -1,7 +1,7 @@
 close all
 clear all
-what_to_show = 'neg'; % Options: 'pos','neg','both'
-pred_target = 'Images';
+what_to_show = ['neg']; % Options: 'pos','neg','both'
+pred_target = 'Past';
 
 % Start Parallel Pool (for efficiency)
 % ------------------------------------

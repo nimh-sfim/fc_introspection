@@ -1,12 +1,12 @@
 # ---
 # jupyter:
 #   jupytext:
-#     formats: ipynb,py:light
+#     formats: ipynb,py
 #     text_representation:
 #       extension: .py
 #       format_name: light
 #       format_version: '1.5'
-#       jupytext_version: 1.15.2
+#       jupytext_version: 1.16.1
 #   kernelspec:
 #     display_name: FC Instrospection py 3.10 | 2023b
 #     language: python
@@ -26,7 +26,7 @@ import numpy as np
 import os.path as osp
 import hvplot.pandas
 from utils.basics import FB_400ROI_ATLAS_NAME as ATLAS_NAME
-from utils.basics import ATLASES_DIR, RESOURCES_NIMARE_DIR, RESOURCES_CONN_DIR, FB_200ROI_ATLAS_NAME, RESOURCES_NBS_DIR
+from utils.basics import ATLASES_DIR, RESOURCES_NIMARE_DIR, RESOURCES_CONN_DIR, RESOURCES_NBS_DIR
 from utils.plotting import hvplot_fc, hvplot_fc_nwlevel, create_graph_from_matrix, plot_as_graph
 import holoviews as hv
 from holoviews import opts
@@ -40,14 +40,14 @@ from nilearn.image import load_img
 from nilearn import masking
 # -
 
-import os
-port_tunnel = int(os.environ['PORT2'])
-print('++ INFO: Second Port available: %d' % port_tunnel)
+NBS_CONTRASTS = ['SetA_gt_SetB','SetB_gt_SetA']
 
-SOLUTION      = 'CL02'
-THRESHOLD     = 'NBS_3p1'
-DESIGN_MATRIX = 'SbjAware'
-NBS_CONTRASTS = ['Image-Pos-Others_gt_Surr-Neg-Self','Surr-Neg-Self_gt_Image-Pos-Others']
+# + vscode={"languageId": "raw"} active=""
+# SOLUTION      = 'CL02'
+# THRESHOLD     = 'NBS_3p1'
+# DESIGN_MATRIX = 'SbjAware'
+# NBS_CONTRASTS = ['Image-Pos-Others_gt_Surr-Neg-Self','Surr-Neg-Self_gt_Image-Pos-Others']
+# -
 
 # # 2. Load information about the Atlas and ROI needed for plotting
 #
@@ -56,7 +56,10 @@ NBS_CONTRASTS = ['Image-Pos-Others_gt_Surr-Neg-Self','Surr-Neg-Self_gt_Image-Pos
 ATLASINFO_PATH = osp.join(ATLASES_DIR,ATLAS_NAME,'{ATLAS_NAME}.roi_info.csv'.format(ATLAS_NAME=ATLAS_NAME))
 roi_info       = pd.read_csv(ATLASINFO_PATH)
 Nrois          = roi_info.shape[0]
-print(Nrois)
+Nedges         = int(Nrois*(Nrois-1)/2)
+print(Nrois,Nedges)
+
+roi_info[roi_info['ROI_Name']=='LH_SalVentAttn_Med_5']
 
 # Count the number of networks and get their names
 
@@ -68,7 +71,7 @@ print(networks, len(networks))
 
 data = {}
 for contrast in NBS_CONTRASTS:
-    aux_path = osp.join(RESOURCES_NBS_DIR,ATLAS_NAME,f'NBS_{SOLUTION}_Results',THRESHOLD,DESIGN_MATRIX,f'NBS_{SOLUTION}_{contrast}.edge')
+    aux_path = osp.join(RESOURCES_NBS_DIR,ATLAS_NAME,f'NBS_Results',f'NBS_{contrast}.edge')
     if osp.exists(aux_path):
         aux_data = np.loadtxt(aux_path)
         data[contrast]  = pd.DataFrame(aux_data,
@@ -81,42 +84,53 @@ for contrast in NBS_CONTRASTS:
                                      columns = roi_info.set_index(['Hemisphere','Network','ROI_Name','ROI_ID','RGB']).index)
         print('++ WARTNING: No results available for %s' % contrast)
 
-data['Surr-Neg-Self_gt_Image-Pos-Others'].sum().sum()
+N_sig_edges = data['SetA_gt_SetB'].sum().sum()/2
+PC_sig_edges = 100 * N_sig_edges / Nedges
+N_sig_edges,PC_sig_edges
 
-data['Both'] = data['Image-Pos-Others_gt_Surr-Neg-Self'] - data['Surr-Neg-Self_gt_Image-Pos-Others']
+
+N_sig_nodes  = (data['SetA_gt_SetB'].sum() > 0).sum()
+PC_sig_nodes = 100 * N_sig_nodes / N_sig_nodes
+N_sig_nodes,PC_sig_nodes
+
+data['Both'] = data['SetA_gt_SetB'] - data['SetB_gt_SetA']
 
 # We will also write the results of NBS into text format that we can load into CONN to generate the brain views of the results
 
+RESOURCES_CONN_DIR
+
 for contrast in data.keys():
     if data[contrast] is not None:
-        aux_path = osp.join(RESOURCES_CONN_DIR,f'NBS_{DESIGN_MATRIX}_{THRESHOLD}_{contrast}.txt')
+        aux_path = osp.join(RESOURCES_CONN_DIR,f'NBS_{contrast}.txt')
         np.savetxt(aux_path,data[contrast].values)
         print("++ INFO: Contrast data [%s] saved to disk %s" %(contrast,aux_path))
 
 # # Plot results at the individual connection level
 
-hvplot_fc(data['Both'].loc[:,networks,:].T.loc[:,networks,:].T, by='Network', add_color_segments=True, add_labels=True, cmap=['#4472C4','#ffffff','#ED7D31'], major_label_overrides={-0.5:'Surr-Neg-Self > Images-Pos-Others',0:'',0.5:'Images-Pos-Others > Surr-Neg-Self'}, colorbar_position='top').opts(toolbar=None, title=f'{DESIGN_MATRIX} | {THRESHOLD} | Both')
+hvplot_fc(data['Both'].loc[:,networks,:].T.loc[:,networks,:].T, by='Network', add_color_segments=True, add_labels=True, cmap=['#ED7D31','#ffffff', '#4472C4'], major_label_overrides={-0.5:'Set B > Set A',0:'',0.5:'Set A > Set B'}, colorbar_position='top').opts(toolbar=None, title='Both')
 
-plot_as_graph(data['Surr-Neg-Self_gt_Image-Pos-Others'], edge_weight=.5, show_hemi_labels=False,pos_edges_color='k')
+plot_as_graph(data['SetA_gt_SetB'], edge_weight=.5, show_hemi_labels=False,pos_edges_color='k')
 
-data['Surr-Neg-Self_gt_Image-Pos-Others'].sum(axis=1).sort_values(ascending=False)
+data['SetA_gt_SetB'].sum(axis=1).sort_values(ascending=False)
 
-hvplot_fc_nwlevel(data['Surr-Neg-Self_gt_Image-Pos-Others'], title='', add_net_colors=True, add_net_labels='both', mode='count', cmap='Greys', clim_max=100, labels_text_color='Greys_r').opts(toolbar=None)
+hvplot_fc_nwlevel(data['SetA_gt_SetB'], title='', add_net_colors=True, add_net_labels='both', mode='count', cmap='Greys', clim_max=100, labels_text_color='Greys_r').opts(toolbar=None)
 
 hvplot_fc_nwlevel(data['Image-Pos-Others_gt_Surr-Neg-Self'], title='', add_net_colors=True, add_net_labels='y', mode='count', cmap='Reds', clim_max=30, labels_text_color='Reds_r').opts(toolbar=None)
 
 # # Laterality Index for each contrast
 #
 
-aux         = (data['Surr-Neg-Self_gt_Image-Pos-Others']).copy()
-aux.index   = data['Surr-Neg-Self_gt_Image-Pos-Others'].index.get_level_values('Hemisphere')
-aux.columns = data['Surr-Neg-Self_gt_Image-Pos-Others'].columns.get_level_values('Hemisphere')
+aux         = (data['SetA_gt_SetB']).copy()
+aux.index   = data['SetA_gt_SetB'].index.get_level_values('Hemisphere')
+aux.columns = data['SetA_gt_SetB'].columns.get_level_values('Hemisphere')
 f2GTf1_LL   = (aux.loc['LH','LH'].sum().sum() / 2)
 f2GTf1_RR   = (aux.loc['RH','RH'].sum().sum() / 2)
 f2GTf1_LR   = aux.loc['LH','RH'].sum().sum()
-print('++ INFO [Surr-Neg-Self > Image-Pos-Others] L-L Conns: %d' % f2GTf1_LL)
-print('++ INFO [Surr-Neg-Self > Image-Pos-Others] R-R Conns: %d' % f2GTf1_RR)
-print('++ INFO [Surr-Neg-Self > Image-Pos-Others] R-L Conns: %d' % f2GTf1_LR)
+print('++ INFO [SetA > SetB] L-L Conns: %d' % f2GTf1_LL)
+print('++ INFO [SetA > SetB] R-R Conns: %d' % f2GTf1_RR)
+print('++ INFO [SetA > SetB] R-L Conns: %d' % f2GTf1_LR)
 print('++ --------------------------------------------------------')
 f2GTf1_fcLI  = (f2GTf1_LL - f2GTf1_RR) / (f2GTf1_LL + f2GTf1_RR)
-print('++ INFO [Surr-Neg-Self > Image-Pos-Others] fcLI:      %.2f' % f2GTf1_fcLI)
+print('++ INFO [SetA > SetB] fcLI:      %.2f' % f2GTf1_fcLI)
+
+

@@ -6,7 +6,7 @@
 #       extension: .py
 #       format_name: light
 #       format_version: '1.5'
-#       jupytext_version: 1.15.2
+#       jupytext_version: 1.16.1
 #   kernelspec:
 #     display_name: FC Instrospection py 3.10 | 2023b
 #     language: python
@@ -53,6 +53,7 @@ port_tunnel = int(os.environ['PORT2'])
 print('++ INFO: Second Port available: %d' % port_tunnel)
 
 ATLAS_NAME = FB_400ROI_ATLAS_NAME
+print(ATLAS_NAME)
 
 # # 1. Load the final list of scans used in this project
 
@@ -124,3 +125,5 @@ sbj_mat_dashboard = pn.Row(sbj_select, plot_subject_fc)
 sbj_mat_dashboard_server = sbj_mat_dashboard.show(port=port_tunnel,open=False)
 
 sbj_mat_dashboard_server.stop()
+
+

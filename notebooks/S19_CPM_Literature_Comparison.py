@@ -1,12 +1,12 @@
 # ---
 # jupyter:
 #   jupytext:
-#     formats: ipynb,py:light
+#     formats: ipynb,py
 #     text_representation:
 #       extension: .py
 #       format_name: light
 #       format_version: '1.5'
-#       jupytext_version: 1.15.2
+#       jupytext_version: 1.16.1
 #   kernelspec:
 #     display_name: FC Instrospection py 3.10 | 2023b
 #     language: python
@@ -104,3 +104,5 @@ for i, TARGET in enumerate(['Wakefulness','Thought Pattern 2','Surroundings','Th
 ax.set_ylabel('Model Accuracy (Pearson`s R)')
 plt.ylim((0.0,.7))
 plt.xlim((-.5,2.5))
+
+
