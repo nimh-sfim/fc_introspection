@@ -5,7 +5,7 @@ import os.path as osp
 import xarray as xr
 import pandas as pd
 from tqdm import tqdm
-from utils.basics import get_sbj_scan_list, RESOURCES_SNYCQ_DIR
+from utils.basics import RESOURCES_SNYCQ_DIR
 
 def read_command_line():
     parser = argparse.ArgumentParser(description='This program reads the results from all swarm jobs for a given configuration and saves them into a single pickle file')
@@ -40,9 +40,9 @@ def main():
     print('++ INFO [main]: Targets = %s' % str(TARGETS))   
     num_missing = {t:0 for t in TARGETS} 
     # Load list of scans and sessions
-    emb_plus  = pd.read_csv(osp.join(RESOURCES_SNYCQ_DIR, 'SNYCQ_tsne_embeddings_plus.csv'), index_col=[0,1])
+    emb_plus  = pd.read_csv(osp.join(RESOURCES_SNYCQ_DIR, 'W.csv'), index_col=[0,1])
     scan_list = emb_plus.index
-    #sbj_list, scan_list = get_sbj_scan_list(when='post_motion', return_snycq=False)
+    #_, scan_list = get_sbj_scan_list(when='post_motion', return_snycq=False)
     scan_idx = [sbj+'.'+run for (sbj,run) in scan_list] 
      
     # Load reference file
