@@ -1,27 +1,18 @@
-# ---
-# jupyter:
-#   jupytext:
-#     formats: ipynb,py:light
-#     text_representation:
-#       extension: .py
-#       format_name: light
-#       format_version: '1.5'
-#       jupytext_version: 1.15.2
-#   kernelspec:
-#     display_name: FC Instrospection py 3.10 | 2023b
-#     language: python
-#     name: fc_introspection_2023b_py310
-# ---
+#!/usr/bin/env python
+# coding: utf-8
 
 # # Description - Create Swarm File to run structural pipeline on NC dataset
-#
+# 
 # This script creates the swarm file to run freesurfer on the NC dataset. 
-#
+# 
 # Becuase this dataset is linked to the MPI LEMON dataset, sometimes subjects have an anatomical, but on other occasions the anatomical needs to be grabbed from the LEMON dataset.
-#
-# In Notebooks/SNYCQ01_CleanDownloadedData we created a dataframe that contains the final list of subjects to be analyzed (i.e., only those with resting runs accompanied by SNYCQ) and for each of these subjects, the dataframe also contains the path of the anatomical for each subject.
-#
+# 
+# In ```Notebooks/S00_OrganizeData``` we saved a file ```ANAT_PATHINFO_PATH``` with the final list of subjects to be analyzed (i.e., only those with resting runs accompanied by SNYCQ) and for each of these subjects, the dataframe also contains the path of the anatomical for each subject.
+# 
 # ***
+
+# In[2]:
+
 
 import pandas as pd
 import os.path as osp
@@ -29,19 +20,34 @@ import os
 from datetime import datetime
 import getpass
 
+
+# In[3]:
+
+
 from utils.basics import PRJ_DIR, SCRIPTS_DIR, ANAT_PATHINFO_PATH
+print('++INFO: Anatomical path information available at: %s' % ANAT_PATHINFO_PATH)
+
+
+# In[4]:
+
 
 username = getpass.getuser()
 print('++ INFO: user working now --> %s' % username)
 
-# +
+
+# In[5]:
+
+
 #user specific folders
 #=====================
 swarm_folder   = osp.join(PRJ_DIR,'SwarmFiles.{username}'.format(username=username))
 logs_folder    = osp.join(PRJ_DIR,'Logs.{username}'.format(username=username))         
                           
 swarm_path     = osp.join(swarm_folder,'S01_NC_run_structural.SWARM.sh')
-# -
+
+
+# In[6]:
+
 
 # create user specific folders if needed
 # ======================================
@@ -50,28 +56,44 @@ if not osp.exists(swarm_folder):
 if not osp.exists(logs_folder):
     os.makedirs(logs_folder)
 
+
 # ***
 # # 1. Load DataFrame with subject list and path to anatomical
 
+# In[7]:
+
+
 anat_info = pd.read_csv(ANAT_PATHINFO_PATH, index_col='subject')
+
+
+# In[8]:
+
 
 anat_info.head()
 
+
 # # 2. Create Log Directory for swarm jobs
+
+# In[9]:
+
 
 logdir_path = osp.join(logs_folder,'S01_NC_run_structural.logs')
 if not osp.exists(logdir_path):
     os.mkdir(logdir_path)
     print("++ INFO: Log folder created [%s]" % logdir_path)
 
+
 # ***
 # # 3. Create Swarm File
 
 # This will create a swarm file with one line call to S01_NC_run_structural.sh per subject. The inputs to that bash script are:
-#
+# 
 # * SBJ = subject ID
 # * ANAT_PREFIX = 'ses-01' or 'ses-02' depending on where the anatomical data resides. This information will be used by ```structural.py``` and ```mp2rage.py``` within the lemon pipeline.
 # * ANAT_PATH = folder containing the anatomical scans. They will be also used by the two pipeline files mentioned above
+
+# In[9]:
+
 
 # Open the file
 swarm_file = open(swarm_path, "w")
@@ -94,5 +116,4 @@ for sbj,row in anat_info.iterrows():
                                                                                                                                              scripts_folder=SCRIPTS_DIR))
     swarm_file.write('\n')
 swarm_file.close()
-
 
