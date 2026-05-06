@@ -44,7 +44,7 @@ NOTEBOOKS_DIR           = osp.join(PRJ_DIR,'code','fc_introspection','notebooks'
 SCRIPTS_DIR             = osp.join(PRJ_DIR,'code','fc_introspection','bash')
 PREPROCESSING_NOTES_DIR = osp.join(PRJ_DIR,'code','fc_introspection','resources','preprocessing_notes')
 RESOURCES_DINFO_DIR     = osp.join(PRJ_DIR,'code','fc_introspection','resources','dataset_info')
-PROC_SNYCQ_DIR          = osp.join(PRJ_DIR,'data','snycq')
+#PROC_SNYCQ_DIR          = osp.join(PRJ_DIR,'data','snycq')
 RESOURCES_SNYCQ_DIR     = osp.join(PRJ_DIR,'code','fc_introspection','resources','snycq')
 RESOURCES_NBS_DIR       = osp.join(PRJ_DIR,'code','fc_introspection','resources','nbs')
 RESOURCES_CPM_DIR       = osp.join(PRJ_DIR,'code','fc_introspection','resources','cpm')
@@ -62,7 +62,7 @@ CPM_NULL_NITERATIONS = 10000     # Number of iterations used to build a null dis
 
 # Paths to files we use often
 # ===========================
-ORIG_SNYCQ_PATH      = osp.join(PROC_SNYCQ_DIR, 'SNYCQ_Preproc.csv')                # Files with all SNYCQ answers compiled into a single dataframe
+ORIG_SNYCQ_PATH      = osp.join(RESOURCES_SNYCQ_DIR, 'SNYCQ_Preproc.csv')                # Files with all SNYCQ answers compiled into a single dataframe
 SBJS_WITH_SNYCQ_PATH = osp.join(RESOURCES_DINFO_DIR,'NC_withSNYCQ_subjects.txt')    # List of subjects with at least one rest scan with SNYCQ
 SNYCQ_CLUSTERS_INFO_PATH =  osp.join(RESOURCES_SNYCQ_DIR,'SNYCQ_clusters_info.csv') # Information with scan membership for each cluster.
 SNYCQ_W_PATH             =  osp.join(RESOURCES_SNYCQ_DIR,'SNYCQ_W.csv')             # W: output from applying sbcNMMF to SNYCQ

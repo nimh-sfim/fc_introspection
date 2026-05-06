@@ -385,19 +385,10 @@ def hvplot_fc_nwlevel(data,mode='percent',clim_max=None,clim_min=0, cmap='viridi
         
     # Create Network Colorbar
     if add_net_colors:
-        net_segments_y = hv.Segments((tuple(np.ones(num_networks)-1),tuple(np.arange(num_networks)-.5),
-                                  tuple(np.ones(num_networks)-1),tuple(np.arange(num_networks)+.5), networks),vdims='Networks').opts(cmap=nw_color_map, color=dim('Networks'), line_width=10,show_legend=False)
-        net_segments_x = hv.Segments((tuple(np.arange(num_networks)),tuple(np.ones(num_networks)-1.5),
-                                  tuple(np.arange(num_networks)+1),tuple(np.ones(num_networks)-1.5), networks),vdims='Networks').opts(cmap=nw_color_map, color=dim('Networks'), line_width=10,show_legend=False) 
-        #net_segments_y = hv.Segments((tuple(np.ones(num_networks)-1.5),tuple(np.arange(num_networks)-.5),
-        #                              tuple(np.ones(num_networks)-1.5),tuple(np.arange(num_networks)+.5), networks),vdims='Networks').opts(cmap=nw_color_map, color=dim('Networks'), line_width=10,show_legend=False)
-        #net_segments_x = hv.Segments((tuple(np.arange(num_networks)-.5),tuple(np.ones(num_networks)-1.5),
-        #                              tuple(np.arange(num_networks)+.5),tuple(np.ones(num_networks)-1.5), networks),vdims='Networks').opts(cmap=nw_color_map, color=dim('Networks'), line_width=10,show_legend=False) 
-        x_min_lim = -4
-        y_min_lim = -4
-    else:
-        x_min_lim = 0
-        y_min_lim = 0
+        net_segments_y = hv.Segments((tuple(np.ones(num_networks)-1.5),tuple(np.arange(num_networks)-.5),
+                                  tuple(np.ones(num_networks)-1.5),tuple(np.arange(num_networks)+.5), networks),vdims='Networks').opts(cmap=nw_color_map, color=dim('Networks'), line_width=10,show_legend=False)
+        net_segments_x = hv.Segments((tuple(np.arange(num_networks)-.5),tuple(np.ones(num_networks)-1.5),
+                                  tuple(np.arange(num_networks)+.5),tuple(np.ones(num_networks)-1.5), networks),vdims='Networks').opts(cmap=nw_color_map, color=dim('Networks'), line_width=10,show_legend=False)  
     # Remove axes from data
     if mode=='percent':
         matrix_to_plot              = pd.DataFrame(pc_sig_cons.values)
