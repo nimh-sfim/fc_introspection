@@ -13,7 +13,7 @@ set -e
 
 # Load conda environment
 # ----------------------
-source /data/SFIMJGC_HCP7T/Apps/miniconda38/etc/profile.d/conda.sh && conda activate fc_introspection 
+source /data/SFIMJGC_HCP7T/Apps/miniconda38/etc/profile.d/conda.sh && conda activate /data/SFIMJGC_HCP7T/Apps/envs/generic_2025a 
 
 # Enter lemon dataset pre-processing pipelines
 # --------------------------------------------
