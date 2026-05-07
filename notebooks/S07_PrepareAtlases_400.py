@@ -1,32 +1,23 @@
-# ---
-# jupyter:
-#   jupytext:
-#     formats: ipynb,py:light
-#     text_representation:
-#       extension: .py
-#       format_name: light
-#       format_version: '1.5'
-#       jupytext_version: 1.15.2
-#   kernelspec:
-#     display_name: FC Instrospection (2023 | 3.10)
-#     language: python
-#     name: fc_introspection_2023_py310
-# ---
+#!/usr/bin/env python
+# coding: utf-8
 
-# # Description - Information and Code to prepare the atlases used in this work
-#
+# # Description: Combine atlases and constrain to only ROIs within our dataaset imaging FOV
+# 
 # For this paper we use a combination of two altases: Schaeffer 400 ROI atlas (for cortical regions) and AAL v2 atlas (for subcortical regions).
-#
+# 
 # This notebook will help you prepare final versions of the atlases that contain ROIs well within the imaging FOV of the sample and with ROIs numbered contigously. It will also help you generate accessory files with color, ROI ID and ROI location info needed for plotting and for sorting ROI by network membership.
-#
+# 
 # By the end of this notebook, there will be two atlases of interest:
-#
+# 
 # * ```Schaefer2018_400Parcels_7Networks```: Atlase with 187 ROI distributed across 6 Yeo Networks (all ROIs from the Limbic network are removed due to FOV constrains)
 # * ```Schaefer2018_400Parcels_7Networks_AAL2```: Atlas with 195 ROIs that include the 187 from the atlas above plus 8 extra subcortical ROIs: L/R Thalamus, L/R Pallidum, L/R Caudate, L/R Putamen
-#
+# 
 # Prior to running this notebook you need to make sure the following variables are correctly set:
-#
-# 1. Assign the full path to the atlases folder to variable [```ATLASES_DIR``` in ```basics.py```](https://github.com/nimh-sfim/fc_introspection/blob/main/notebooks/utils/basics.py#L65).
+# 
+# 1. Assign the full path to the atlases folder to variable [```ATLASES_DIR``` in ```basics.py```](https://github.com/nimh-sfim/fc_introspection/blob/main/notebooks/utils/basics.py#L77).
+
+# In[1]:
+
 
 import subprocess
 import getpass
@@ -35,7 +26,7 @@ import pandas as pd
 from datetime import datetime
 from shutil import rmtree
 from utils.basics import CORTICAL_400ROI_ATLAS_PATH, CORTICAL_400ROI_ATLAS_NAME, SUBCORTICAL_ATLAS_PATH, SUBCORTICAL_ATLAS_NAME, FB_400ROI_ATLAS_NAME, FB_400ROI_ATLAS_PATH
-from utils.basics import DATA_DIR, PRJ_DIR, SCRIPTS_DIR, ATLASES_DIR
+from utils.basics import DATA_DIR, ATLASES_DIR
 from utils.basics import get_sbj_scan_list, rgb2hex
 import os.path as osp
 from sfim_lib.atlases.raking import correct_ranked_atlas
@@ -43,37 +34,38 @@ import hvplot.pandas
 import holoviews as hv
 import warnings
 warnings.simplefilter(action='ignore', category=FutureWarning)
-print('++ Pandas version (<2.0 needed becuase some functions still use pd.append) --> This kernel uses: %s' % str(pd.__version__))
 
+
+# ***
 # # 1. Atlas Preparation: Schaeffer 400 ROI Atlas
-#
+# 
 # This project uses the 400 ROI version of the Schaefer Atlas sorted according to the 7 Yeo Networks. This atlas is publicly available [here](https://github.com/ThomasYeoLab/CBIG/tree/master/stable_projects/brain_parcellation/Schaefer2018_LocalGlobal).
-#
+# 
 # To prepare this atlas for the project, please perform the following operations:
-#
+# 
 # 1. Create a local folder for brain parcellations: (e.g., ```/data/SFIMJGC_Introspec/2023_fc_intrsopection/atlases```)
-#
-#
-#    > **NOTE**: Unless you are using a different version of the Schaefer Atlas, you can skip this step.
-#
-#
-# 3. Create a sub-folder for the 400 Schaefer Atlas:
-# ```bash
-# # cd ${ATLASES_DIR}
-# # mkdir Schaefer2018_400Parcels_7Networks
-# ```
-#
-# 3. Copy the following files from their original location in CBIG repo (link above) to your local Schaefer Atlas folder:
-#
+# 
+# 2. Create a sub-folder for the 400 Schaefer Atlas:
+# 
+#    ```bash
+#    cd ${ATLASES_DIR}
+#    mkdir Schaefer2018_400Parcels_7Networks
+#    ```
+# 
+# 3. Download the following files from their original location in CBIG repo (link above) to your local Schaefer Atlas folder:
+# 
 # * [```Schaefer2018_400Parcels_7Networks_order_FSLMNI152_2mm.nii.gz```](https://github.com/ThomasYeoLab/CBIG/tree/master/stable_projects/brain_parcellation/Schaefer2018_LocalGlobal/Parcellations/MNI/Schaefer2018_400Parcels_7Networks_order_FSLMNI152_2mm.nii.gz): 400 ROI Atlas / 7 Yeo Networks in MNI space on a 2mm grid.
-#
+# 
 # * [```Schaefer2018_400Parcels_7Networks_order.txt```](https://github.com/ThomasYeoLab/CBIG/tree/master/stable_projects/brain_parcellation/Schaefer2018_LocalGlobal/Parcellations/MNI/freeview_lut/Schaefer2018_400Parcels_7Networks_order.txt): list of all ROI, their network membership and color code (RGB).
-#
+# 
 # * [```Schaefer2018_400Parcels_7Networks_order.lut```](https://github.com/ThomasYeoLab/CBIG/tree/master/stable_projects/brain_parcellation/Schaefer2018_LocalGlobal/Parcellations/MNI/fsleyes_lut/Schaefer2018_400Parcels_7Networks_order.lut): same as above, but coded for FSL eyes.
-#
+# 
 # * [```Schaefer2018_400Parcels_7Networks_order_FSLMNI152_2mm.Centroid_RAS.csv```](https://github.com/ThomasYeoLab/CBIG/tree/master/stable_projects/brain_parcellation/Schaefer2018_LocalGlobal/Parcellations/MNI/Centroid_coordinates/Schaefer2018_400Parcels_7Networks_order_FSLMNI152_2mm.Centroid_RAS.csv): information about each ROI centroid coordinates.
 
 # 4. Correct space, generate label table and attach it to atlas file
+
+# In[2]:
+
 
 # Correct the space tag, generate a label table, attach it to the original atlas file.
 command = """module load afni; \
@@ -85,7 +77,11 @@ command = """module load afni; \
 output  = subprocess.check_output(command, shell=True, stderr=subprocess.STDOUT)
 print(output.strip().decode())
 
+
 # 5. Convert Atlas file to final grid of all pre-processed data
+
+# In[3]:
+
 
 # Put in the final grid that agress with that of all fully pre-processed functional scans
 command = """module load afni; \
@@ -95,9 +91,19 @@ command = """module load afni; \
 output  = subprocess.check_output(command, shell=True, stderr=subprocess.STDOUT)
 print(output.strip().decode())
 
+
 # 6. Find problematic regions (limited coverage by FOV with good signal quality)
 
+# In[2]:
+
+
 sbj_list, scan_list = get_sbj_scan_list(when='post_motion', return_snycq=False)
+
+
+# The following code will generate a mask with voxels that fall in the FOV at least 95% of the time across the whole dataset. Then using this mask and the atlas it will generate a file that shows the initial number of voxels per ROI in the atlas (`{CORTICAL_400ROI_ATLAS_NAME}.coverage.txt`)
+
+# In[5]:
+
 
 mask_list = ''
 for sbj,run in scan_list:
@@ -114,6 +120,12 @@ command = f"""module load afni; \
 output  = subprocess.check_output(command, shell=True, stderr=subprocess.STDOUT)
 print(output.strip().decode())
 
+
+# Load the resulting coverage estimate and plot it as a distribution to see the values of coverage across all ROIs
+
+# In[3]:
+
+
 path = osp.join(CORTICAL_400ROI_ATLAS_PATH,f"{CORTICAL_400ROI_ATLAS_NAME}.coverage.txt")
 df = pd.read_csv(path, delimiter='\t')
 df = df.drop(['File','Sub-brick'],axis=1)
@@ -125,14 +137,34 @@ df.reset_index(inplace=True)
 df.index = df.index + 1
 df.index.name = 'ROI_ID'
 
-df.hvplot.hist(y='Coverage',bins=100) * hv.VLine(50).opts(color='k', line_dash='dashed')
+
+# We will only keep those ROIs that have at least 50 voxels of coverage across all scans.
+
+# In[4]:
+
+
+df.hvplot.hist(y='Coverage',bins=100, xlabel='Coverage [#Voxels in FOV]', ylabel='Number of ROIs') * hv.VLine(50).opts(color='k', line_dash='dashed')
+
+
+# In[5]:
+
 
 bad_rois = list(df[df['Coverage'] <=50].index)
+print(f"Number of ROIs with coverage <= 50 voxels: {len(bad_rois)}")
+print(f"ROIs with coverage <= 50 voxels: {bad_rois}")
+
+
+# In[6]:
+
 
 bad_rois_minus = '-'.join([str(roi)+'*equals(a,'+str(roi)+')' for roi in bad_rois])
 bad_rois_plus  = '+'.join([str(roi)+'*equals(a,'+str(roi)+')' for roi in bad_rois])
 
+
 # 7. Remove regions with bad coverage from the atlas
+
+# In[10]:
+
 
 command=f"""module load afni; \
            cd {CORTICAL_400ROI_ATLAS_PATH}; \
@@ -148,7 +180,11 @@ command=f"""module load afni; \
 output  = subprocess.check_output(command, shell=True, stderr=subprocess.STDOUT)
 print(output.strip().decode())
 
+
 # 8. Rank the atlas with missing ROIs
+
+# In[11]:
+
 
 command = f"""module load afni; \
              cd {CORTICAL_400ROI_ATLAS_PATH}; \
@@ -156,14 +192,22 @@ command = f"""module load afni; \
 output  = subprocess.check_output(command, shell=True, stderr=subprocess.STDOUT)
 print(output.strip().decode())
 
+
 # 9. Create rank corrected Order & Centroid Files
+
+# In[12]:
+
 
 path_to_order_file = osp.join(CORTICAL_400ROI_ATLAS_PATH,f'{CORTICAL_400ROI_ATLAS_NAME}_order.txt')
 path_to_rank_file  = osp.join(CORTICAL_400ROI_ATLAS_PATH,f'{CORTICAL_400ROI_ATLAS_NAME}.ranked.nii.gz.rankmap.1D')
 path_to_centroids_file = osp.join(CORTICAL_400ROI_ATLAS_PATH,f'{CORTICAL_400ROI_ATLAS_NAME}.Centroid_RAS.csv')
 correct_ranked_atlas(path_to_order_file,path_to_centroids_file,path_to_rank_file)
 
+
 # 10. Add corrected label table to the ranked version of the atlas
+
+# In[13]:
+
 
 command = f"""module load afni; \
              cd {CORTICAL_400ROI_ATLAS_PATH}; \
@@ -171,9 +215,13 @@ command = f"""module load afni; \
 output  = subprocess.check_output(command, shell=True, stderr=subprocess.STDOUT)
 print(output.strip().decode())
 
+
 # 11. Create a dataframe with all the necessary info about this atlas
-#
+# 
 # We now create a single dataframe with all the info we need: roi number, roi label, network, hemisphere, colors codes and centroid position. We save this to disk so that it can be easily accessed by any other notebook
+
+# In[14]:
+
 
 # Load the cetroid file for the ranked atlas in memory
 centroids_info               = pd.read_csv(osp.join(ATLASES_DIR, CORTICAL_400ROI_ATLAS_NAME,f'{CORTICAL_400ROI_ATLAS_NAME}.Centroid_RAS.ranked.csv' ))
@@ -189,47 +237,51 @@ df['RGB']  = [rgb2hex(r,g,b) for r,g,b in df.set_index('ROI_ID')[['color_R','col
 # Save the new data frame to disk
 df.to_csv(osp.join(ATLASES_DIR,CORTICAL_400ROI_ATLAS_NAME,f'{CORTICAL_400ROI_ATLAS_NAME}.ranked.roi_info.csv'), index=False)
 
+
 # 11. Clean-up folder and assign file file names to completely pre-processed atlas
 
 # ```bash
-# # cd /data/SFIMJGC_Introspec/2023_fc_introspection/atlases/Schaefer2018_400Parcels_7Networks
-# # mkdir orig
-# # mv Schaefer2018_400Parcels_7Networks.Centroid_RAS.csv orig/
-# # mv Schaefer2018_400Parcels_7Networks.nii.gz orig/
-# # mv Schaefer2018_400Parcels_7Networks_order.lut orig/
-# # mv Schaefer2018_400Parcels_7Networks_order.txt orig/
-# # mv Schaefer2018_400Parcels_7Networks.niml.lt orig/
-# # mv Schaefer2018_400Parcels_7Networks_order_FSLMNI152_2mm.nii.gz orig/
-#
-# # mv Schaefer2018_400Parcels_7Networks.Centroid_RAS.ranked.csv Schaefer2018_400Parcels_7Networks.Centroid_RAS.csv
-# # mv Schaefer2018_400Parcels_7Networks_order.ranked.niml.lt Schaefer2018_400Parcels_7Networks_order.niml.lt
-# # mv Schaefer2018_400Parcels_7Networks_order.ranked.txt Schaefer2018_400Parcels_7Networks_order.txt
-# # mv Schaefer2018_400Parcels_7Networks.ranked.nii.gz Schaefer2018_400Parcels_7Networks.nii.gz
-# # mv Schaefer2018_400Parcels_7Networks.ranked.nii.gz.rankmap.1D Schaefer2018_400Parcels_7Networks.nii.gz.rankmap.1D
-# # mv Schaefer2018_400Parcels_7Networks.ranked.roi_info.csv Schaefer2018_400Parcels_7Networks.roi_info.csv
+# cd /data/SFIMJGC_Introspec/2023_fc_introspection/atlases/Schaefer2018_400Parcels_7Networks
+# mkdir orig
+# mv Schaefer2018_400Parcels_7Networks.Centroid_RAS.csv orig/
+# mv Schaefer2018_400Parcels_7Networks.nii.gz orig/
+# mv Schaefer2018_400Parcels_7Networks_order.lut orig/
+# mv Schaefer2018_400Parcels_7Networks_order.txt orig/
+# mv Schaefer2018_400Parcels_7Networks.niml.lt orig/
+# mv Schaefer2018_400Parcels_7Networks_order_FSLMNI152_2mm.nii.gz orig/
+# 
+# mv Schaefer2018_400Parcels_7Networks.Centroid_RAS.ranked.csv Schaefer2018_400Parcels_7Networks.Centroid_RAS.csv
+# mv Schaefer2018_400Parcels_7Networks_order.ranked.niml.lt Schaefer2018_400Parcels_7Networks_order.niml.lt
+# mv Schaefer2018_400Parcels_7Networks_order.ranked.txt Schaefer2018_400Parcels_7Networks_order.txt
+# mv Schaefer2018_400Parcels_7Networks.ranked.nii.gz Schaefer2018_400Parcels_7Networks.nii.gz
+# mv Schaefer2018_400Parcels_7Networks.ranked.nii.gz.rankmap.1D Schaefer2018_400Parcels_7Networks.nii.gz.rankmap.1D
+# mv Schaefer2018_400Parcels_7Networks.ranked.roi_info.csv Schaefer2018_400Parcels_7Networks.roi_info.csv
 # ```
 
 # ***
 # # 2. Prepare the AAL v2 Atlas
-#
+# 
 # We will use this atlas to obtain defintions for 8 subcortical regions not includes in the Schaeffer atlas, namely L/R caudate, L/R putamen, L/R pallidum and L/R thalamus.
-#
+# 
 # To prepare this atlas for the project, please preform the following operations:
-#
+# 
 # 1. Create a sub-folder within ```ATLASES_DIR``` for this second atlas
-#
+# 
 # ```bash
-# # cd ${ATLASES_DIR}
-# # mkdir aal2
+# cd ${ATLASES_DIR}
+# mkdir aal2
 # ```
-#
+# 
 # 2. Download the AAL v2 Atlas from [here](https://www.gin.cnrs.fr/en/tools/aal/)
-#
+# 
 # 3. Unzip the contents of the downloaded file into the AAL2 folder.
-#
+# 
 #    > **NOTE**: we only need two files ```aal2.nii.gz``` and ```aal2.nii.txt```. So make sure those are available in ```${ATLASES_DIR}/aal2``` 
-#
+# 
 # 4. We need to correct the space in ```aal2.nii.gz``` to have the correct MNI space tag for AFNI
+
+# In[16]:
+
 
 # Correct the space tag, generate a label table, attach it to the original atlas file.
 command = """module load afni; \
@@ -239,7 +291,11 @@ command = """module load afni; \
 output  = subprocess.check_output(command, shell=True, stderr=subprocess.STDOUT)
 print(output.strip().decode())
 
+
 # 5. Convert Atlas to the same grid as the functional data
+
+# In[17]:
+
 
 # Put in the final grid that agress with that of all fully pre-processed functional scans
 command = """module load afni; \
@@ -249,7 +305,11 @@ command = """module load afni; \
 output  = subprocess.check_output(command, shell=True, stderr=subprocess.STDOUT)
 print(output.strip().decode())
 
+
 # 6. Create new atlas file with only the 8 ROIs we need
+
+# In[18]:
+
 
 command = """module load afni; \
              cd {ATLAS_PATH}; \
@@ -263,9 +323,13 @@ command = """module load afni; \
 output  = subprocess.check_output(command, shell=True, stderr=subprocess.STDOUT)
 print(output.strip().decode())
 
+
 # 7. Remove areas of overlap between the two atlases
-#
+# 
 # Upon visual inspection we realized that despite having eroded the subcortical ROIs from the AAL2 atlas, we could still observe one voxel that overlaps with the Schaeffer atlas. Given at a later stage we will be merging both atlases, it is best to remove this voxel from the ```aal2.subcortical.nii.gz``` file now.
+
+# In[20]:
+
 
 command="""module load afni; \
            cd {SUBCORTICAL_ATLAS_PATH};  \
@@ -276,7 +340,11 @@ command="""module load afni; \
 output  = subprocess.check_output(command, shell=True, stderr=subprocess.STDOUT)
 print(output.strip().decode())
 
+
 # 8. Rank the atlas with missing ROIs
+
+# In[21]:
+
 
 command = """module load afni; \
              cd {ATLAS_PATH}; \
@@ -284,9 +352,13 @@ command = """module load afni; \
 output  = subprocess.check_output(command, shell=True, stderr=subprocess.STDOUT)
 print(output.strip().decode())
 
+
 # 9. Create two additional text files with info about centroids and colors that we will need later
-#
+# 
 # * ```aal2.subcortical_order.txt```: contains ROI_ID, ROI_Name, RGB Color, Size
+
+# In[22]:
+
 
 command = """cd {ATLAS_PATH}; \
              cat {ATLAS_NAME}.nii.txt | grep -e Thalamus -e Pallidum -e Caudate -e Putamen | awk -F '[ _]' '{{print $1"\taal2_"$3"H_Subcortical_"$2"\t255\t255\t0\t0"}}' > {ATLAS_NAME}.subcortical_order.txt;
@@ -294,26 +366,34 @@ command = """cd {ATLAS_PATH}; \
 output  = subprocess.check_output(command, shell=True, stderr=subprocess.STDOUT)
 print(output.strip().decode())
 
+
 # * ```aal2.subcortical.Centroid_RAS.csv```: contains ROI_ID, ROI_Name , Centroid coordinates
 
 # ```bash
-# # cd /data/SFIMJGC_Introspec/2023_fc_introspection/atlases/aal2
+# cd /data/SFIMJGC_Introspec/2023_fc_introspection/atlases/aal2
 # module load afni
-# # cat aal2.subcortical_order.txt | awk -F '\t' '{print $1","$2","}' > rm01.aal2.subcortical.Centroid_RAS.csv
+# cat aal2.subcortical_order.txt | awk -F '\t' '{print $1","$2","}' > rm01.aal2.subcortical.Centroid_RAS.csv
 # 3dCM -Icent -all_rois -Icent aal2.subcortical.nii.gz | grep -v '#' | tail -n 8 | awk '{print int($1)*-1","int($2)*-1","int($3)*-1}' > rm02.aal2.subcortical.Centroid_RAS.csv
 # paste -d'\0' rm01.aal2.subcortical.Centroid_RAS.csv rm02.aal2.subcortical.Centroid_RAS.csv > aal2.subcortical.Centroid_RAS.csv
 # sed -i '1s/^/ROI Label,ROI Name,R,A,S\n/' aal2.subcortical.Centroid_RAS.csv;
-# # rm rm01.aal2.subcortical.Centroid_RAS.csv rm02.aal2.subcortical.Centroid_RAS.csv
+# rm rm01.aal2.subcortical.Centroid_RAS.csv rm02.aal2.subcortical.Centroid_RAS.csv
 # ```
 
 # 10. Create Rank corrected Order and Centroid Files
+
+# In[23]:
+
 
 path_to_order_file = osp.join(SUBCORTICAL_ATLAS_PATH,'aal2.subcortical_order.txt')
 path_to_rank_file  = osp.join(SUBCORTICAL_ATLAS_PATH,'aal2.subcortical.ranked.nii.gz.rankmap.1D')
 path_to_centroids_file = osp.join(SUBCORTICAL_ATLAS_PATH,'aal2.subcortical.Centroid_RAS.csv')
 correct_ranked_atlas(path_to_order_file,path_to_centroids_file,path_to_rank_file)
 
+
 # 11. Add corrected label table to the ranked version of the atlas
+
+# In[25]:
+
 
 command = """module load afni; \
              cd {ATLAS_PATH}; \
@@ -321,9 +401,13 @@ command = """module load afni; \
 output  = subprocess.check_output(command, shell=True, stderr=subprocess.STDOUT)
 print(output.strip().decode())
 
+
 # 10. Create a dataframe with all the necessary info about this atlas
-#
+# 
 # We now create a single dataframe with all the info we need: roi number, roi label, network, hemisphere, colors codes and centroid position. We save this to disk so that it can be easily accessed by any other notebook
+
+# In[26]:
+
 
 # Load the cetroid file for the ranked atlas in memory
 centroids_info               = pd.read_csv(osp.join(ATLASES_DIR, SUBCORTICAL_ATLAS_NAME,'aal2.subcortical.Centroid_RAS.ranked.csv' ))
@@ -339,18 +423,23 @@ df['RGB']  = [rgb2hex(r,g,b) for r,g,b in df.set_index('ROI_ID')[['color_R','col
 # Save the new data frame to disk
 df.to_csv(osp.join(ATLASES_DIR,SUBCORTICAL_ATLAS_NAME,'aal2.subcortical.ranked.roi_info.csv'), index=False)
 
+
 # ***
 # # 3. Combine Cortical and Subcortical Atlas
-#
+# 
 # 1. Create new folder for the combined atlas
+
+# In[3]:
+
 
 if osp.exists(FB_400ROI_ATLAS_PATH):
     rmtree(FB_400ROI_ATLAS_PATH)
     print('++ WARNING: Removing pre-existing folder for combined atlas [%s]' % FB_400ROI_ATLAS_PATH)
 os.makedirs(FB_400ROI_ATLAS_PATH)
 
+
 # Downstream code has some expectations regarding ROI sorting:
-#
+# 
 # * All ROIs in the left hemisphere first, followed by all ROIs on the right hemisphere
 # * Within each hemisphere, ROIs from the same network has contigous IDs
 # * The subcortical regions will be added as its own network at the end of each hemisphere
@@ -358,7 +447,7 @@ os.makedirs(FB_400ROI_ATLAS_PATH)
 # 2. Create un-ranked combined atlas NII file
 # ```bash
 # # Create a NIFTI files with all ROIs in order, but not contigous yet.
-# # cd /data/SFIMJGC_Introspec/2023_fc_introspection/atlases/Schaefer2018_400Parcels_7Networks_AAL2
+# cd /data/SFIMJGC_Introspec/2023_fc_introspection/atlases/Schaefer2018_400Parcels_7Networks_AAL2
 # 3dcalc -overwrite -a ../Schaefer2018_400Parcels_7Networks/orig/Schaefer2018_400Parcels_7Networks.nii.gz -expr 'within(a,0,200)*a' -prefix rm.Schaefer2018_400Parcels_7Networks.LH.nii.gz
 # 3dcalc -overwrite -a ../Schaefer2018_400Parcels_7Networks/orig/Schaefer2018_400Parcels_7Networks.nii.gz -expr 'within(a,201,400)*a' -prefix rm.Schaefer2018_400Parcels_7Networks.RH.nii.gz
 # 3dcalc -overwrite -a ../aal2/aal2.subcortical.ranked.nii.gz -expr [`cat ../aal2/aal2.subcortical_order.ranked.txt | grep LH | awk '{print "(a*equals(a,"$1"))"}' | tr -s '\n' '+' | sed 's/+$//g'`] -overwrite -prefix rm.aal2_subcortical.LH.nii
@@ -367,7 +456,7 @@ os.makedirs(FB_400ROI_ATLAS_PATH)
 # ```
 
 # 3. Create un-ranked order file that matches the nii file just generated
-#
+# 
 # ```bash
 # # Create order file that matches the nii above file.
 # grep LH ../Schaefer2018_400Parcels_7Networks/orig/Schaefer2018_400Parcels_7Networks_order.txt > rm.combined_order.txt
@@ -381,7 +470,7 @@ os.makedirs(FB_400ROI_ATLAS_PATH)
 # 4. Create un-ranked Centroids file that matches the nii file two cells up
 # ```bash
 # # Create Centroid file that matches the nii file above.
-# # echo "ROI Label,ROI Name,R,A,S" > rm.combined.Centroid_RAS.csv
+# echo "ROI Label,ROI Name,R,A,S" > rm.combined.Centroid_RAS.csv
 # grep LH ../Schaefer2018_400Parcels_7Networks/orig/Schaefer2018_400Parcels_7Networks.Centroid_RAS.csv >> rm.combined.Centroid_RAS.csv
 # grep LH ../aal2/aal2.subcortical.Centroid_RAS.ranked.csv                                        | awk -F ',' '{print 1000+int($1)","$2","$3","$4","$5}' >> rm.combined.Centroid_RAS.csv
 # grep RH ../Schaefer2018_400Parcels_7Networks/orig/Schaefer2018_400Parcels_7Networks.Centroid_RAS.csv | awk -F ',' '{print 2000+int($1)","$2","$3","$4","$5}' >> rm.combined.Centroid_RAS.csv
@@ -389,8 +478,11 @@ os.makedirs(FB_400ROI_ATLAS_PATH)
 # sed -i 's/7Networks/8Networks/g' rm.combined.Centroid_RAS.csv
 # sed -i 's/aal2/8Networks/g'      rm.combined.Centroid_RAS.csv
 # ```
-#
+# 
 # 5.  Add the label information to the nifti file
+
+# In[4]:
+
 
 command = """module load afni; \
              cd {ATLAS_PATH}; \
@@ -398,7 +490,11 @@ command = """module load afni; \
 output  = subprocess.check_output(command, shell=True, stderr=subprocess.STDOUT)
 print(output.strip().decode())
 
+
 # 6. Rank the atlas with missing ROIs
+
+# In[5]:
+
 
 command = """module load afni; \
              cd {ATLAS_PATH}; \
@@ -406,14 +502,22 @@ command = """module load afni; \
 output  = subprocess.check_output(command, shell=True, stderr=subprocess.STDOUT)
 print(output.strip().decode())
 
+
 # 6. Create Rank corrected Order and Centroid Files
+
+# In[6]:
+
 
 path_to_order_file = osp.join(FB_400ROI_ATLAS_PATH,'rm.combined_order.txt')
 path_to_rank_file  = osp.join(FB_400ROI_ATLAS_PATH,'Schaefer2018_400Parcels_7Networks_AAL2.nii.gz.rankmap.1D')
 path_to_centroids_file = osp.join(FB_400ROI_ATLAS_PATH,'rm.combined.Centroid_RAS.csv')
 correct_ranked_atlas(path_to_order_file,path_to_centroids_file,path_to_rank_file, new_atlas_name='Schaefer2018_400Parcels_7Networks_AAL2')
 
+
 # 11. Add corrected label table to the ranked version of the atlas
+
+# In[7]:
+
 
 command = """module load afni; \
              cd {ATLAS_PATH}; \
@@ -422,9 +526,13 @@ command = """module load afni; \
 output  = subprocess.check_output(command, shell=True, stderr=subprocess.STDOUT)
 print(output.strip().decode())
 
+
 # 10. Create a dataframe with all the necessary info about this atlas
-#
+# 
 # We now create a single dataframe with all the info we need: roi number, roi label, network, hemisphere, colors codes and centroid position. We save this to disk so that it can be easily accessed by any other notebook
+
+# In[8]:
+
 
 # Load the cetroid file for the ranked atlas in memory
 centroids_info               = pd.read_csv(osp.join(ATLASES_DIR, FB_400ROI_ATLAS_NAME,'{ATLAS_NAME}.Centroid_RAS.ranked.csv'.format(ATLAS_NAME=FB_400ROI_ATLAS_NAME) ))
@@ -440,12 +548,13 @@ df['RGB']  = [rgb2hex(r,g,b) for r,g,b in df.set_index('ROI_ID')[['color_R','col
 # Save the new data frame to disk
 df.to_csv(osp.join(ATLASES_DIR,FB_400ROI_ATLAS_NAME,'{ATLAS_NAME}.roi_info.csv'.format(ATLAS_NAME=FB_400ROI_ATLAS_NAME)), index=False)
 
+
 # 11. Clean-up atlas folder
-#
+# 
 # ```bash
-# # cd /data/SFIMJGC_Introspec/2023_fc_introspection/atlases/Schaefer2018_400Parcels_7Networks_AAL2
-# # rm rm.*
-# # mv Schaefer2018_400Parcels_7Networks_AAL2.Centroid_RAS.ranked.csv Schaefer2018_400Parcels_7Networks_AAL2.Centroid_RAS.csv
-# # mv Schaefer2018_400Parcels_7Networks_AAL2_order.ranked.niml.lt Schaefer2018_400Parcels_7Networks_AAL2_order.niml.lt
-# # mv Schaefer2018_400Parcels_7Networks_AAL2_order.ranked.txt Schaefer2018_400Parcels_7Networks_AAL2_order.txt
+# cd /data/SFIMJGC_Introspec/2023_fc_introspection/atlases/Schaefer2018_400Parcels_7Networks_AAL2
+# rm rm.*
+# mv Schaefer2018_400Parcels_7Networks_AAL2.Centroid_RAS.ranked.csv Schaefer2018_400Parcels_7Networks_AAL2.Centroid_RAS.csv
+# mv Schaefer2018_400Parcels_7Networks_AAL2_order.ranked.niml.lt Schaefer2018_400Parcels_7Networks_AAL2_order.niml.lt
+# mv Schaefer2018_400Parcels_7Networks_AAL2_order.ranked.txt Schaefer2018_400Parcels_7Networks_AAL2_order.txt
 # ```
