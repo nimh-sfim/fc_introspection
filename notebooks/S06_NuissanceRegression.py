@@ -1,32 +1,22 @@
-# ---
-# jupyter:
-#   jupytext:
-#     formats: ipynb,py:light
-#     text_representation:
-#       extension: .py
-#       format_name: light
-#       format_version: '1.5'
-#       jupytext_version: 1.15.2
-#   kernelspec:
-#     display_name: FC Instrospection py 3.10 | 2023b
-#     language: python
-#     name: fc_introspection_2023b_py310
-# ---
+#!/usr/bin/env python
+# coding: utf-8
 
-# # Description - Create Swarm File to run transformation to MNI pipeline on the preprocessed data
-#
+# # Description: Nuisance Regression on fMRI resting-state scans
+# 
 # This script creates the swarm file that will perform the following steps on the functional scans:
-#
+# 
 # * Create scan specific tissue mask to extract compcorr regressors
 # * Scale the data to signal percent change
 # * Prepare regressors for bandpass filtering, motion and compcorr
 # * Perform nuissance regression.
-#
+# 
 # The name of the fully pre-processed files will be ```rest2mni.b0.scale.denoise.nii.gz```.
-#
+# 
 # By the end of running this code, you should have of these for each of the scans that passed all QAs.
 
-# +
+# In[1]:
+
+
 import pandas as pd
 import os.path as osp
 import os
@@ -40,23 +30,33 @@ from utils.basics import PRJ_DIR, DATA_DIR, SCRIPTS_DIR
 print('++ INFO: Project Dir:                  %s' % PRJ_DIR) 
 print('++ INFO: Bash Scripts Dir:             %s' % SCRIPTS_DIR)
 print('++ INFO: Data Dir:                     %s' % DATA_DIR)
-# -
+
+
+# In[2]:
+
 
 username = getpass.getuser()
 print('++ INFO: user working now --> %s' % username)
 
+
 # # 1. Load list of scans that completed struct and func pre-processing and have low motion
+
+# In[3]:
+
 
 sbj_list, scan_list, SNYCQ_data = get_sbj_scan_list('post_motion')
 
+
 # ***
 # # 2. Create SWARM file
-#
+# 
 # This will create a swarm file with one line call per subject. The inputs to that bash script are:
-#
+# 
 # * SBJ = subject ID
 
-# +
+# In[4]:
+
+
 #user specific folders
 #=====================
 swarm_folder   = osp.join(PRJ_DIR,'SwarmFiles.{username}'.format(username=username))
@@ -64,7 +64,10 @@ logs_folder    = osp.join(PRJ_DIR,'Logs.{username}'.format(username=username))
 
 swarm_path     = osp.join(swarm_folder,'S06_NuissanceRegression.SWARM.sh')
 logdir_path    = osp.join(logs_folder, 'S06_NuissanceRegression.pass01.logs')
-# -
+
+
+# In[5]:
+
 
 # create user specific folders if needed
 # ======================================
@@ -75,7 +78,10 @@ if not osp.exists(logdir_path):
     os.makedirs(logdir_path)
     print('++ INFO: New folder for log files created [%s]' % logdir_path)
 
-# +
+
+# In[6]:
+
+
 # Open the file
 swarm_file = open(swarm_path, "w")
 # Log the date and time when the SWARM file is created
@@ -91,3 +97,4 @@ for sbj,run in scan_list:
     swarm_file.write("export SBJ={sbj} RUN={RUN}; sh {scripts_folder}/S06_NuissanceRegression.sh".format(sbj=sbj, RUN=run, scripts_folder = SCRIPTS_DIR))
     swarm_file.write('\n')
 swarm_file.close()
+
