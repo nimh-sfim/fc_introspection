@@ -1,37 +1,27 @@
-# ---
-# jupyter:
-#   jupytext:
-#     formats: ipynb,py
-#     text_representation:
-#       extension: .py
-#       format_name: light
-#       format_version: '1.5'
-#       jupytext_version: 1.16.1
-#   kernelspec:
-#     display_name: FC Instrospection py 3.10 | 2023b
-#     language: python
-#     name: fc_introspection_2023b_py310
-# ---
+#!/usr/bin/env python
+# coding: utf-8
 
-# # Description
-#
+# # Description: SNYCQ Initial Exploration, Clustering and TSNE
+# 
 # This notebook contains the following analytical steps associated with the in-scanner experience data
-#
+# 
 # 1. Data scaling: this is accomplished using skicit-learn [```RobustScaler```](https://scikit-learn.org/stable/modules/generated/sklearn.preprocessing.RobustScaler.html)
-#
+# 
 # 2. Outlier detection
-#
+# 
 # 3. Creates figure looking a potential correlations between sNYCQ items
-#
+# 
 # 4. Dimensionality reduction with T-SNE
-#
+# 
 # 5. Clustering analysis in original 11D space 
 
-# +
-from utils.basics import get_sbj_scan_list, DATA_DIR, ORIG_SNYCQ_PATH, RESOURCES_DINFO_DIR, RESOURCES_SNYCQ_DIR, ORIG_DEMO_PATH
-from textwrap import wrap
+# In[1]:
+
+
+from utils.basics import get_sbj_scan_list, RESOURCES_DINFO_DIR, RESOURCES_SNYCQ_DIR, ORIG_DEMO_PATH
+from utils.plotting import show_correlations_with_statistics
 import os.path as osp
-from scipy.stats import ttest_ind, mannwhitneyu, ttest_rel, wilcoxon
+from scipy.stats import ttest_ind, mannwhitneyu, wilcoxon
 import hvplot.pandas
 import holoviews as hv
 import seaborn as sns
@@ -40,7 +30,10 @@ from tqdm.notebook import  tqdm
 import warnings
 warnings.simplefilter(action='ignore', category=FutureWarning)
 
-# +
+
+# In[2]:
+
+
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -52,115 +45,28 @@ from sklearn.preprocessing import RobustScaler
 from sklearn.covariance import MinCovDet
 from sklearn.mixture import GaussianMixture
 from sklearn.cluster import KMeans
-from sklearn.metrics import silhouette_score, davies_bouldin_score, calinski_harabasz_score, adjusted_rand_score
+from sklearn.metrics import silhouette_score, adjusted_rand_score
 from sklearn.manifold import TSNE, trustworthiness
 from sklearn.linear_model import LinearRegression
 
 
-# -
-
-# This function allows to take a hvplot.hatmap and then modify it to mark significant celss with a bold black edge.
-
-def show_correlations_with_statistics(data_val, data_pval=None, pval_thr=0.05,
-                 clabel=None, height=700, width=700,
-                 cmap='RdBu_r', fontscale=1, clim=(-.7, .7)):
-
-    # ---------- Hook to draw black rectangles on significant cells ----------
-    def highlight_cell_hook(plot, element):
-        fig = plot.state  # bokeh Figure
-        # draw a transparent rect with black border for every "True" cell
-        for _, row in data_pval_indexed_long.iterrows():
-            if row['pval']:  # True if significant
-                # +0.5 because HeatMap cell centers are at integer+0.5
-                highlight_x = row['col'] + 0.5
-                highlight_y = row['index'] + 0.5
-                fig.rect(x=highlight_x, y=highlight_y,
-                         width=1, height=1,
-                         line_color='black', line_width=2,
-                         fill_alpha=0, name='highlight')
-
-    # ---------- Make sure index/col names and value name exist ----------
-    if data_val.columns.name is None:
-        data_val.columns.name = 'col'
-    if data_val.index.name is None:
-        data_val.index.name = 'index'
-    if data_val.name is None:
-        data_val.name = 'value'
-
-    # ---------- Build long-form data for HeatMap ----------
-    data_val_long = (
-        data_val
-        .melt(ignore_index=False,
-              var_name=data_val.columns.name,
-              value_name=data_val.name)
-        .reset_index()
-    )
-    data_val_long = data_val_long[
-        [data_val.columns.name, data_val.index.name, data_val.name]
-    ]
-
-    data_val_heatmap = hv.HeatMap(data_val_long).opts(
-        tools=['hover'],
-        height=height, width=width,
-        fontscale=fontscale,
-        cmap=cmap, clim=clim,
-        line_color='k', line_width=.1,
-        xrotation=45,
-        colorbar=True,
-        clabel=clabel
-    ).opts(aspect='square')
-
-    labels = hv.Labels(data_val_heatmap).opts(text_color='k')
-    # ---------- If no p-values or threshold, just return the heatmap ----------
-    if (data_pval is None) or (pval_thr is None):
-        return data_val_heatmap * labels
-
-    # ---------- Prepare p-value boolean mask in integer coords ----------
-    # True = significant (p < threshold)
-    sig_bool = (data_pval < pval_thr)
-
-    # Reset indices/cols to integer positions = plotting coordinates
-    data_pval_indexed = (
-        sig_bool
-        .reset_index(drop=True)   # rows -> 0..n-1
-        .T.reset_index(drop=True) # cols -> 0..n-1
-        .T
-    )
-    data_pval_indexed.columns.name = data_val.columns.name
-    data_pval_indexed.index.name   = data_val.index.name
-    data_pval_indexed.name         = 'pval'
-
-    # Long form: columns: ['col','index','pval'] where pval is boolean
-    global data_pval_indexed_long   # so hook can see it
-    data_pval_indexed_long = (
-        data_pval_indexed
-        .melt(ignore_index=False,
-              var_name=data_pval_indexed.columns.name,
-              value_name=data_pval_indexed.name)
-        .reset_index()
-    )
-    data_pval_indexed_long = data_pval_indexed_long[
-        [data_pval_indexed.columns.name, data_pval_indexed.index.name, data_pval_indexed.name]
-    ]
-    data_pval_indexed_long.columns = ['col', 'index', 'pval']
-
-    # ---------- Attach hook to draw black outlines ----------
-    data_val_heatmap_highlighted = data_val_heatmap.opts(hooks=[highlight_cell_hook]) * labels
-
-    return data_val_heatmap_highlighted
-
-
-
 # Configurations for outlier detection, ambigous clusters and random seed
+
+# In[3]:
+
 
 OUTLIER_Q = 0.997          # robust cutoff on squared Mahalanobis distances
 AMBIG_THRESH = 0.8         # ambiguous if max(prob) < 0.8
 RANDOM_STATE = 42
 
+
 # ***
 # # 1. Load In-scanner Experience Data (SNYCQ)
-#
+# 
 # We load this data only for the scans that have passed our QA for the imaging data
+
+# In[4]:
+
 
 SBJs, SCANs, SNYCQ_wVigilance = get_sbj_scan_list(when='post_motion', return_snycq=True)
 SNYCQ              = SNYCQ_wVigilance.drop('Vigilance',axis=1)
@@ -168,26 +74,41 @@ Nscans, Nquestions = SNYCQ.shape
 print(SNYCQ.shape)
 SNYCQ_items        = SNYCQ.columns
 
+
 # ***
 # # 2. Data Scaling
 # Answers to all questions, except wakefulness, were scaled using scikit-learn ```RobustScaler```. This scaler object removes the median and scales the data by the inter-quantile range. This form of scaling was performed to avoid excessive influence of outliers in the scaling process. 
-#
+# 
+
+# In[5]:
+
 
 X_raw_df    = SNYCQ[SNYCQ_items].replace([np.inf, -np.inf], np.nan).dropna(axis=0)
 idx         = X_raw_df.index
 X_scaled    = RobustScaler().fit_transform(X_raw_df.values)
 X_scaled_df = pd.DataFrame(X_scaled,index=idx, columns=X_raw_df.columns)
 
+
 # We look at the distributions of the sNYCQ data before and after scaling
 
-X_raw_df.hvplot.hist(title='SNYC-Q pre scaling') + X_scaled_df.hvplot.hist(title='SNYC-Q post scaling', shared_axes=False)
+# In[6]:
+
+
+plot_dist = X_raw_df.hvplot.hist(title='SNYC-Q pre scaling') + X_scaled_df.hvplot.hist(title='SNYC-Q post scaling', shared_axes=False)
+hv.save(plot_dist, osp.join('figures', 'FigureXX-SNYCQ_histograms_pre_post_scaling.html'))
+plot_dist
+
+
+# ![Distributions of SNYQC items before and after scaling](./figures/FigureXX-SNYCQ_histograms_pre_post_scaling.png)
 
 # ***
 # # 3. Outlier Detection
-#
+# 
 # We relied on the Mahalanobis distance of each scan to the sample's mean in order to detect outlier scans. We set the threshold to the top 3% quantile
 
-# +
+# In[7]:
+
+
 mcd = MinCovDet().fit(X_scaled_df.values)
 # squared Mahalanobis distances for the training set
 md2 = mcd.mahalanobis(X_scaled_df.values) if hasattr(mcd, "mahalanobis") else mcd.dist_
@@ -195,29 +116,39 @@ md2 = mcd.mahalanobis(X_scaled_df.values) if hasattr(mcd, "mahalanobis") else mc
 # Threshold
 thr = np.quantile(md2, OUTLIER_Q)
 keep = md2 < thr
-# -
+
+
+# In[8]:
+
 
 md2_df = pd.DataFrame(md2, index=idx)
 md2_df.hvplot(hover_cols=['Subject','Run'], title='Mahalanobis ditance',ylabel='Mahalanobis distance') *hv.HLine(thr).opts(line_width=0.5, line_dash='dashed', line_color='k')
 
+
 # Now that we have identified two outlier scans, we create a new version of the data where those scans have been removed (e.g., ```X_$$$$_kept```)
+
+# In[9]:
+
 
 idx_kept          = idx[keep] 
 X_scaled_kept_df  = X_scaled_df.loc[idx_kept]   # Scaled data for scans not marked as outliers
 X_raw_kept_df     = X_raw_df.loc[idx_kept]      # Original data for scans not marked as outliers
 print(f"[Outliers] Flagged {(~keep).sum()} / {len(md2)}; keeping {keep.sum()}")
 
+
 # # 4. Correlation between SNYCQ items
-#
+# 
 # To explore the structure of in-scanner experience reports, we first computed the Pearson’s correlation between the 11 in-scanner experience items.
 
-# +
+# In[10]:
+
 
 # Compute correlation matrix
 X_raw_kept_corr_df = X_raw_kept_df.corr()
 
 
-# +
+# In[11]:
+
 
 # Estimate  P-value matrix (Pearson)
 cols    = X_raw_kept_df.columns
@@ -232,7 +163,8 @@ for i, c1 in enumerate(cols):
             pval_df.loc[c2, c1] = p
 
 
-# +
+# In[12]:
+
 
 # Get clustering order from seaborn
 clustergrid = sns.clustermap(X_raw_kept_corr_df)
@@ -245,7 +177,8 @@ corr_ord = X_raw_kept_corr_df.round(2).loc[ordered, ordered]
 pval_ord = pval_df.loc[ordered, ordered]
 
 
-# +
+# In[13]:
+
 
 # Make sure names exist (used by show_results)
 corr_ord.index.name   = 'index'
@@ -255,13 +188,17 @@ corr_ord.name         = 'corr'
 pval_ord.index.name   = 'index'
 pval_ord.columns.name = 'col'
 pval_ord.name         = 'pval'
-# -
+
+
+# In[14]:
+
 
 # Calcualte the number of unique entries to do Bonferroni correction
 n_comps = corr_ord.shape[0]*(corr_ord.shape[0]-1)/2
 
 
-# +
+# In[15]:
+
 
 # Plot: correlation heatmap with bold black outline for pBonf < 0.05
 plot = show_correlations_with_statistics(
@@ -276,50 +213,24 @@ plot = show_correlations_with_statistics(
     clim=(-0.7, 0.7)
 )
 
-plot
+pn.Row(plot).save(osp.join('figures', 'Figure01_B-SNYCQcorr.html'))
 
 
-
-# + vscode={"languageId": "raw"} active=""
-# X_raw_kept_corr_df = X_raw_kept_df.corr()
-# clustergrid        = sns.clustermap(X_raw_kept_corr_df)
-# plt.close()
-#
-# # Get the reordered row indices
-# row_order          = clustergrid.dendrogram_row.reordered_ind
-# index_order        = X_raw_kept_corr_df.index[row_order]
-#
-# # Create interactive heatmap usin the sorting that seaborn did for us
-# heatmap = X_raw_kept_corr_df.loc[index_order,index_order].round(2).hvplot.heatmap(clim=(-.7,.7),cmap='RdBu_r',aspect='square', frame_width=500,fontscale=1.5).opts(xrotation=45, clabel='Pearson Correation')
-# myplot  = heatmap * hv.Labels(heatmap).opts(text_color='k')
-# myplot
-
-# + vscode={"languageId": "raw"} active=""
-# X_scaled_kept_corr_df = X_scaled_kept_df.corr()
-# clustergrid           = sns.clustermap(X_scaled_kept_corr_df)
-# plt.close()
-#
-# # Get the reordered row indices
-# row_order          = clustergrid.dendrogram_row.reordered_ind
-# index_order        = X_scaled_kept_corr_df.index[row_order]
-#
-# # Create interactive heatmap usin the sorting that seaborn did for us
-# heatmap = X_scaled_kept_corr_df.loc[index_order,index_order].round(2).hvplot.heatmap(clim=(-.7,.7),cmap='RdBu_r',aspect='square', frame_width=500,fontscale=1.5).opts(xrotation=45, clabel='Pearson Correation')
-# myplot  = heatmap * hv.Labels(heatmap).opts(text_color='k')
-# myplot
-# -
+# ![Figure 01 - Panel B](./figures/Figure01_B-SNYCQcorr.png)
 
 # ***
 # # 4. Dimensionality Reduction with T-SNE
 # ## 4.1. Hyper-parameter Optimization
-# Two key hyper-parameters of the T-SNE algorithm are dimensionality and perplexity. We relied on trustworthiness [REF]—an estimate of how well a given embedding preserves local distances—to select these two hyper-parameters on a data-driven manner. The explored hyper-parameter space was: 
-#
+# Two key hyper-parameters of the T-SNE algorithm are dimensionality and perplexity. We relied on [trustworthiness](https://scikit-learn.org/stable/modules/generated/sklearn.manifold.trustworthiness.html)—an estimate of how well a given embedding preserves local distances—to select these two hyper-parameters on a data-driven manner. The explored hyper-parameter space was: 
+# 
 # | Hyper-parameter | Space Explored |
 # |:----------------|:---------------|
 # |dimensionality|  {1,2,3}|
 # | perplexity | {5,9,10,13,15,18,20,30,40,50} |
 
-# +
+# In[16]:
+
+
 def choose_tsne_perplexity(X, random_state=RANDOM_STATE,n_components=[1,2,3]):
     n = X.shape[0]
     # Theoretical upper bound: perplexity < (n - 1); practical upper ~ n/3
@@ -344,15 +255,22 @@ def choose_tsne_perplexity(X, random_state=RANDOM_STATE,n_components=[1,2,3]):
     return scores[0][0], scores[0][1], pd.DataFrame(scores, columns=["num_components","perplexity", "trustworthiness"])
 
 best_nc, best_perp, tw_table = choose_tsne_perplexity(X_scaled_kept_df.values, RANDOM_STATE)
-# -
 
-#print("\n[t-SNE tuning] Candidate perplexities & trustworthiness:")
-#print(tw_table.to_string(index=False, float_format=lambda v: f"{v:0.3f}"))
+
+# Now we show what were the values that maximized the trustworthiness of the T-SNE embeddings
+
+# In[17]:
+
+
 print(f"[t-SNE tuning] Selected perplexity = {best_perp}")
 print(f"[t-SNE tuning] Selected dimensionaity = {best_nc}")
 print(f"[t-SNE tuning] Trustworthiness = {tw_table['trustworthiness'].max()}")
 
+
 # ## 4.2. Compute T-SNE with optimal dimensionality and perplexity
+
+# In[18]:
+
 
 tsne = TSNE(
     n_components=best_nc, perplexity=best_perp, learning_rate='auto', init='pca',
@@ -366,8 +284,11 @@ else:
 
 
 # ## 4.3. Compute Biplot Arrows inidicating directions of maximal variance for each SNYCQ item
-#
+# 
 # To aid with the interpretation of how T-SNE dimensions relate to the original items in the SNYC survey, we modeled each of the SNYCQ items as a linear function of the three T-SNE coordinates. We then used these coefficients to draw biplot arrows depicting the directions of maximal change for each SNYCQ item in the 3D T-NSE embedding space.
+
+# In[19]:
+
 
 def compute_biplot_arrows(emb_df, features_df, feature_names):
     """
@@ -399,19 +320,28 @@ def compute_biplot_arrows(emb_df, features_df, feature_names):
     return arrows_df
 
 
+# In[20]:
+
+
 tsne_arrows = compute_biplot_arrows(emb,X_raw_kept_df,SNYCQ_items)
 # Scaling so that they are clearly visible in the plot
 tsne_arrows['beta_x'] = tsne_arrows['beta_x'] * 5 
 tsne_arrows['beta_y'] = tsne_arrows['beta_y'] * 5
 tsne_arrows['beta_z'] = tsne_arrows['beta_z'] * 5
 
+
 # ## 4.4. Plot the T-SNE embedding colored by one SNYCQ item
+
+# In[21]:
+
 
 # Create a new DF with both th original values and the dimensions in T-SNE (for plotting purposes)
 emb_plus = pd.concat([emb, X_raw_kept_df], axis=1)
 
 
-# +
+# In[22]:
+
+
 tsne_camera_object = dict(
     center=dict(x=6.661338147750939e-16, y=-1.942890293094024e-16, z=8.881784197001252e-16),
     eye=dict(x=0.4505864572659788, y=1.5176226342505497, z=-1.6428294069570146),
@@ -490,21 +420,42 @@ fig.update_layout(
     ),
     title='3D t-SNE Plot with Feature Arrows',
     margin=dict(l=0, r=0, b=0, t=40),
-    height=700
+    height=700,
+    showlegend=False
 )
 
 fig.show()
 
-# -
+
+# In[23]:
+
+
+fig.write_html(osp.join('figures', 'FigureXX-SNYCQtsne_colorby_People.html'))
+
+
+# ![TSNE Map colored by the People question](./figures/FigureXX-SNYCQtsne_colorby_People.png)
 
 # *** 
 # # 5. Clustering Analyses
-#
+# 
 # ## 5.1 Apply K-means and Gaussian Mixture Modeling to the data (K=2)
-#
-# To separate scans into two sets with well-differentiated inner-experience, we decided to apply two different clustering algorithms to the in-experience data (11 questions) following robust scaling. To be clear, clustering was performed in the original 11D space, not the low dimensional space generated by T-SNE. Working with two different clustering methods allows to evaluate the robustness of results against clustering technique.
-#
-# The two selected methods were K-Means and Gaussian Mixture Modeling; both as implemented in the python library scikit-learn. K-Means was chosen as a representative hard-clustering method often used in the neuroimaging literature. Gaussian Mixture Modeling was chosen because of its soft-clustering nature (i.e., it provides membership probabilities) and because it allows non-spherical clusters. In both instances, we set k=2.
+# 
+# To separate scans into two sets with well-differentiated inner-experience, we decided to apply two different clustering algorithms to the in-experience data (11 questions) following robust scaling. 
+# 
+# >NOTE: To be clear, clustering was performed in the original 11D space, not the low dimensional space generated by T-SNE. 
+# 
+# Working with two different clustering methods allows to evaluate the robustness of results against clustering technique.
+# 
+# The two selected methods were [K-Means](https://scikit-learn.org/stable/modules/generated/sklearn.cluster.KMeans.html) and [Gaussian Mixture Modeling](https://scikit-learn.org/stable/modules/generated/sklearn.mixture.GaussianMixture.html); both as implemented in the python library scikit-learn. 
+# 
+# K-Means was chosen as a representative hard-clustering method often used in the neuroimaging literature. 
+# 
+# Gaussian Mixture Modeling was chosen because of its soft-clustering nature (i.e., it provides membership probabilities) and because it allows non-spherical clusters. In both instances, we set k=2.
+# 
+# The next cell computes the GMM clustering for K = 2
+
+# In[24]:
+
 
 K          = 2
 gm         = GaussianMixture(n_components=K, covariance_type="spherical", random_state=RANDOM_STATE).fit(X_scaled_kept_df.values)
@@ -512,41 +463,55 @@ proba      = gm.predict_proba(X_scaled_kept_df.values)
 labels_gmm = proba.argmax(axis=1)
 
 
-# +
+# Now we do the same using KMeans for comparison
+
+# In[25]:
+
 
 km = KMeans(n_clusters=K, random_state=RANDOM_STATE, n_init=10).fit(X_scaled_kept_df.values)
 labels_km = km.predict(X_scaled_kept_df.values)
-# -
+
 
 # ## 5.2. Cluster method comparison with ARI and Silhouette Index
-#
+# 
 # We now check for the consistency of the clustering results across both methods using the Asjusted Rand Index (ARI), and also for their quality, separately, using the Silhouette Index (SI)
-#
+# 
 # 1. Compute the SI for each clustering result
+
+# In[26]:
+
 
 sil_gmm = silhouette_score(X_scaled_kept_df.values, labels_gmm)
 sil_km  = silhouette_score(X_scaled_kept_df.values, labels_km)
 
+
 # 2. Compute the ARI comparing both methods
+
+# In[27]:
+
 
 ari_km_gmm = adjusted_rand_score(labels_km, labels_gmm)
 
+
 # 3. Print the computed statistics
 
-# +
+# In[28]:
+
+
 print(f"[GMM k=2 sph] silhouette={sil_gmm:.3f}")
 print(f"[K-M k=2    ] silhouette={sil_km:.3f}")
 
 print(f"[Agreement] ARI(KMeans vs GMM) = {ari_km_gmm:.3f}")
 print(f"[Sizes] GMM clusters: {np.bincount(labels_gmm)}")
 
-# -
 
 # Based on the SI, we decided to move forward with the GMM solustion, which we explore in further detail.
 
 # ## 5.3. Bootstraing Analysis for GMM
 
-# +
+# In[29]:
+
+
 def subsample_labels(model, X, frac=0.8, seed=0):
     rng = np.random.RandomState(seed)
     n = X.shape[0]
@@ -577,21 +542,32 @@ def bootstrap_ari(model, X, n_runs=20, frac=0.8, base_seed=0):
 
 gm_mean_ari, gm_sd_ari = bootstrap_ari(gm, X_scaled_kept_df.values, n_runs=20, frac=0.8, base_seed=100)
 print("Bootstrap ARI (GMM) mean±sd:    %.2f +/- %.2f" %(gm_mean_ari, gm_sd_ari))
-# -
+
 
 # ***
 # ## 5.4. Detection of scans with ambigous cluster membership
-#
+# 
 # One additional bonus of GMM over K-means is that GMM not being a hard clustering algorithm, it outputs cluster membershup probabilities. We will use these to detect scans with ambiguous membership. Such scans will not be included in the population differences analyses later on.
+
+# In[30]:
+
 
 proba_df = pd.DataFrame(proba, index=idx_kept, columns=['P(c1)','P(c2)'])
 proba_df.hvplot.hist('P(c1)', title='Probability Distribution for Membership in Cluster 1')
+
+
+# In[31]:
+
 
 # store probabilities & an ambiguity flag
 p1        = proba[:, 1]
 ambiguity = np.maximum(1 - p1, p1) < (AMBIG_THRESH)
 
+
 # Save final cluster/sets labels in a new pandas dataframe: ```group_info_df```
+
+# In[32]:
+
 
 # Store that information with clear labels in a pandas Dataframe
 group_info_df = pd.DataFrame(index=idx_kept, columns=['Set Label', 'Group Probability'])
@@ -608,20 +584,30 @@ for i,scan in enumerate(idx_kept):
             group_info_df.loc[scan,"Group Probability"] = 1 - p1[i]
 group_info_df['Set Label'].value_counts()
 
+
 # Add cluster membership information to the TSNE embedding information, and save two versions to disk: one with the original SNYCQ items, one with their scaled values.
 
-# +
+# In[33]:
+
+
 emb_plus = pd.concat([emb_plus, group_info_df], axis=1)
 emb_plus.to_csv(osp.join(RESOURCES_SNYCQ_DIR, 'SNYCQ_tsne_embeddings_plus.csv'))
-
+print('++ INFO: Saved t-SNE embeddings with original features and group info to CSV: %s' % osp.join(RESOURCES_SNYCQ_DIR, 'SNYCQ_tsne_embeddings_plus.csv'))
 emb_plus_scaled = pd.concat([emb, X_scaled_kept_df, group_info_df], axis=1)
 emb_plus_scaled.to_csv(osp.join(RESOURCES_SNYCQ_DIR, 'SNYCQ_tsne_embeddings_plus_scaled.csv'))
-print(emb_plus_scaled.shape)
-# -
+print('++ INFO: Saved t-SNE embeddings with scaled features and group info to CSV: %s' % osp.join(RESOURCES_SNYCQ_DIR, 'SNYCQ_tsne_embeddings_plus_scaled.csv'))
+
 
 # ## 5.5. Plot the T-SNE embedding again, but this time with scans colored according to set membership
 
-# +
+# In[86]:
+
+
+tsne_camera_object = dict(
+    center=dict(x=0.0, y=0.0, z=0.0),
+    eye=dict(x=1.25, y=-1.25, z=1.25),
+    up=dict(x=0.0, y=0.0, z=0.0)
+)
 scatter_traces = []
 
 group_colors = {
@@ -658,7 +644,6 @@ for group, color in group_colors.items():
             hoverinfo='text'
         )
     )
-
 # === 3. Combine all traces ===
 fig = go.Figure(data=scatter_traces + arrow_traces)
 
@@ -683,28 +668,38 @@ fig.update_layout(
     ),
     title='3D t-SNE Plot with Feature Arrows',
     margin=dict(l=0, r=0, b=0, t=40),
-    height=700
+    height=700,
+    showlegend=True
 )
 
 fig.show()
 
-# -
+
+# In[87]:
+
+
+fig.write_html(osp.join('figures', 'Figure01_K_SNYCQtsneWclusters.html'))
+
+
+# ![TSNE with clusters](./figures/Figure01_K-SNYCQtnseWclusters.png)
 
 # ***
 # ## 6. Explore how Sets A and B differ in terms of SNYCQ items, vigilance, head motion and basic demographics
-#
+# 
 # We will seek for potential differences across groups in the following variables:
-#
+# 
 # * All entries in the SNYCQ, including wakefulness
 # * Mean head motion
 # * Age distribution
 # * Gender distribution
-#
+# 
 # We will do this using Cohen's d, MannWhitney tests and Wilconxon tests
 
 # ## 6.1. Examination of differences in age distribution
 
-# +
+# In[88]:
+
+
 # Load Demographic Data
 demographics = pd.read_csv(ORIG_DEMO_PATH, index_col=0,sep='\t')
 demographics = demographics.loc[list(SBJs)]
@@ -732,7 +727,10 @@ age_counts_per_group.loc[age_counts_per_group['Group']=='A','color'] = group_col
 age_counts_per_group.loc[age_counts_per_group['Group']=='B','color'] = group_colors['Set B']
 age_counts_per_group = age_counts_per_group.infer_objects()
 age_counts_per_group = age_counts_per_group.sort_values(by='Age Range', ascending=True)
-# -
+
+
+# In[89]:
+
 
 A = age_counts_per_group.set_index(['Group','Age Range']).loc['A',:]['# Scans']
 B = age_counts_per_group.set_index(['Group','Age Range']).loc['B',:]['# Scans']
@@ -740,11 +738,20 @@ W, w_p = wilcoxon(A,B, alternative='two-sided', method='exact')
 print('++ AGE ACROSS SETS: Wilcoxon = %.2f (p = %.2f)' % (W,w_p))
 
 
+# In[95]:
+
+
 # Generate graph that will get later added to a Grid with information about all variables
 age_bar_plot = age_counts_per_group.hvplot.bar(x='Age Range',by='Group', alpha=0.5, xlabel='Age',cmap=["#1f77b4","#ff7f0e"]).opts(toolbar=None, xrotation=90, width=250, height=200, fontscale=1)
-age_bar_plot
+hv.save(age_bar_plot, osp.join('figures', 'Figure01_I-AgePerSet.html'))
+
+
+# ![Age per set](./figures/Figure01_I-AgePerSet.png)
 
 # ## 6.2. Examination of differneces in gender distribution
+
+# In[96]:
+
 
 # Extract information about age
 sex_per_scan = pd.DataFrame(index=idx_kept, columns=['Set Label','Sex'])
@@ -764,12 +771,21 @@ sex_counts_per_group = sex_per_scan.groupby('Set Label').value_counts()
 sex_counts_per_group = sex_counts_per_group.infer_objects()
 sex_counts_per_group
 
+
+# In[97]:
+
+
 sex_bar_plot = sex_counts_per_group.hvplot.bar(stacked=True, xlabel='', legend='top_left', title='', ylabel='# Scans', color=['white','gray']).opts(toolbar=None, width=250, height=200, fontscale=1)
-sex_bar_plot
+hv.save(sex_bar_plot, osp.join('figures', 'Figure01_J-SexPerSet.html'))
+
+
+# ![Sex per Set](./figures/Figure01_J-SexPerSet.png)
 
 # ## 6.3. Examination of diffrences in head motion
 
-# +
+# In[98]:
+
+
 # Load motion information for each scan
 mot_info   = pd.read_csv(osp.join(RESOURCES_DINFO_DIR,'motion_confounds.csv'),index_col=['Subject','Run'])
 scans_in_A = emb_plus[emb_plus['Set Label'] == 'Set A'].index
@@ -779,7 +795,10 @@ mot_B      = mot_info.loc[scans_in_B,'Mean Rel Motion'].values
 
 U, u_p     = mannwhitneyu(mot_A,mot_B,alternative='two-sided')
 print('++ AGE ACROSS SETS: Mann-Whiteney U    = %.2f (p = %.2f)' % (U,u_p))
-# -
+
+
+# In[100]:
+
 
 mot_A = mot_info.loc[scans_in_A,'Mean Rel Motion']
 mot_B = mot_info.loc[scans_in_B,'Mean Rel Motion']
@@ -787,12 +806,17 @@ overlay = mot_A.hvplot.hist(label='Set A', c=group_colors['Set A'], title='', wi
           mot_B.hvplot.hist(label='Set B', c=group_colors['Set B'], alpha=0.5, shared_axes=False, bins=20, normed=True) * \
           mot_A.hvplot.kde(label='Set A', c=group_colors['Set A'],  alpha=0.5, shared_axes=False) * \
           mot_B.hvplot.kde(label='Set B', c=group_colors['Set B'], alpha=0.5, shared_axes=False)
-overlay
+hv.save(overlay, osp.join('figures', 'Figure01_H-MotionPerSet.html'))
+
+
+# ![Motion per set](./figures/Figure01_H-MotionPerSet.png)
 
 # ## 6.4 Examination of Vigilance
-#
+# 
 
-# +
+# In[101]:
+
+
 vigilance = SNYCQ_wVigilance['Vigilance']
 vigilance.name = 'Wakefulness'
 scans_in_A = emb_plus[emb_plus['Set Label'] == 'Set A'].index
@@ -802,7 +826,10 @@ vigilance_B      = vigilance.loc[scans_in_B].values
 
 T,t_p      = ttest_ind(vigilance_A,vigilance_B,alternative='two-sided')
 print('++ VIGILANCE ACROSS SETS: Mann-Whiteney U    = %.2f (p = %.2f)' % (U,u_p))
-# -
+
+
+# In[102]:
+
 
 vigilance_A      = vigilance.loc[scans_in_A]
 vigilance_B      = vigilance.loc[scans_in_B]
@@ -810,12 +837,15 @@ overlay = vigilance_A.hvplot.hist(label='Set A', c=group_colors['Set A'], title=
           vigilance_B.hvplot.hist(label='Set B', c=group_colors['Set B'], alpha=0.5, shared_axes=False, bins=[0,10,20,30,40,50,60,70,80,90,100], normed=True) * \
           vigilance_A.hvplot.kde(label='Set A', c=group_colors['Set A'],  alpha=0.5, shared_axes=False) * \
           vigilance_B.hvplot.kde(label='Set B', c=group_colors['Set B'], alpha=0.5, shared_axes=False)
-overlay.opts(show_legend=False)
+hv.save(overlay, osp.join('figures', 'Figure01_G-VigilancePerSet.html'))
 
+
+# ![Wakefulness per set](./figures/Figure01_G-VigilancePerSet.png)
 
 # ## 6.5. Examination of differences in SNYCQ items
 
-# +
+# In[103]:
+
 
 def cohens_d(x0, x1):
     m0, m1 = np.nanmean(x0), np.nanmean(x1)
@@ -824,7 +854,7 @@ def cohens_d(x0, x1):
     sp = np.sqrt(((n0-1)*s0**2 + (n1-1)*s1**2) / (n0 + n1 - 2))
     return (m1 - m0) / sp if sp > 0 else np.nan
 
-def calculate_stats_per_set(df, items, label_col='Set Label', method="bootstrap",  # "bootstrap" or "analytic"
+def calculate_stats_per_set(df, items, label_col='Set Label', method="bootstrap",
                             B=2000,              # bootstrap reps
                             ci=95,random_state=123):
     
@@ -879,8 +909,8 @@ def calculate_stats_per_set(df, items, label_col='Set Label', method="bootstrap"
     return out_df
 
 
+# In[104]:
 
-# -
 
 non_ambiguous_scans = emb_plus[emb_plus['Set Label']!='Ambiguous'].index
 data_items          = SNYCQ_wVigilance.loc[non_ambiguous_scans,:]
@@ -888,6 +918,10 @@ data_labels         = emb_plus.loc[non_ambiguous_scans,'Set Label']
 data                = pd.concat([data_items,data_labels],axis=1)
 stats_per_set       = calculate_stats_per_set(data,[c for c in data_items.columns if c !='Vigilance'],'Set Label')
 stats_per_set.sort_values(by="d(Set B - Set A)", ascending=False).round(2)[['Set A (mean)','Set B (mean)','d(Set B - Set A)','MW (U)','MW (p)']]
+
+
+# In[108]:
+
 
 layout                = pn.GridBox(ncols=4)
 items_in_descending_d = stats_per_set.sort_values(by="d(Set B - Set A)", ascending=False).index
@@ -906,12 +940,16 @@ for item in items_in_descending_d:
               SNYCQ.loc[set_b_scans,item].hvplot.kde(label='Set B', c=group_colors['Set B'], alpha=0.5, shared_axes=False)
     overlay = overlay.opts(show_legend=False,shared_axes=False, toolbar=None)
     layout.append(overlay)
-layout
+layout.save( osp.join('figures', 'Supplementary_Figure02.html'))
 
+
+# ![Supplementary Figure 02](./figures/Supplementary_Figure02.png)
 
 # Provide the same information in more concise manner in the form of a radar plot
 
-# --------- 2) Radar plot with shaded CIs ----------
+# In[121]:
+
+
 def plot_radar_means_with_ci(
     stats_df,               # output of cluster_means_ci (indexed by feature)
     order=None,             # optional ordering of features
@@ -974,19 +1012,26 @@ def plot_radar_means_with_ci(
     ax.set_xticklabels(features)
     ax.set_ylim(rmin - pad, rmax + pad)
     ax.set_title(title)
-    ax.legend(loc="upper right", bbox_to_anchor=(1.25, 1.1))
+    ax.legend(loc="upper right", bbox_to_anchor=(0.1, 1.0))
 
     plt.tight_layout()
     plt.show()
 
 
+# In[122]:
+
+
 # Plot (keep your preferred order of spokes)
-plot_radar_means_with_ci(stats_per_set, order=list(items_in_descending_d),
+plot = plot_radar_means_with_ci(stats_per_set, order=list(items_in_descending_d),
                           title="SNYCQ per-cluster means with 95% CI")
 
+
 # ***
-#
+# 
 # # Distribution of SNYCQ values (Supplementary Figure 1)
+
+# In[127]:
+
 
 layout = None
 for q in SNYCQ.columns:
@@ -996,26 +1041,9 @@ for q in SNYCQ.columns:
     else:
         layout = layout + plot
 layout = layout.cols(3).opts(toolbar=None)
-layout
+hv.save(layout, osp.join('figures', 'Supplementary_Figure01.html'))
 
-# Alternative version
 
-# +
-sns.set_theme(style="whitegrid")
-fig, ax = plt.subplots(figsize=(10,6))
+# ![Supplementary Figure 01](./figures/Supplementary_Figure01.png)
 
-sns.boxplot(
-    data=SNYCQ_wVigilance,
-    color='lightgray',
-    ax=ax
-)
-
-ax.set_ylabel('Scores')
-ax.set_xlabel('Items')
-
-# Rotate x-tick labels 45 degrees
-plt.setp(ax.get_xticklabels(), rotation=45, ha='right')
-
-plt.tight_layout()
-plt.show()
-
+# 
