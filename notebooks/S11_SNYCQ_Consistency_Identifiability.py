@@ -1,26 +1,18 @@
-# ---
-# jupyter:
-#   jupytext:
-#     formats: ipynb,py
-#     text_representation:
-#       extension: .py
-#       format_name: light
-#       format_version: '1.5'
-#       jupytext_version: 1.16.1
-#   kernelspec:
-#     display_name: FC Instrospection py 3.10 | 2023b
-#     language: python
-#     name: fc_introspection_2023b_py310
-# ---
+#!/usr/bin/env python
+# coding: utf-8
 
-# # Description
-#
-# This notebook runs additional analyses regarding whether or not thought patterns are systematically similar across scans, using two methods:
-#
+# # Description | Inspecting trait-like behaviors in SNYCQ data
+# 
+# This notebook runs additional analyses regarding whether or not thought patterns are systematically similar across scans, using three methods:
+# 
+# * Rate of repeated scans being part of the same set
 # * Differntial Identifiability: as described in [The quest for identifiability in human functional connectomes](https://www.nature.com/articles/s41598-018-25089-1) by Amico & Goñi (Scientific Reports, 2018)
 # * Identifiability Rate: as described in [Functional connectome fingerprinting: identifying individuals using patterns of brain activity](https://www.nature.com/articles/nn.4135) by Finn et al. (Nat. Neuro, 2015)
-#
-#
+# 
+# 
+
+# In[45]:
+
 
 import pandas as pd
 import numpy as np
@@ -28,23 +20,27 @@ from tqdm import tqdm
 from textwrap import wrap
 import seaborn as sns
 import matplotlib.pyplot as plt
+from matplotlib.ticker import FormatStrFormatter
 import matplotlib.colors as colors
 from utils.io import read_fc_matrices
 from utils.basics import DATA_DIR, FB_400ROI_ATLAS_NAME, RESOURCES_SNYCQ_DIR
 import os.path as osp
-import holoviews as hv
-from scipy.stats import pearsonr, spearmanr
 from random import shuffle
 import warnings
 import hvplot.pandas
 from matplotlib import colors as mcolors
 warnings.simplefilter(action='ignore', category=FutureWarning)
 
+
+# ***
 # # 1. Percent of scans in the same clsuter several times
-#
+# 
 # The first way we look at the question of whether introspective reports are trait-like is by looking by how often all scans from the same subject fall in the same scan set (as defined in the previous notebook)
-#
+# 
 # 1. Load SNYCQ items and clustering info
+
+# In[2]:
+
 
 emb_plus  = pd.read_csv(osp.join(RESOURCES_SNYCQ_DIR, 'SNYCQ_tsne_embeddings_plus_scaled.csv'), index_col=[0,1])
 scan_list = emb_plus.index.tolist() 
@@ -56,7 +52,9 @@ emb_plus.head(2)
 
 # 2. Count how many scans we have per subject. Only scans from subjects that were scanned at least three time will be used in these analyses
 
-# +
+# In[3]:
+
+
 N_MIN_SCANS = 3
 
 # Count the number of runs per subject
@@ -64,9 +62,12 @@ scan_list_df = pd.DataFrame(scan_list,columns=['Subject','Run'])
 run_counts   = scan_list_df.groupby("Subject")["Run"].nunique().to_frame(name="NumRuns")
 
 sbjs_sel_scans = run_counts[run_counts["NumRuns"] >= N_MIN_SCANS].index.tolist()
-# -
+
 
 # 3. Print information regarding how many scans, subjects, etc enter these analyses
+
+# In[4]:
+
 
 Nsbjs_total       = len(emb_plus.index.get_level_values('Subject').unique())
 Nsbjs_sel_scans   = len(sbjs_sel_scans)
@@ -77,6 +78,9 @@ print('++ INFO: Number of scans (for subjects with %d or more scans : %d subject
 
 
 # 4. Count the prevalence of scans in the same set
+
+# In[5]:
+
 
 def count_scans_per_group(sbjs,cluster_info):
     # Extract from cluster_info structure the entries for scans with 2 or more scans
@@ -96,14 +100,11 @@ def count_scans_per_group(sbjs,cluster_info):
 
 
 # 5. Plot the results
-#
+# 
 
-# +
-import matplotlib.pyplot as plt
-import seaborn as sns
-from textwrap import wrap
+# In[6]:
 
-# Example data
+
 final_counts = count_scans_per_group(sbjs_sel_scans, emb_plus)
 labels = final_counts.index
 
@@ -136,45 +137,65 @@ for i, a in enumerate(autotexts):
 plt.tight_layout()
 plt.show()
 
-# -
 
+# In[7]:
+
+
+fig.savefig(osp.join('figures', 'Figure02_A-ScanMembershipConsistency.png'), bbox_inches='tight')
+
+
+# ***
 # # 2. Differential Identifibiability
-#
+# 
 # Here, we compute Idiff (Differential Identifiability) following the procedure described by [Amico et al. (2018)](https://www.nature.com/articles/s41598-018-25089-1)
-#
+# 
 # 1. Identify scans from subjects that were scanned at least twice.
 
-# Define custom colors for True and False
-cmap_colors = ['white', 'blue']  # False will be white, True will be blue
-# Create a custom colormap
-custom_cmap = mcolors.LinearSegmentedColormap.from_list('boolean_cmap', cmap_colors, N=2)
+# In[8]:
+
 
 # Identify the runs with less than 2 scans
 subjects_lt2 = run_counts[run_counts["NumRuns"] < 2].index.tolist()
 # Create mask with True for scans we want to keep and False for those to remove
 mask = emb_plus.index.get_level_values("Subject").isin(subjects_lt2)
 
+
+# In[9]:
+
+
 # These scans / subjects will not enter the identifiability analyses
 scan_list_df[mask]
 
+
 # 2. Create an index with only the scans from subjects with at least two visits
+
+# In[10]:
+
 
 # Remove from the introspection dataframe the entries for scans that are single entries per subject
 scans_for_identifiability = emb_plus.copy().loc[~mask].index
 #scans_by_cluster          = emb_plus.copy().loc[~mask].sort_values(by=['Set Label']).index
 print('++ Number of scans used in identifiability analyses: %d scans' % len(scans_for_identifiability))
 
+
 # 3. Create a list of the subjects that enter the anlyses
+
+# In[11]:
+
 
 # Number of subjects entering the analyses
 sbjs_for_identifiability = scans_for_identifiability.get_level_values('Subject').unique().tolist()
 print('++ Number of subjects used in identifiability analyses: %d subjects' % len(sbjs_for_identifiability))
 
+
 # ## 2.1. Differential Identifiability for Introspection data
-#
+# 
 # 1. Create a new dataframe that only contains the SNYCQ items of interest (all but vigilance) for the subjects and scans with 2+ visits.
-#
-#
+# 
+# 
+
+# In[12]:
+
 
 # Remove the Vigilance entry to match all other analyses
 SNYCQ_for_identifiability = emb_plus.loc[scans_for_identifiability].drop(['TSNE1','TSNE2','TSNE3','Group Probability','Set Label'],axis=1)
@@ -183,6 +204,9 @@ print(SNYCQ_for_identifiability.shape)
 
 # 2. Estimate the Identifiability Matrix (correlation of each scan to every other scan) --> This is at the scan level.
 
+# In[13]:
+
+
 def get_scan_level_identifiability_matrix(dataframe):
     Id_matrix = dataframe.T.corr(method='pearson').values
     np.fill_diagonal(Id_matrix,np.nan)
@@ -190,20 +214,17 @@ def get_scan_level_identifiability_matrix(dataframe):
     return Id_matrix
 
 
+# In[15]:
+
+
 Id_SNYCQ_scans = get_scan_level_identifiability_matrix(SNYCQ_for_identifiability)
-Id_SNYCQ_scans.head(3)
+Id_SNYCQ_scans.head(3).round(2)
 
-
-# + vscode={"languageId": "raw"} active=""
-# # Compute Identifiability matrix at the scan level
-# Id_SNYCQ_scans2 = SNYCQ_for_identifiability.T.corr(method='pearson').values
-# # Set diagonal to NaN
-# np.fill_diagonal(Id_SNYCQ_scans2,np.nan)
-# # Make it a dataframe again
-# Id_SNYCQ_scans2 = pd.DataFrame(Id_SNYCQ_scans2,index=scans_for_identifiability,columns=scans_for_identifiability)
-# -
 
 # 3. Use the scan-level Identifiability matrix to compute the subject-level identifiability matrix
+
+# In[16]:
+
 
 def get_subject_level_identifiability_matrix(scan_level_Id_matrix):
     """
@@ -229,25 +250,16 @@ def get_subject_level_identifiability_matrix(scan_level_Id_matrix):
     return Id_subjects
 
 
+# In[17]:
+
+
 Id_SNYCQ_sbjs = get_subject_level_identifiability_matrix(Id_SNYCQ_scans)
 
-# + vscode={"languageId": "raw"} active=""
-# Id_SNYCQ_sbjs = pd.DataFrame(np.nan,index=sbjs_for_identifiability,columns=sbjs_for_identifiability, dtype=np.float32)
-# for sbj_i in sbjs_for_identifiability:
-#     for sbj_j in sbjs_for_identifiability:
-#         aux = Id_SNYCQ_scans.loc[sbj_i][sbj_j].values
-#         if sbj_i == sbj_j:
-#             new_value = aux[np.triu_indices_from(aux, k=1)].mean()
-#             if pd.isna(Id_SNYCQ_sbjs.loc[sbj_i, sbj_j]):
-#                 Id_SNYCQ_sbjs.loc[sbj_i, sbj_j] = new_value
-#             else:
-#                 assert Id_SNYCQ_sbjs.loc[sbj_i, sbj_j] == new_value, "Inconsistent value found!"
-#         else:
-#             Id_SNYCQ_sbjs.loc[sbj_i, sbj_j] = aux.mean().mean() 
-#
-# -
 
 # 4. Compute ISelf, IOther and IDiff
+
+# In[18]:
+
 
 Iself  = np.diag(Id_SNYCQ_sbjs.values).mean()
 Iother = np.concatenate([Id_SNYCQ_sbjs.values[np.triu_indices_from(Id_SNYCQ_sbjs.values, k=1)],Id_SNYCQ_sbjs.values[np.tril_indices_from(Id_SNYCQ_sbjs.values, k=1)]]).mean()
@@ -259,7 +271,9 @@ print ('++ Identifiability based on Introspection data = %.1f %%' % Idiff)
 
 # 5. Plot the Identifiability Matrix at the subject level
 
-# +
+# In[ ]:
+
+
 fig, ax = plt.subplots(figsize=(5,5))
 hm = sns.heatmap(
     Id_SNYCQ_sbjs.values,
@@ -286,11 +300,17 @@ plt.tight_layout()
 plt.show()
 
 
-# -
+# In[21]:
+
+
+fig.savefig(osp.join('figures', 'Figure02_B-SNYCQ_IdentifiabilityMatrix.png'), bbox_inches='tight')
+
 
 # 6. Create histograms of values contributing to Iself and Iother
 
-# +
+# In[22]:
+
+
 # Create mask matrix that only contains 1 for scans that are from the same subject
 row_subj = Id_SNYCQ_scans.index.get_level_values("Subject").to_numpy()
 col_subj = Id_SNYCQ_scans.columns.get_level_values("Subject").to_numpy()
@@ -301,19 +321,29 @@ within_sbj_mask = pd.DataFrame(
                      columns=Id_SNYCQ_scans.columns)
 across_sbj_mask = ~within_sbj_mask
 within_sbj_mask.values[range(len(within_sbj_mask)),range(len(within_sbj_mask))] = False 
-# -
+
+
+# In[23]:
+
 
 Iself_values_SNYCQ = Id_SNYCQ_scans[within_sbj_mask].values.flatten()
 Iself_values_SNYCQ = Iself_values_SNYCQ[~np.isnan(Iself_values_SNYCQ)]
 Iself_SNYCQ        = Iself_values_SNYCQ.mean()
 print('++ Introspection Iself = %.5f ' % Iself_SNYCQ)
 
+
+# In[24]:
+
+
 Iother_values_SNYCQ = Id_SNYCQ_scans[across_sbj_mask].values.flatten()
 Iother_values_SNYCQ = Iother_values_SNYCQ[~np.isnan(Iother_values_SNYCQ)]
 Iother_SNYCQ        = Iother_values_SNYCQ.mean() 
 print('++ Introspection Iother = %.5f ' % Iother_SNYCQ)
 
-# +
+
+# In[28]:
+
+
 fig, ax = plt.subplots(figsize=(3,5))
 
 sns.kdeplot(Iself_values_SNYCQ, label=r'$I_{Self}$', alpha=0.5, color='blue', fill=True, ax=ax)
@@ -335,31 +365,49 @@ ax.tick_params(axis='both', labelsize=12)
 ax.set_ylabel('Density', fontsize=12)
 
 # Set axis limits
-ax.set_xlim(-1, 1)
+ax.set_xlim(-1., 1)
 
-plt.tight_layout()
+#plt.tight_layout()
 plt.show()
 
-# -
+
+# In[30]:
+
+
+fig.savefig(osp.join('figures', 'Figure02_C-SNYCQ_IselfAndIother.png'), bbox_inches='tight')
+
 
 # ## 2.2. Differential Identifiability based on FC
-#
+# 
 # 1. Load Pre-processed FC matrices for scans in these analyses
 
-ATLAS_NAME           = FB_400ROI_ATLAS_NAME
+# In[31]:
 
-FC_for_identifiability = read_fc_matrices(scans_for_identifiability,DATA_DIR,ATLAS_NAME,'pb06_staticFC')
+
+FC_for_identifiability = read_fc_matrices(scans_for_identifiability,DATA_DIR,FB_400ROI_ATLAS_NAME,'pb06_staticFC')
+
 
 # 2. Compute the scan-level identifiability matrix
 
+# In[ ]:
+
+
 Id_FC_scans = get_scan_level_identifiability_matrix(FC_for_identifiability)
-Id_FC_scans.head(3)
+Id_FC_scans.head(3).round(2)
+
 
 # 3. Compute the subject-level identifiability matrix
 
+# In[34]:
+
+
 Id_FC_sbjs = get_subject_level_identifiability_matrix(Id_FC_scans)
 
+
 # 4. Compute ISelf, IOther and IDiff
+
+# In[35]:
+
 
 Iself  = np.diag(Id_FC_sbjs.values).mean()
 Iother = np.concatenate([Id_FC_sbjs.values[np.triu_indices_from(Id_FC_sbjs.values, k=1)],Id_FC_sbjs.values[np.tril_indices_from(Id_FC_sbjs.values, k=1)]]).mean()
@@ -371,7 +419,9 @@ print ('++ Identifiability based on Introspection data = %.1f %%' % Idiff)
 
 # 5. Plot the Identifiability Matrix at the subject level
 
-# +
+# In[36]:
+
+
 fig, ax = plt.subplots(figsize=(5,5))
 hm = sns.heatmap(
     Id_FC_sbjs.values,
@@ -398,19 +448,33 @@ plt.tight_layout()
 plt.show()
 
 
-# -
+# In[39]:
+
+
+fig.savefig(osp.join('figures', 'Figure02_D-FMRI_IdentifiabilityMatrix.png'), bbox_inches='tight')
+
+
+# In[40]:
+
 
 Iself_values_FC = Id_FC_scans[within_sbj_mask].values.flatten()
 Iself_values_FC = Iself_values_FC[~np.isnan(Iself_values_FC)]
 Iself_FC        = Iself_values_FC.mean()
 print('++ Introspection Iself = %.5f ' % Iself_FC)
 
+
+# In[41]:
+
+
 Iother_values_FC = Id_FC_scans[across_sbj_mask].values.flatten()
 Iother_values_FC = Iother_values_FC[~np.isnan(Iother_values_FC)]
 Iother_FC        = Iother_values_FC.mean() 
 print('++ Introspection Iother = %.5f ' % Iother_FC)
 
-# +
+
+# In[46]:
+
+
 fig, ax = plt.subplots(figsize=(3,5))
 
 sns.kdeplot(Iself_values_FC, label=r'$I_{Self}$', alpha=0.5, color='blue', fill=True, ax=ax)
@@ -432,21 +496,30 @@ ax.tick_params(axis='both', labelsize=12)
 ax.set_ylabel('Density', fontsize=12)
 
 # Set axis limits
-ax.set_xlim(-1, 1)
+ax.set_xlim(-1., 1.)
+ax.xaxis.set_major_formatter(FormatStrFormatter('%.1f'))
+ax.yaxis.set_major_formatter(FormatStrFormatter('%.1f'))
 
-plt.tight_layout()
+#plt.tight_layout()
 plt.show()
 
 
-# -
+# In[47]:
+
+
+fig.savefig(osp.join('figures', 'Figure02_E-FMRI_IselfAndIother.png'), bbox_inches='tight')
+
 
 # ***
-#
+# 
 # # 3. Identifiability Rate
-#
+# 
 # ## 3.1 Indentifibility Rate based on introspection data
-#
+# 
 # 1. Compute the experimental Identification Rate
+
+# In[48]:
+
 
 def get_id_rate(id_matrix_sbj):
     n_scans          = id_matrix_sbj.shape[0]
@@ -460,12 +533,18 @@ def get_id_rate(id_matrix_sbj):
     return id_rate
 
 
-Id_Rate_SNYCQ = get_id_rate(Id_SNYCQ_scans)
+# In[50]:
+
+
+identification_rate_SNYCQ = get_id_rate(Id_SNYCQ_scans)
 print('++ Introspection-based Identification Rate = %.2f %%' % (identification_rate_SNYCQ))
+
 
 # 2. Do Permutation analysis
 
-# +
+# In[51]:
+
+
 N_NULL_PERMS = 10000
 SNYCQ_id_rate_null = pd.DataFrame(0,columns=['ID_Rate'],index=range(N_NULL_PERMS), dtype=float)
 SNYCQ_id_rate_null.index.name = 'Permutation'
@@ -477,7 +556,10 @@ for i in tqdm(range(N_NULL_PERMS)):
     Id_matrix_shuffled.columns = pd.MultiIndex.from_tuples(cols, names=['Subject','Run'])
     this_perm_id_rate = get_id_rate(Id_matrix_shuffled)
     SNYCQ_id_rate_null.loc[i,'ID_Rate'] = this_perm_id_rate
-# -
+
+
+# In[52]:
+
 
 fig,ax = plt.subplots(1,1,figsize=(4,5))
 plot = sns.kdeplot(data=SNYCQ_id_rate_null,x='ID_Rate',fill=True,label='Null Distribution',ax=ax, color='gray')
@@ -491,16 +573,29 @@ plot.legend(loc='upper right', fontsize=14)
 ax.set_xticklabels(ax.get_xticklabels(), fontsize=14);
 ax.set_yticklabels(ax.get_yticklabels(), fontsize=14);
 
+
+# In[53]:
+
+
+fig.savefig(osp.join('figures', 'Figure02_F-FMRI_IdentificationRate.png'), bbox_inches='tight')
+
+
 # ## 3.2. Identification Rate based on FC data
-#
+# 
 # 1. Get expiremantal identification rate
+
+# In[54]:
+
 
 Id_Rate_FC = get_id_rate(Id_FC_scans)
 print('++ FC-based Identification Rate = %.2f %%' % (Id_Rate_FC))
 
+
 # 2. Bootstraping analysis
 
-# +
+# In[55]:
+
+
 N_NULL_PERMS = 10000
 FC_id_rate_null = pd.DataFrame(0,columns=['ID_Rate'],index=range(N_NULL_PERMS), dtype=float)
 FC_id_rate_null.index.name = 'Permutation'
@@ -512,7 +607,10 @@ for i in tqdm(range(N_NULL_PERMS)):
     Id_matrix_shuffled.columns = pd.MultiIndex.from_tuples(cols, names=['Subject','Run'])
     this_perm_id_rate = get_id_rate(Id_matrix_shuffled)
     FC_id_rate_null.loc[i,'ID_Rate'] = this_perm_id_rate
-# -
+
+
+# In[56]:
+
 
 fig,ax = plt.subplots(1,1,figsize=(4,5))
 plot = sns.kdeplot(data=FC_id_rate_null,x='ID_Rate',fill=True,label='Null Distribution',ax=ax, color='gray')
@@ -525,3 +623,10 @@ plot.set_xlim(0,100)
 plot.legend(loc='upper right', fontsize=14)
 ax.set_xticklabels(ax.get_xticklabels(), fontsize=14);
 ax.set_yticklabels(ax.get_yticklabels(), fontsize=14);
+
+
+# In[57]:
+
+
+fig.savefig(osp.join('figures', 'Figure02_G-FMRI_IdentificationRate.png'), bbox_inches='tight')  
+
