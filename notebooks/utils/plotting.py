@@ -22,6 +22,97 @@ nw_color_map = {'LH-Vis':'#9e53a9',      'RH-Vis':'#9e53a9','Vis':'#9e53a9',
                    'LH-Limbic':'#f6fdcb',      'RH-Limbic':'#f6fdcb','Limbic':'#f6fdcb'}
 hm_color_map = {'LH':'grey','RH':'darkgrey'}
 
+# Dynamic Heatmaps with statistics
+# ================================
+def show_correlations_with_statistics(data_val, data_pval=None, pval_thr=0.05,
+                 clabel=None, height=700, width=700,
+                 cmap='RdBu_r', fontscale=1, clim=(-.7, .7)):
+
+    # ---------- Hook to draw black rectangles on significant cells ----------
+    def highlight_cell_hook(plot, element):
+        fig = plot.state  # bokeh Figure
+        # draw a transparent rect with black border for every "True" cell
+        for _, row in data_pval_indexed_long.iterrows():
+            if row['pval']:  # True if significant
+                # +0.5 because HeatMap cell centers are at integer+0.5
+                highlight_x = row['col'] + 0.5
+                highlight_y = row['index'] + 0.5
+                fig.rect(x=highlight_x, y=highlight_y,
+                         width=1, height=1,
+                         line_color='black', line_width=2,
+                         fill_alpha=0, name='highlight')
+
+    # ---------- Make sure index/col names and value name exist ----------
+    if data_val.columns.name is None:
+        data_val.columns.name = 'col'
+    if data_val.index.name is None:
+        data_val.index.name = 'index'
+    if data_val.name is None:
+        data_val.name = 'value'
+
+    # ---------- Build long-form data for HeatMap ----------
+    data_val_long = (
+        data_val
+        .melt(ignore_index=False,
+              var_name=data_val.columns.name,
+              value_name=data_val.name)
+        .reset_index()
+    )
+    data_val_long = data_val_long[
+        [data_val.columns.name, data_val.index.name, data_val.name]
+    ]
+
+    data_val_heatmap = hv.HeatMap(data_val_long).opts(
+        tools=['hover'],
+        height=height, width=width,
+        fontscale=fontscale,
+        cmap=cmap, clim=clim,
+        line_color='k', line_width=.1,
+        xrotation=45,
+        colorbar=True,
+        clabel=clabel
+    ).opts(aspect='square')
+
+    labels = hv.Labels(data_val_heatmap).opts(text_color='k')
+    # ---------- If no p-values or threshold, just return the heatmap ----------
+    if (data_pval is None) or (pval_thr is None):
+        return data_val_heatmap * labels
+
+    # ---------- Prepare p-value boolean mask in integer coords ----------
+    # True = significant (p < threshold)
+    sig_bool = (data_pval < pval_thr)
+
+    # Reset indices/cols to integer positions = plotting coordinates
+    data_pval_indexed = (
+        sig_bool
+        .reset_index(drop=True)   # rows -> 0..n-1
+        .T.reset_index(drop=True) # cols -> 0..n-1
+        .T
+    )
+    data_pval_indexed.columns.name = data_val.columns.name
+    data_pval_indexed.index.name   = data_val.index.name
+    data_pval_indexed.name         = 'pval'
+
+    # Long form: columns: ['col','index','pval'] where pval is boolean
+    global data_pval_indexed_long   # so hook can see it
+    data_pval_indexed_long = (
+        data_pval_indexed
+        .melt(ignore_index=False,
+              var_name=data_pval_indexed.columns.name,
+              value_name=data_pval_indexed.name)
+        .reset_index()
+    )
+    data_pval_indexed_long = data_pval_indexed_long[
+        [data_pval_indexed.columns.name, data_pval_indexed.index.name, data_pval_indexed.name]
+    ]
+    data_pval_indexed_long.columns = ['col', 'index', 'pval']
+
+    # ---------- Attach hook to draw black outlines ----------
+    data_val_heatmap_highlighted = data_val_heatmap.opts(hooks=[highlight_cell_hook]) * labels
+
+    return data_val_heatmap_highlighted
+
+
 # ========================================================
 #       Plotting of annotated FC matrix (full view)
 # ========================================================
