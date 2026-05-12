@@ -22,7 +22,7 @@ import hvplot.pandas
 import panel as pn
 import holoviews as hv
 from utils.basics import FB_400ROI_ATLAS_NAME as ATLAS_NAME
-from utils.basics import ATLASES_DIR, RESOURCES_CONN_DIR, RESOURCES_NBS_DIR
+from utils.basics import ATLASES_DIR, RESOURCES_CONN_DIR, RESOURCES_NBS_DIR, RESOURCES_CONN_DIR
 from utils.plotting import hvplot_fc, hvplot_fc_nwlevel, plot_as_graph
 elt_labels = {'T3p1':'Edge-Level Threshold (p<0.001)', 'T2p58':'Edge-Level Threshold (p<0.005)'}
 
@@ -230,4 +230,44 @@ for elt in ['T3p1','T2p58']:
     print('++ --------------------------------------------------------')
     f2GTf1_fcLI  = (f2GTf1_LL - f2GTf1_RR) / (f2GTf1_LL + f2GTf1_RR)
     print('++ INFO [%s | SetA > SetB] fcLI:      %.2f' % (elt, f2GTf1_fcLI))
+
+
+# # CONN Files (needed for visualization in brain mode with CONN)
+# 
+# We will now write three files needed for CONN:
+# 
+# * `resources/conn/roi_labels.txt`: contains the names of the ROIs in the atlas
+# * `resources/conn/roi_coords.txt`: contains the coordinates of the ROIs centers
+# * `resources/conn/roi_colors.txt`: contains the color for the ROIs
+
+# In[4]:
+
+
+if not osp.exists(RESOURCES_CONN_DIR):
+    os.makedirs(RESOURCES_CONN_DIR)
+    print('++ INFO: Created directory %s' % RESOURCES_CONN_DIR)
+
+
+# In[5]:
+
+
+CONN_roi_labels_path = osp.join(RESOURCES_CONN_DIR,'roi_labels.txt')
+roi_info['ROI_Name'].to_csv(CONN_roi_labels_path,header=None, index=None)
+print(f'++ INFO: ROI labels saved to {CONN_roi_labels_path}')
+
+
+# In[6]:
+
+
+CONN_roi_coords_path = osp.join(RESOURCES_CONN_DIR,'roi_coords.txt')
+roi_info[['pos_R','pos_A','pos_S']].to_csv(CONN_roi_coords_path,header=None, index=None)
+print(f'++ INFO: ROI coordinates saved to {CONN_roi_coords_path}')
+
+
+# In[7]:
+
+
+CONN_roi_colors_path = osp.join(RESOURCES_CONN_DIR,'roi_colors.txt')
+(roi_info[['color_R','color_G','color_B']]/256).round(2).to_csv(CONN_roi_colors_path,header=None, index=None)
+print(f'++ INFO: ROI colors saved to {CONN_roi_colors_path}')
 
