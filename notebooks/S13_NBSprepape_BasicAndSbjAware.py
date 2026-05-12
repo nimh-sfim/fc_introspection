@@ -266,7 +266,7 @@ for CONTRAST in CONTRASTS_SBJAWARE.keys():
 # 
 # 
 
-# ![NBS Config Window]('./figures/Notebook_Image_NBSConf.png')
+# ![NBS Config Window](./figures/Notebook_Image_NBSConf.png)
 
 # In[18]:
 
