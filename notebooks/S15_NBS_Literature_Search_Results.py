@@ -73,3 +73,9 @@ sns.swarmplot(data=nbs_lit,y='% Sig. Nodes',c ='k', s=2, ax=axs[1])
 axs[1].set_ylabel('Percentage of Nodes in Significant Edges')
 axs[1].axhline(y=100*N_SIG_NODES/380, color='r', linestyle='--', linewidth=1)
 
+
+# In[10]:
+
+
+fig.savefig('./figures/Figure03_EF.png', dpi=300, bbox_inches='tight')
+
