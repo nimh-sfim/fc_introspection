@@ -1,48 +1,63 @@
-# ---
-# jupyter:
-#   jupytext:
-#     formats: ipynb,py
-#     text_representation:
-#       extension: .py
-#       format_name: light
-#       format_version: '1.5'
-#       jupytext_version: 1.16.1
-#   kernelspec:
-#     display_name: FC Instrospection py 3.10 | 2023b
-#     language: python
-#     name: fc_introspection_2023b_py310
-# ---
+#!/usr/bin/env python
+# coding: utf-8
 
 # # Description
-#
+# 
 # This notebook creates the figure that use to show how our results relate to prior work that has used NBS to look for significant differences in connectivity between clinical and healthy populations.
 
-# +
+# In[1]:
+
+
 import pandas as pd
 import numpy as np
-import hvplot.pandas
 import seaborn as sns
 import matplotlib.pyplot as plt
 
 import warnings
 warnings.simplefilter(action='ignore', category=FutureWarning)
-# -
+
+
+# In[2]:
+
 
 nbs_lit_search_path = '../resources/nbs_literature_search/NBS_Papers_Top50.csv'
 
+
+# In[3]:
+
+
 nbs_lit = pd.read_csv(nbs_lit_search_path)
+
+
+# In[4]:
+
 
 nbs_lit = nbs_lit.replace('?',np.nan)
 nbs_lit = nbs_lit.replace('NaN',np.nan)
 
+
+# In[5]:
+
+
 nbs_lit = nbs_lit.infer_objects()
 
+
+# In[6]:
+
+
 nbs_lit = nbs_lit[['% Sig. Edges', '% Sig. Nodes']].copy()
+
+
+# In[7]:
+
 
 nbs_lit['% Sig. Edges'] = nbs_lit['% Sig. Edges'].str.rstrip('%').astype('float')
 nbs_lit['% Sig. Nodes'] = nbs_lit['% Sig. Nodes'].str.rstrip('%').astype('float')
 
-# +
+
+# In[8]:
+
+
 N_SIG_CONNS = 458
 N_SIG_NODES = 210
 
@@ -57,6 +72,4 @@ sns.boxplot(data=nbs_lit,y='% Sig. Nodes', color='lightgray', ax=axs[1])
 sns.swarmplot(data=nbs_lit,y='% Sig. Nodes',c ='k', s=2, ax=axs[1])
 axs[1].set_ylabel('Percentage of Nodes in Significant Edges')
 axs[1].axhline(y=100*N_SIG_NODES/380, color='r', linestyle='--', linewidth=1)
-# -
-
 
