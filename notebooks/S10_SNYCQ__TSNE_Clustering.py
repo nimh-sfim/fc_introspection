@@ -587,7 +587,7 @@ group_info_df['Set Label'].value_counts()
 
 # Add cluster membership information to the TSNE embedding information, and save two versions to disk: one with the original SNYCQ items, one with their scaled values.
 
-# In[33]:
+# In[ ]:
 
 
 emb_plus = pd.concat([emb_plus, group_info_df], axis=1)
@@ -600,7 +600,7 @@ print('++ INFO: Saved t-SNE embeddings with scaled features and group info to CS
 
 # ## 5.5. Plot the T-SNE embedding again, but this time with scans colored according to set membership
 
-# In[86]:
+# In[35]:
 
 
 tsne_camera_object = dict(
@@ -675,7 +675,7 @@ fig.update_layout(
 fig.show()
 
 
-# In[87]:
+# In[36]:
 
 
 fig.write_html(osp.join('figures', 'Figure01_K_SNYCQtsneWclusters.html'))
@@ -697,7 +697,7 @@ fig.write_html(osp.join('figures', 'Figure01_K_SNYCQtsneWclusters.html'))
 
 # ## 6.1. Examination of differences in age distribution
 
-# In[88]:
+# In[37]:
 
 
 # Load Demographic Data
@@ -729,7 +729,7 @@ age_counts_per_group = age_counts_per_group.infer_objects()
 age_counts_per_group = age_counts_per_group.sort_values(by='Age Range', ascending=True)
 
 
-# In[89]:
+# In[38]:
 
 
 A = age_counts_per_group.set_index(['Group','Age Range']).loc['A',:]['# Scans']
@@ -738,7 +738,7 @@ W, w_p = wilcoxon(A,B, alternative='two-sided', method='exact')
 print('++ AGE ACROSS SETS: Wilcoxon = %.2f (p = %.2f)' % (W,w_p))
 
 
-# In[95]:
+# In[39]:
 
 
 # Generate graph that will get later added to a Grid with information about all variables
@@ -750,7 +750,7 @@ hv.save(age_bar_plot, osp.join('figures', 'Figure01_I-AgePerSet.html'))
 
 # ## 6.2. Examination of differneces in gender distribution
 
-# In[96]:
+# In[40]:
 
 
 # Extract information about age
@@ -772,7 +772,7 @@ sex_counts_per_group = sex_counts_per_group.infer_objects()
 sex_counts_per_group
 
 
-# In[97]:
+# In[41]:
 
 
 sex_bar_plot = sex_counts_per_group.hvplot.bar(stacked=True, xlabel='', legend='top_left', title='', ylabel='# Scans', color=['white','gray']).opts(toolbar=None, width=250, height=200, fontscale=1)
@@ -783,7 +783,7 @@ hv.save(sex_bar_plot, osp.join('figures', 'Figure01_J-SexPerSet.html'))
 
 # ## 6.3. Examination of diffrences in head motion
 
-# In[98]:
+# In[42]:
 
 
 # Load motion information for each scan
@@ -797,7 +797,7 @@ U, u_p     = mannwhitneyu(mot_A,mot_B,alternative='two-sided')
 print('++ AGE ACROSS SETS: Mann-Whiteney U    = %.2f (p = %.2f)' % (U,u_p))
 
 
-# In[100]:
+# In[43]:
 
 
 mot_A = mot_info.loc[scans_in_A,'Mean Rel Motion']
@@ -814,7 +814,7 @@ hv.save(overlay, osp.join('figures', 'Figure01_H-MotionPerSet.html'))
 # ## 6.4 Examination of Vigilance
 # 
 
-# In[101]:
+# In[44]:
 
 
 vigilance = SNYCQ_wVigilance['Vigilance']
@@ -824,11 +824,11 @@ scans_in_B = emb_plus[emb_plus['Set Label'] == 'Set B'].index
 vigilance_A      = vigilance.loc[scans_in_A].values
 vigilance_B      = vigilance.loc[scans_in_B].values
 
-T,t_p      = ttest_ind(vigilance_A,vigilance_B,alternative='two-sided')
+U, u_p      = mannwhitneyu(vigilance_A,vigilance_B,alternative='two-sided')
 print('++ VIGILANCE ACROSS SETS: Mann-Whiteney U    = %.2f (p = %.2f)' % (U,u_p))
 
 
-# In[102]:
+# In[45]:
 
 
 vigilance_A      = vigilance.loc[scans_in_A]
@@ -844,7 +844,7 @@ hv.save(overlay, osp.join('figures', 'Figure01_G-VigilancePerSet.html'))
 
 # ## 6.5. Examination of differences in SNYCQ items
 
-# In[103]:
+# In[46]:
 
 
 def cohens_d(x0, x1):
@@ -909,7 +909,7 @@ def calculate_stats_per_set(df, items, label_col='Set Label', method="bootstrap"
     return out_df
 
 
-# In[104]:
+# In[47]:
 
 
 non_ambiguous_scans = emb_plus[emb_plus['Set Label']!='Ambiguous'].index
@@ -920,7 +920,7 @@ stats_per_set       = calculate_stats_per_set(data,[c for c in data_items.column
 stats_per_set.sort_values(by="d(Set B - Set A)", ascending=False).round(2)[['Set A (mean)','Set B (mean)','d(Set B - Set A)','MW (U)','MW (p)']]
 
 
-# In[108]:
+# In[48]:
 
 
 layout                = pn.GridBox(ncols=4)
@@ -947,7 +947,7 @@ layout.save( osp.join('figures', 'Supplementary_Figure02.html'))
 
 # Provide the same information in more concise manner in the form of a radar plot
 
-# In[121]:
+# In[49]:
 
 
 def plot_radar_means_with_ci(
@@ -1018,7 +1018,7 @@ def plot_radar_means_with_ci(
     plt.show()
 
 
-# In[122]:
+# In[50]:
 
 
 # Plot (keep your preferred order of spokes)
@@ -1030,7 +1030,7 @@ plot = plot_radar_means_with_ci(stats_per_set, order=list(items_in_descending_d)
 # 
 # # Distribution of SNYCQ values (Supplementary Figure 1)
 
-# In[127]:
+# In[51]:
 
 
 layout = None
