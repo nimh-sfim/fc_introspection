@@ -3,8 +3,8 @@ clear all
 
 % Start Parallel Pool (for efficiency)
 % ------------------------------------
-addpath('/opt/matlab/conn')
-addpath('/opt/matlab/spm12')
+%addpath('/opt/matlab/conn')
+%addpath('/opt/matlab/spm12')
 contrast = 'SetA_gt_SetB';
 pos_edges_color = [237, 125, 49]/255;
 neg_edges_color = [68, 114, 196]/255;
@@ -19,7 +19,7 @@ end
 % ------------------------
 disp('++ Load Connectivity Matrix')
 tic
-fc_file  = ['../resources/conn/NBS_',contrast,'.txt']
+fc_file  = ['../resources/conn/NBS_T3p1_s0.05_',contrast,'.txt']
 
 fc = load(fc_file);
 N_conns = sum(sum(fc))/2;
