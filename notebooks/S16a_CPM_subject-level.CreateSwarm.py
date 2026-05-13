@@ -1,35 +1,27 @@
-# ---
-# jupyter:
-#   jupytext:
-#     formats: ipynb,py
-#     text_representation:
-#       extension: .py
-#       format_name: light
-#       format_version: '1.5'
-#       jupytext_version: 1.16.1
-#   kernelspec:
-#     display_name: FC Instrospection py 3.10 | 2023b
-#     language: python
-#     name: fc_introspection_2023b_py310
-# ---
+#!/usr/bin/env python
+# coding: utf-8
 
 # # Description
-#
+# 
 # This notebook create the swarm jobs to run CPM on 100 iterations over the real data and 10,000 iterations over randomized data. 
-#
+# 
 # This happens separately for each question in the SNYCQ
+
+# In[1]:
+
 
 import os.path as osp
 import os
 from datetime import datetime
 import getpass
 from utils.basics import get_sbj_scan_list
-from utils.basics import PRJ_DIR, SCRIPTS_DIR, RESOURCES_CPM_DIR, DATA_DIR, RESOURCES_DINFO_DIR, FB_400ROI_ATLAS_NAME, FB_200ROI_ATLAS_NAME, ATLASES_DIR
-#from cpm.cpm import read_fc_matrices
+from utils.basics import PRJ_DIR, SCRIPTS_DIR, RESOURCES_CPM_DIR, DATA_DIR, RESOURCES_DINFO_DIR, FB_400ROI_ATLAS_NAME
 from utils.io import read_fc_matrices
-import numpy as np
 import pandas as pd
-import hvplot.pandas
+
+
+# In[2]:
+
 
 CPM_NITERATIONS      = 100             # Number of iterations on real data (to evaluate robustness against fold generation)
 CPM_NULL_NITERATIONS = 10000           # Number of iterations used to build a null distribution
@@ -42,73 +34,121 @@ MODEL_TYPE           = CORR_TYPE+'_'+E_SUMMARY_METRIC
 CONFOUNDS            = 'conf_residualized' # Options: conf_residualized, conf_not_residualized
 ATLAS_NAME           = FB_400ROI_ATLAS_NAME
 
+
+# In[3]:
+
+
 username = getpass.getuser()
 print('++ INFO: user working now --> %s' % username)
 
+
 # ***
-#
+# 
 # # 1. CPM taking into account subject identity in the cross-validation splits
-#
+# 
 # ## 1.1. Prepare Inputs and Folders
-#
+# 
 # 1. Create resources folder for CPM analyses
+
+# In[4]:
+
 
 print('++INFO: CPM Output folder %s' % RESOURCES_CPM_DIR)
 if not osp.exists(RESOURCES_CPM_DIR):
     print('++ INFO: Creating resources folder for CPM analyses [%s]' % RESOURCES_CPM_DIR)
     os.makedirs(RESOURCES_CPM_DIR)
 
+
 # 2. Load list of scans that passed all QAs
+
+# In[5]:
+
 
 sbj_list, scan_list, snycq_df = get_sbj_scan_list(when='post_motion', return_snycq=True)
 
+
 # 3. Add Factors
 
-W = pd.read_csv('../resources/icqf/W.csv',index_col=[0,1])
+# In[8]:
+
+
+W = pd.read_csv('../resources/snycq/SNYCQ_W.csv',index_col=[0,1])
 W.columns = [c.replace(' ','') for c in W.columns]
 W.head(3)
 
+
+# In[9]:
+
+
 behav_df = pd.concat([snycq_df.loc[W.index,:],W],axis=1)
 behav_df.head(5)
+
+
+# In[10]:
+
 
 # We update scan list to remove the 2 outliers
 scan_list = behav_df.index 
 len(scan_list)
 
+
 # 4. Get list of all variables to predict
+
+# In[11]:
+
 
 targets = list(behav_df.columns)
 print('++ INFO: Prediction Targets: %s' % str(targets))
 print('++ INFO: Number of prediction targets: %d' % len(targets))
 
+
 # 5. Load FC data into memory
+
+# In[12]:
+
 
 fc_data = read_fc_matrices(scan_list,DATA_DIR,ATLAS_NAME,'pb06_staticFC')
 
+
 # 6. Save FC data in vectorized form for all scans into a single file for easy access for batch jobs
+
+# In[13]:
+
 
 out_path = osp.join(RESOURCES_CPM_DIR,f'fc_data_{ATLAS_NAME}.csv')
 fc_data.to_csv(out_path)
 print('++ INFO: FC data saved to disk [%s]' % out_path)
 
+
 # 7. Save SNYCQ in the cpm resources folder
+
+# In[14]:
+
 
 out_path = osp.join(RESOURCES_CPM_DIR,'behav_data.csv')
 behav_df.to_csv(out_path)
 print('++ INFO: Behavioral data saved to disk [%s]' % out_path)
 
+
 # 8. Save a version of motion parameters with only the non-outlier scans
+
+# In[15]:
+
 
 mot_path = osp.join(RESOURCES_DINFO_DIR,'motion_confounds.csv')
 mot_data = pd.read_csv(mot_path, index_col=[0,1])  
 mot_data.loc[W.index].to_csv(osp.join(RESOURCES_CPM_DIR,'confounds.csv'))
+print(f'{mot_path} --> {osp.join(RESOURCES_CPM_DIR,"confounds.csv")}')
 
-#
+
+# 
 # ## 1.2. Create Swarm Jobs for the real data
 
 # We will generate separate swarm files per question. Similarly we will separate the swarm jobs that are for computations on real data and those that are for the generation of the null distribution.
 
-# +
+# In[16]:
+
+
 #user specific folders
 #=====================
 swarm_folder = osp.join(PRJ_DIR,'SwarmFiles.{username}'.format(username=username),f'S16_CPM_{SPLIT_MODE}')
@@ -126,9 +166,16 @@ if not osp.exists(logs_folder):
 for TARGET in targets:    
     swarm_path[TARGET]  = osp.join(swarm_folder,'S16_CPM-{atlas}-real-{sm}-{conf}-{mt}-{target}.SWARM.sh'.format(atlas=ATLAS_NAME,sm=SPLIT_MODE,conf=CONFOUNDS,mt=MODEL_TYPE, target=TARGET.replace(' ','')))
     logdir_path[TARGET] = osp.join(logs_folder, 'S16_CPM-{atlas}-real-{sm}-{conf}-{mt}-{target}.logs'.format(atlas=ATLAS_NAME,sm=SPLIT_MODE,conf=CONFOUNDS,mt=MODEL_TYPE, target=TARGET))
-# -
+
+
+# In[17]:
+
 
 swarm_folder
+
+
+# In[18]:
+
 
 # create specific folders if needed
 # ======================================
@@ -136,6 +183,10 @@ for TARGET in targets:
     if not osp.exists(logdir_path[TARGET]):
         os.makedirs(logdir_path[TARGET])
         print('++ INFO: New folder for log files created [%s]' % logdir_path[TARGET])
+
+
+# In[19]:
+
 
 for TARGET in targets:
     # Open the file
@@ -167,15 +218,16 @@ for TARGET in targets:
                            confounds        = CONFOUNDS == 'conf_residualized'))
         swarm_file.write('\n')
     swarm_file.close()
-    print(swarm_file)
+    print(swarm_path[TARGET])
+
 
 # Once all the jobs have successfully completed, you should run the following command to compile all the outputs into a single file.
-#
+# 
 # ```bash
-# conda activate fc_introspection_2023_py310
-#
+# conda activate generic_2025a
+# 
 # # Compile together the results over the 100 real permutations
-# python /data/SFIMJGC_Introspec/2023_fc_introspection/code/fc_introspection/notebooks/S16b_GatherSwarmResults.py \
+# python /data/SFIMJGC_Introspec/2023_fc_introspection/code/fc_introspection/notebooks/S16_GatherCPMSwarmOutputs.py \
 #    -i /data/SFIMJGC_Introspec/2023_fc_introspection/code/fc_introspection/resources/cpm/swarm_outputs/real/Schaefer2018_400Parcels_7Networks_AAL2/subject_aware/conf_residualized/pearson_sum/ \
 #    -o /data/SFIMJGC_Introspec/2023_fc_introspection/code/fc_introspection/resources/cpm/real-Schaefer2018_400Parcels_7Networks_AAL2-subject_aware-conf_residualized-pearson_sum.pkl \
 #    -n 100
@@ -183,11 +235,16 @@ for TARGET in targets:
 
 # ## 1.3. Create Swarm jobs for the Null Distributions
 
-swarm_folder
+# In[20]:
+
 
 for TARGET in targets:    
     swarm_path[TARGET]  = osp.join(swarm_folder,'S16_CPM-{atlas}-null-{sm}-{conf}-{mt}-{target}.SWARM.sh'.format(atlas=ATLAS_NAME,sm=SPLIT_MODE,conf=CONFOUNDS,mt=MODEL_TYPE, target=TARGET))
     logdir_path[TARGET] = osp.join(logs_folder, 'S16_CPM-{atlas}-null-{sm}-{conf}-{mt}-{target}.logs'.format(atlas=ATLAS_NAME,sm=SPLIT_MODE,conf=CONFOUNDS,mt=MODEL_TYPE, target=TARGET))
+
+
+# In[21]:
+
 
 # create specific folders if needed
 # ======================================
@@ -195,6 +252,10 @@ for TARGET in targets:
     if not osp.exists(logdir_path[TARGET]):
         os.makedirs(logdir_path[TARGET])
         print('++ INFO: New folder for log files created [%s]' % logdir_path[TARGET])
+
+
+# In[22]:
+
 
 for TARGET in targets:
     # Open the file
@@ -225,29 +286,37 @@ for TARGET in targets:
                            confounds        = CONFOUNDS == 'conf_residualized'))
         swarm_file.write('\n')
     swarm_file.close()
+    print(swarm_path[TARGET])
 
-# Once all the jobs have successfully completed, you should run the following command to compile all the outputs into a single file.
-#
+
+# Once all the jobs have successfully completed, you can use this modified call to `S16_GatherCPMSwarmOutputs.py` to get a list of jobs that might have failed (often used to insufficient wall time).
+# The `-T` says this is a test run (only check for file existence)
+# The `-t <PREDICTION_TARGET>` allows you to check on a target by target basis
+# 
+# Sample command:
+# 
 # ```bash
-# conda activate fc_introspection_2023_py310
-#
+# conda activate generic_2025a
+# 
 # # Compile together the results over the 100 real permutations
-# python /data/SFIMJGC_Introspec/2023_fc_introspection/code/fc_introspection/notebooks/S16b_GatherSwarmResults.py \
+# python /data/SFIMJGC_Introspec/2023_fc_introspection/code/fc_introspection/notebooks/S16_GatherCPMSwarmOutputs.py \
 #    -i /data/SFIMJGC_Introspec/2023_fc_introspection/code/fc_introspection/resources/cpm/swarm_outputs/null/Schaefer2018_400Parcels_7Networks_AAL2/subject_aware/conf_residualized/pearson_sum/ \
 #    -o /data/SFIMJGC_Introspec/2023_fc_introspection/code/fc_introspection/resources/cpm/null-Schaefer2018_400Parcels_7Networks_AAL2-subject_aware-conf_residualized-pearson_sum.pkl \
 #    -n 10000 -T -t Factor1
 
-# ## 1.4 Command Lines to load everything into a single dataframe
+# Once you have confirmed that all jobs finished correctly also for the null distribution, then you need to run the following code:
 
 # ```bash
-# # 
-# python /data/SFIMJGC_Introspec/2023_fc_introspection/code/fc_introspection/notebooks/S16b_GatherSwarmResults.py \
-#        -i /data/SFIMJGC_Introspec/2023_fc_introspection/code/fc_introspection/resources/cpm/swarm_outputs/real/Schaefer2018_400Parcels_7Networks_AAL2/subject_aware/conf_residualized/pearson_sum/ \
-#        -o /data/SFIMJGC_Introspec/2023_fc_introspection/code/fc_introspection/resources/cpm/real-Schaefer2018_400Parcels_7Networks_AAL2-subject_aware-conf_residualized-pearson_sum.pkl \
-#        -n 100
-#
-#
-# python ./S16b_GatherSwarmResults.py  -i /data/SFIMJGC_Introspec/2023_fc_introspection/code/fc_introspection/resources/cpm/swarm_outputs/real/Schaefer2018_400Parcels_7Networks_AAL2/subject_aware/conf_not_residualized/pearson_sum/ -o /data/SFIMJGC_Introspec/2023_fc_introspection/code/fc_introspection/resources/cpm/real-Schaefer2018_400Parcels_7Networks_AAL2-subject_aware-conf_not_residualized-pearson_sum.pkl -n 100 -c pearson
-#
-# python /data/SFIMJGC_Introspec/2023_fc_introspection/code/fc_introspection/notebooks/S16b_GatherSwarmResults.py  -i /data/SFIMJGC_Introspec/2023_fc_introspection/code/fc_introspection/resources/cpm/swarm_outputs/null/Schaefer2018_400Parcels_7Networks_AAL2/subject_aware/conf_not_residualized/pearson_sum/ -o /data/SFIMJGC_Introspec/2023_fc_introspection/code/fc_introspection/resources/cpm/null-Schaefer2018_400Parcels_7Networks_AAL2-subject_aware-conf_not_residualized-pearson_sum.pkl -n 10000 -c pearson
+# python /data/SFIMJGC_Introspec/2023_fc_introspection/code/fc_introspection/notebooks/S16_GatherCPMSwarmOutputs.py \
+#        -i /data/SFIMJGC_Introspec/2023_fc_introspection/code/fc_introspection/resources/cpm/swarm_outputs/null/Schaefer2018_400Parcels_7Networks_AAL2/subject_aware/conf_residualized/pearson_sum/ \
+#        -o /data/SFIMJGC_Introspec/2023_fc_introspection/code/fc_introspection/resources/cpm/null-Schaefer2018_400Parcels_7Networks_AAL2-subject_aware-conf_residualized-pearson_sum.pkl \
+#        -n 10000
 # ```
+
+# At this point, I would recommend deletion of the content of the `/data/SFIMJGC_Introspec/2023_fc_introspection/code/fc_introspection/resources/cpm/swarm_outputs/null/Schaefer2018_400Parcels_7Networks_AAL2/subject_aware/` folder. For the null distribution, all we care about is the accuracy, and those are now saved in `null-Schaefer2018_400Parcels_7Networks_AAL2-subject_aware-conf_residualized-pearson_sum.pkl`. For the "real" case, we want to keep all the outputs of the jobs becuase we will also explore the models in a later notebook. So do not delete the contents of ``/data/SFIMJGC_Introspec/2023_fc_introspection/code/fc_introspection/resources/cpm/swarm_outputs/real/Schaefer2018_400Parcels_7Networks_AAL2/subject_aware/`.
+# 
+# ```bash
+# rm -rf `/data/SFIMJGC_Introspec/2023_fc_introspection/code/fc_introspection/resources/cpm/swarm_outputs/null/Schaefer2018_400Parcels_7Networks_AAL2/subject_aware/`
+# ```
+
+# 
