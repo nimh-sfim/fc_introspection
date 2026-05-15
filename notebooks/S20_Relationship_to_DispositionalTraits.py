@@ -1,30 +1,25 @@
-# ---
-# jupyter:
-#   jupytext:
-#     formats: ipynb,py
-#     text_representation:
-#       extension: .py
-#       format_name: light
-#       format_version: '1.5'
-#       jupytext_version: 1.16.1
-#   kernelspec:
-#     display_name: FC Instrospection (2023 | 3.10)
-#     language: python
-#     name: fc_introspection_2023_py310
-# ---
+#!/usr/bin/env python
+# coding: utf-8
 
 # # Description
-#
+# 
 # This notebook will look at the additional tests that participants completed. All tests can be grouped in the following categories:
-#
+# 
 # * Personality and Habituation Behaviors
 # * Mind-wandering / Mindfulness
 # * Synesthesia
 # * Cognitive Control / Sustained Attention
 # * Creativity
 
+# In[1]:
+
+
 import bokeh
 print(bokeh.__version__)
+
+
+# In[2]:
+
 
 import pandas as pd
 import numpy as np
@@ -43,6 +38,9 @@ from utils.basics import get_sbj_scan_list
 
 # We will use this function to compute Cohen's d across scan sets
 
+# In[3]:
+
+
 def cohens_d(x0, x1):
     m0, m1 = np.nanmean(x0), np.nanmean(x1)
     s0, s1 = np.nanstd(x0, ddof=1), np.nanstd(x1, ddof=1)
@@ -52,6 +50,9 @@ def cohens_d(x0, x1):
 
 
 # We will use this function to show heatmaps with srtatistical significance marked via BOLD black outlines
+
+# In[4]:
+
 
 def show_results(data_val,data_pval=None,pval_thr=0.05, clabel=None,height=600,width=700,cmap='RdBu_r', fontscale=1, clim=(-.7,.7)):
 
@@ -93,6 +94,9 @@ def show_results(data_val,data_pval=None,pval_thr=0.05, clabel=None,height=600,w
 
 # We will use this function to plot distribution of items across both scan Sets
 
+# In[5]:
+
+
 def plot_distributions_across_NBS_groups(phenotype,df,groups_info, show_hist=True):
     # Extract gouping info:
     group_labels = list(groups_info.keys())
@@ -127,22 +131,24 @@ def plot_distributions_across_NBS_groups(phenotype,df,groups_info, show_hist=Tru
 
 
 # ***
-#
+# 
 # # 1. Create data structures with basic information about behavioral measures available as part of the Mind-Brain-Body Dataset
-#
+# 
 # 1. Here is a list of all available surveys organized by category
-#
+# 
 # This list was created taking into accoun that a few test are not available at the [download page](https://dataverse.harvard.edu/dataset.xhtml?persistentId=doi:10.7910/DVN/VMJ6NV). Those are:
-#
+# 
 # * FBI (Facebook intensity scale)
 # * MGIQ (Multi-gender identity questionnaire)
-#
+# 
 # Also, for two CogControl task, there is the need for computing summary metrics, so we will ignored them by now
-#
+# 
 # * I found code for CCPT
 # * Not sure what to do with ETS
 
-# +
+# In[6]:
+
+
 surveys_per_category = {
     'Personality':          ['AMAS','ASR','BDI','BISBAS','BCQ','BPS','SCS','ESS','GoldMSI','HADS','IAT','IMIS','MPU','MMI','NEO','PSSI','SE','SD3','SDS','TPS','UPPS'],
     'Mind-wandering':       ['FFMQ','MCQ','SDMW','VISQ'],
@@ -154,9 +160,12 @@ all_surveys =  [ x for xs in surveys_per_category.values() for x in xs ]
 
 for survey in surveys_per_category:
     print('%s has %d surveys' % (survey, len(surveys_per_category[survey])))
-# -
+
 
 # The next dicitionary contains information about the different summary metrics available per survey
+
+# In[7]:
+
 
 metrics_per_survey = {'AMAS':['AMAS_sum'],
                       'ASR':['ASR_summary_adaptiveFunctioning_friends_sum','ASR_summary_adaptiveFunctioning_spouse_sum','ASR_summary_adaptiveFunctioning_family_sum','ASR_summary_adaptiveFunctioning_job_sum','ASR_summary_adaptiveFunctioning_education_sum',
@@ -192,9 +201,17 @@ metrics_per_survey = {'AMAS':['AMAS_sum'],
                       'RAT':['RAT_CORRECT_NR', 'RAT_PERCENT', 'RAT_Rtmeanforcorrectanswers'],
                       'TCIA':['TCIA_Vividness_mean', 'TCIA_Orig_mean', 'TCIA_Transform_mean']}
 
+
 # 2. Gather the path to the files associated with each survey
 
+# In[8]:
+
+
 SURVEYS_DIR = osp.join(ORIG_BEHAV_DIR,'behavioral_data_MPILMBB','phenotype')
+
+
+# In[9]:
+
 
 # Create strucutres with access to the files associated with them
 survey_data_paths = {}
@@ -208,17 +225,24 @@ for test in tqdm(all_surveys, desc='Test'):
         survey_data_paths[test] = data_file
         survey_info_paths[test] = info_file
 
+
 # ***
 # # 2. Analysis regarding the role of dispositional traits in population differences (NBS results)
-#
+# 
 # 1. Load the list of all scans in the NBS groups
+
+# In[10]:
+
 
 emb_plus     = pd.read_csv(osp.join(RESOURCES_SNYCQ_DIR, 'SNYCQ_tsne_embeddings_plus.csv'), index_col=[0,1])
 clusters_info = emb_plus[['Set Label','Group Probability']]
 
+
 # 2. Get the subjects in each group
 
-# +
+# In[11]:
+
+
 # All subjects entering NBS analyses
 sbjs_in_SetA    = list(clusters_info[clusters_info['Set Label']=='Set A'].index.get_level_values('Subject').unique())
 sbjs_in_SetB    = list(clusters_info[clusters_info['Set Label']=='Set B'].index.get_level_values('Subject').unique())
@@ -229,20 +253,25 @@ print('++ Scans in NBS groups (this will include scans and subjects that are in 
 print('++ Number of scans/subjects in group [Set A]: %d/%d' % (clusters_info[clusters_info['Set Label']=='Set A'].shape[0],len(sbjs_in_SetA)))
 print('++ Number of scans/subjects in group [Set B]: %d/%d' % (clusters_info[clusters_info['Set Label']=='Set B'].shape[0],len(sbjs_in_SetB)))
 print('++ Number of scans/subjects in both groups:   %d/%d' % (clusters_info[clusters_info['Set Label']!='Ambiguous'].shape[0],len(sbjs_in_Both)))
-# -
+
 
 # 3. Keep only subjects that are in one of the two sets only
 
-# +
+# In[12]:
+
+
 sbjs_in_SetB    = [item for item in sbjs_in_SetB if item not in sbjs_in_Both]
 sbjs_in_SetA    = [item for item in sbjs_in_SetA if item not in sbjs_in_Both]
 NBS_all_sbjs    = sbjs_in_SetA + sbjs_in_SetB
 
 print('++ Number of scans/subjects in group [Set A]: %d' % len(sbjs_in_SetA))
 print('++ Number of scans/subjects in group [Set B]: %d' % len(sbjs_in_SetB))
-# -
+
 
 # 4. For a few surveys, subjects name do not agree at all (most likely associagted with the other portion of the dataset that we do not analyze here). We identify such surveys by seeing there is zero overlap in subject labels between the subjects entering NBS and the subjects in the survey index. Such surveys are eliminated
+
+# In[13]:
+
 
 # Look for surveys that do not include information about the subjects we are using
 surveys_to_remove_insuficient_subjects = []
@@ -253,6 +282,10 @@ for survey in tqdm(all_surveys):
     if (len(intersection_w_NBS) == 0) :
         surveys_to_remove_insuficient_subjects.append(survey)
 print('++ Surveys that contain information about another subject group: %s' % surveys_to_remove_insuficient_subjects)
+
+
+# In[14]:
+
 
 # Remove those surveys from the list of available surveys
 aux = {}
@@ -266,7 +299,11 @@ NBS_surveys_per_category = aux
 for category,surveys in NBS_surveys_per_category.items():
     print(' + %s has %d surveys in it: %s' % (category, len(surveys), str(surveys)))
 
+
 # 5. For the surveys still remaining, we will now remove all surveys that do not provide information in at least 70% of subjects in the NBS analyses
+
+# In[15]:
+
 
 NBS_sbjs_avail_per_survey                   = {'N_avail':pd.DataFrame(columns=['NBS_SetA','NBS_SetB'])}
 surveys_to_remove_insuficient_subjects_NBS  = []
@@ -284,6 +321,10 @@ for category, surveys in NBS_surveys_per_category.items():
                 surveys_to_remove_insuficient_subjects_NBS.append(survey)
 surveys_to_remove_insuficient_subjects_NBS
 
+
+# In[16]:
+
+
 # Remove those surveys from the list of available surveys
 aux = {}
 for category,surveys in NBS_surveys_per_category.items():
@@ -296,11 +337,19 @@ print('++ New set of surveys:')
 for category,surveys in NBS_surveys_per_category.items():
     print(' + %s has %d surveys in it: %s' % (category, len(surveys), str(surveys)))
 
+
 # 6. Compute T-test and Mann-Whitney for all selected surveys
+
+# In[17]:
+
 
 NBS_ttest = pd.DataFrame(columns=['T','pval'])
 NBS_mw    = pd.DataFrame(columns=['U','pval'])
 NBS_cohen_d = pd.DataFrame(columns=['d'])
+
+
+# In[18]:
+
 
 for category,surveys in NBS_surveys_per_category.items():
     for survey in surveys:
@@ -320,7 +369,10 @@ for category,surveys in NBS_surveys_per_category.items():
 NBS_ttest = NBS_ttest.infer_objects()
 NBS_mw    = NBS_mw.infer_objects()
 
-# +
+
+# In[19]:
+
+
 pBonf_NBS = 0.05 / NBS_ttest.shape[0]
 NBS_ttest['T (pBonf<0.05)'] = NBS_ttest['T']
 NBS_ttest['T (p<0.05)'] = NBS_ttest['T']
@@ -331,27 +383,54 @@ NBS_mw['U (pBonf<0.05)'] = NBS_mw['U']
 NBS_mw['U (p<0.05)'] = NBS_mw['U']
 NBS_mw.loc[NBS_mw['pval'] > pBonf_NBS, 'U (pBonf<0.05)'] = np.nan
 NBS_mw.loc[NBS_mw['pval'] > 0.05, 'U (p<0.05)'] = np.nan
-# -
 
-NBS_cohen_d.hvplot.heatmap(height=600, fontscale=1,line_color='k',line_width=1, width=245, clim=(-2,2), cmap='RdBu_r').opts(xrotation=90, 
+
+# In[23]:
+
+
+plot = NBS_cohen_d.hvplot.heatmap(height=600, fontscale=1,line_color='k',line_width=1, width=245, clim=(-2,2), cmap='RdBu_r').opts(xrotation=90, 
                                                                                                               clabel='Cohen`s d (Set A - Set B)', 
                                                                                                               shared_axes=False) + \
 NBS_ttest.drop('pval',axis=1).hvplot.heatmap(height=600, fontscale=1,cmap='RdBu_r',clim=(-3,3), line_color='k',line_width=1, width=275).opts(xrotation=90, clabel='Paired T-stat', shared_axes=False) + \
 NBS_mw.drop('pval',axis=1).hvplot.heatmap(height=600, fontscale=1,cmap='RdBu_r',line_color='k',line_width=1, width=275).opts(xrotation=90, clabel='Mann-Whitney U statistic')
 
+
+# In[25]:
+
+
+hv.save(plot, './figures/Figure04.html')
+
+
+# ![Figure04](./figures/Figure04.png)
+
+# In[21]:
+
+
 NBS_ttest.drop(['T (pBonf<0.05)'],axis=1).dropna()
+
+
+# In[22]:
+
 
 NBS_mw.drop(['U (pBonf<0.05)'],axis=1).dropna()
 
+
 # ***
 # # 2.  Role of dispositional traits in Predictive Analyses (CPMs)
-#
+# 
 # 1. Load the SNYCQ answers
+
+# In[26]:
+
 
 _, _, snycq_df = get_sbj_scan_list(when='post_motion', return_snycq=True)
 snycq_df.drop(['Vigilance'],axis=1,inplace=True)
 
+
 # 2. Extract list of 469 scans entering the CPM analyses
+
+# In[27]:
+
 
 # We do it this way so that we remove the two scans marked as outliers during the initial evaluation of the experiential data
 scan_list = emb_plus.index
@@ -359,34 +438,60 @@ scan_list = emb_plus.index
 
 # 3. Load the ICQF Thought Pattern loadings
 
-W = pd.read_csv('../resources/icqf/W.csv', index_col=[0,1])
+# In[28]:
+
+
+W = pd.read_csv('../resources/snycq/SNYCQ_W.csv', index_col=[0,1])
 W.columns = ['TP1','TP2']
 W = W.loc[scan_list]
 
+
 # 4. Update the ```SNYCA_df``` dataframe with the thought patterns loadings just loaded
+
+# In[29]:
+
 
 snycq_df = pd.concat([snycq_df, W], axis=1)
 
+
 # 5. Behavioral data is only available once per subject, so that we need a single measure of experiential data per subject --> we use the mean   
+
+# In[30]:
+
 
 snyq_by_subject_df = snycq_df.groupby('Subject').mean()
 sbj_list = list(snyq_by_subject_df.index)
 
+
+# In[31]:
+
+
 # All diemsnions available to be checked
 introspection_dimensions = list(snyq_by_subject_df.columns)
+
+
+# In[32]:
+
 
 # Final list of subjects entering the CPM analyses
 CPM_all_sbjs = list(snyq_by_subject_df.index.values)
 print(len(CPM_all_sbjs))
 
+
 # 6. Compute correlations between in-scanner experience measures and dispositional trait measures
+
+# In[33]:
+
 
 CPM_R  = pd.DataFrame(columns=snycq_df.columns); CPM_R.name  = 'R'
 CPM_Rp = pd.DataFrame(columns=snycq_df.columns); CPM_Rp.name = 'R_pval'
 CPM_S  = pd.DataFrame(columns=snycq_df.columns); CPM_S.name  = 'S'
 CPM_Sp = pd.DataFrame(columns=snycq_df.columns); CPM_Sp.name = 'S_pval'
 
-# +
+
+# In[34]:
+
+
 for category,surveys in NBS_surveys_per_category.items():
     for survey in surveys:
         df_survey      = pd.read_csv(survey_data_paths[survey], sep='\t', index_col=0)
@@ -406,8 +511,16 @@ for aux in [CPM_R,CPM_Rp,CPM_S,CPM_Sp]:
     
 CPM_pBonf = 0.05 / CPM_R.shape[0]
 print(CPM_pBonf)
-# -
+
 
 # 7. Plot the results based both in R and Spearman R
 
-show_results(CPM_R,CPM_Rp,CPM_pBonf,clabel='Pearson Correlation (R) | pBONF < 0.05') + show_results(CPM_S,CPM_Sp,CPM_pBonf,clabel='Spearman Correlation (S) | pBONF < 0.05')
+# In[38]:
+
+
+plot = show_results(CPM_R,CPM_Rp,CPM_pBonf,clabel='Pearson Correlation (R) | pBONF < 0.05') 
+hv.save(plot, './figures/Figure09.html')
+plot
+
+
+# ![Figure09](./figures/Figure09.png)
