@@ -57,49 +57,53 @@ SPLIT_MODE           = 'basic'
 ATLAS                = FB_400ROI_ATLAS_NAME
 
 
-# ## 1. Load CPM results
+# ***
+# # 1. Load CPM results
 # 
-# 1.1. Real data
+# ## 1.1. Real data
 
 # In[4]:
 
 
-get_ipython().run_cell_magic('time', '', "real_results_path = osp.join(RESOURCES_CPM_DIR,f'real-{ATLAS}-{SPLIT_MODE}-{CONFOUNDS}-{CORR_TYPE}_{E_SUMMARY_METRIC}.pkl')\nprint('++ INFO: Loading real predictions from: %s' % real_results_path)\nwith open(real_results_path,'rb') as f:\n     real_predictions_xr = pickle.load(f)\nNbehavs, Niters_real, Nscans, Nresults = real_predictions_xr.shape\nprint(Nbehavs, Niters_real, Nscans, Nresults)\n")
+get_ipython().run_cell_magic('time', '', "real_results_path = osp.join(RESOURCES_CPM_DIR,f'real-{ATLAS}-{SPLIT_MODE}-{CONFOUNDS}-{CORR_TYPE}_{E_SUMMARY_METRIC}.pkl')\nprint('++ INFO: Loading real predictions from: %s' % real_results_path)\nwith open(real_results_path,'rb') as f:\n     real_predictions_xr = pickle.load(f)\nNbehavs, Niters_real, Nscans, Nresults = real_predictions_xr.shape\nprint('++ INFO: Shape of real predictions: Num Targets=%d, Num Iterations=%d, Num Scans=%d, Num Vars=%d' % (Nbehavs, Niters_real, Nscans, Nresults))\n")
 
 
 # Updating Behavior coordinate dimensions for proper labeling of final figures so that they agree with the main text
 
-# In[5]:
+# In[6]:
 
 
 real_predictions_xr = real_predictions_xr.assign_coords({'Behavior':[BEHAVIOR_LABELS_DICT[b] for b in real_predictions_xr.Behavior.values]})
 
 
-# 1.2. Randomized data
-
-# In[6]:
-
-
-get_ipython().run_cell_magic('time', '', "null_results_path = osp.join(RESOURCES_CPM_DIR,f'null-{ATLAS}-{SPLIT_MODE}-{CONFOUNDS}-{CORR_TYPE}_{E_SUMMARY_METRIC}.pkl')\nprint('++ INFO: Loading null predictions from: %s' % null_results_path)\nwith open(null_results_path,'rb') as f:\n     null_predictions_xr = pickle.load(f)\n_, Niters_null, _, _ = null_predictions_xr.shape\nprint(Nbehavs, Niters_null, Nscans, Nresults)\n")
-
+# ## 1.2. Randomized data
 
 # In[7]:
+
+
+get_ipython().run_cell_magic('time', '', "null_results_path = osp.join(RESOURCES_CPM_DIR,f'null-{ATLAS}-{SPLIT_MODE}-{CONFOUNDS}-{CORR_TYPE}_{E_SUMMARY_METRIC}.pkl')\nprint('++ INFO: Loading null predictions from: %s' % null_results_path)\nwith open(null_results_path,'rb') as f:\n     null_predictions_xr = pickle.load(f)\n_, Niters_null, _, _ = null_predictions_xr.shape\nprint('++ INFO: Shape of null predictions: Num Targets=%d, Num Iterations=%d, Num Scans=%d, Num Vars=%d' % (Nbehavs, Niters_null, Nscans, Nresults))\n")
+
+
+# In[8]:
 
 
 null_predictions_xr = null_predictions_xr.assign_coords({'Behavior':[BEHAVIOR_LABELS_DICT[b] for b in null_predictions_xr.Behavior.values]})
 
 
-# # 2. Compute accuracy values
+# ***
+# # 2. Compute accuracy
 # 
-# 2.1. Real data
+# ## 2.1. Real data
 
-# In[8]:
+# In[9]:
 
 
 get_ipython().run_cell_magic('time', '', "accuracy_real          = {BEHAVIOR:pd.DataFrame(index=range(Niters_real), columns=['Accuracy']) for BEHAVIOR in BEHAVIOR_LABELS}\n\np_values          = pd.DataFrame(index=BEHAVIOR_LABELS,columns=['Non Parametric','Parametric'])\n\nfor BEHAVIOR in BEHAVIOR_LABELS:\n    for niter in tqdm(range(Niters_real), desc=BEHAVIOR):\n        observed  = pd.Series(real_predictions_xr.loc[BEHAVIOR,niter,:,'observed'].values)\n        if E_SUMMARY_METRIC == 'ridge':\n            predicted = pd.Series(real_predictions_xr.loc[BEHAVIOR,niter,:,'predicted (ridge)'].values)\n        else:\n            predicted = pd.Series(real_predictions_xr.loc[BEHAVIOR,niter,:,'predicted (glm)'].values)\n        accuracy_real[BEHAVIOR].loc[niter]  = observed.corr(predicted, method='pearson')\n        _,p_values.loc[BEHAVIOR,'Parametric'] = pearsonr(observed,predicted)\n")
 
 
-# In[9]:
+# Compute mean across all attemps
+
+# In[10]:
 
 
 median_accuracies = pd.DataFrame(columns=['Pearson R'], index=BEHAVIOR_LABELS)
@@ -107,41 +111,44 @@ for BEHAVIOR in BEHAVIOR_LABELS:
     median_accuracies.loc[BEHAVIOR,'Pearson R'] = accuracy_real[BEHAVIOR].median().values[0]
 
 
-# In[10]:
+# In[11]:
 
 
-median_accuracies_path = osp.join(RESOURCES_CPM_DIR,f'real-{ATLAS}-{SPLIT_MODE}-{CONFOUNDS}-{CORR_TYPE}_{E_SUMMARY_METRIC}.final_avg_accuracies.csv')
+median_accuracies_path = osp.join(RESOURCES_CPM_DIR,f'{SPLIT_MODE}_final_avg_accuracies.csv')
 median_accuracies.to_csv(median_accuracies_path) 
 print('++ INFO: Median accuracies saved to: %s' % median_accuracies_path)
 
 
-# In[11]:
+# In[12]:
 
 
 display(median_accuracies.infer_objects().round(2))
 
 
-# 2.2. Null data
+# ## 2.2. Null data
 
-# In[12]:
+# In[13]:
 
 
 get_ipython().run_cell_magic('time', '', "accuracy_null = {BEHAVIOR:pd.DataFrame(index=range(Niters_null), columns=['Accuracy']) for BEHAVIOR in BEHAVIOR_LABELS}\nfor BEHAVIOR in BEHAVIOR_LABELS:\n    for niter in tqdm(range(Niters_null), desc=BEHAVIOR):\n        observed  = pd.Series(null_predictions_xr.loc[BEHAVIOR,niter,:,'observed'].values)\n        if E_SUMMARY_METRIC == 'ridge':\n            predicted = pd.Series(null_predictions_xr.loc[BEHAVIOR,niter,:,'predicted (ridge)'].values)\n        else:\n            predicted = pd.Series(null_predictions_xr.loc[BEHAVIOR,niter,:,'predicted (glm)'].values)\n        accuracy_null[BEHAVIOR].loc[niter]  = observed.corr(predicted, method=ACCURACY_METRIC)\n")
 
 
+# ***
 # # 3. Compute non-parameter p-values
 # 
 # For this, we rely on the null distribution generated via label randomization. 
 # 
 # We use the formula on section 2.4.4 from Finn & Bandettini ["Movie-watching outperforms rest for functional connectivity-based prediction of behavior"](https://www.sciencedirect.com/science/article/pii/S1053811921002408) NeuroImage 2021
 
-# In[13]:
+# In[14]:
 
 
 p_values.columns.name = 'p-value'
 for BEHAVIOR in BEHAVIOR_LABELS:
     p_values.loc[BEHAVIOR,'Non Parametric'] = (((accuracy_null[BEHAVIOR] > accuracy_real[BEHAVIOR].median()).sum() + 1) / (Niters_null+1)).values[0]
 
+
+# Add values after correcting for multiple comparisons using FDR
 
 # In[15]:
 
@@ -156,34 +163,33 @@ with pd.option_context("display.float_format", lambda x: "%0.1e" % x):
     display(p_values.infer_objects()[['Parametric','Non Parametric','Non Parametric, FDRbh']])
 
 
+# ***
 # # 4. Generate Prediction-reporting Figures
-# 
-# > **NOTE:** Next cell should be updated to not depend on pandas.append (given it is about to become deprecated). To avoid continous warnings, we ignore those next.
 
-# In[18]:
+# In[17]:
 
 
 import warnings
 warnings.simplefilter(action='ignore', category=FutureWarning)
 
 
+# In[18]:
+
+
+get_ipython().run_cell_magic('time', '', 'rows = []\n\nfor behavior in BEHAVIOR_LABELS:\n    for i in tqdm(range(Niters_null), desc=behavior):\n        r_value = accuracy_null[behavior].loc[i].values[0]\n\n        rows.append({\n            "Question": behavior,\n            "Iteration": i,\n            "R": r_value\n        })\n\nnull_df = pd.DataFrame(rows, columns=["Question", "Iteration", "R"])\n')
+
+
 # In[19]:
 
 
-get_ipython().run_cell_magic('time', '', "rows = []\n\nfor BEHAVIOR in BEHAVIOR_LABELS:\n    for i in tqdm(range(Niters_null), desc=BEHAVIOR):\n        rows.append({\n            'Question': BEHAVIOR,\n            'Iteration': i,\n            'R': accuracy_null[BEHAVIOR].loc[i].values[0]\n        })\n\nnull_df = pd.DataFrame(rows, columns=['Question', 'Iteration', 'R'])\n")
-
-
-# In[20]:
-
-
-get_ipython().run_cell_magic('time', '', "rows = []\n\nfor BEHAVIOR in BEHAVIOR_LABELS:\n    for i in tqdm(range(Niters_real), desc=BEHAVIOR):\n        rows.append({\n            'Question': BEHAVIOR,\n            'Iteration': i,\n            'R': accuracy_real[BEHAVIOR].loc[i].values[0]\n        })\n\nreal_df = pd.DataFrame(rows, columns=['Question', 'Iteration', 'R'])\n")
+get_ipython().run_cell_magic('time', '', 'rows = []\n\nfor behavior in BEHAVIOR_LABELS:\n    for i in tqdm(range(Niters_real), desc=behavior):\n        rows.append({\n            "Question": behavior,\n            "Iteration": i,\n            "R": accuracy_real[behavior].loc[i].values[0],\n        })\n\nreal_df = pd.DataFrame(rows, columns=["Question", "Iteration", "R"])\n')
 
 
 # We will now save these summary views to disk, as we will need them on the next notebook that creates a dashboard that allows a comprehensive exploration of the CPM results.
 # 
 # > **NOTE:** This file is used in S18 Dashboard to load results. If you don't run this cell when new CPM results are available, the Dashboard will present outdated results.
 
-# In[21]:
+# In[20]:
 
 
 output_path = osp.join(RESOURCES_CPM_DIR,f'cpm_predictions_summary-{SPLIT_MODE}-{CONFOUNDS}-{CORR_TYPE}.pkl')
@@ -196,14 +202,14 @@ print('++ INFO: Data written to disk [%s]' % output_path)
 # ## 4.1. Without statistical annotations
 # 
 
-# In[22]:
+# In[21]:
 
 
 median_width = 0.4
 sns.set(style='whitegrid')
 
 
-# In[23]:
+# In[22]:
 
 
 fig,ax = plt.subplots(1,1,figsize=(15,5))
@@ -221,7 +227,7 @@ ax.set_xlabel('SNYCQ Item')
 
 # ## 4.2. With Statistical Annotations
 
-# In[24]:
+# In[23]:
 
 
 fig,ax = plt.subplots(1,1,figsize=(15,5))
@@ -255,7 +261,7 @@ ax.set_xlabel('SNYCQ Item')
 
 # We will also plot the same results, but separated in three different panels. One for the wakefulness question, one for the two factors, and one for the 11 questions entering the Sparse Box-Constrained Non-Negative Matrix Factorization. This might come handy for presentations, yet it is exactly the same information as above.
 
-# In[25]:
+# In[24]:
 
 
 median_width = 0.4
@@ -350,13 +356,13 @@ ax[2].set_xlabel('SNYC Questionnaire: Form and Content of Thoughts')
 plt.tight_layout()
 
 
-# In[26]:
+# In[25]:
 
 
 fig.savefig('./figures/Supplementary_Figure04-ScanLevelCPMResults.png')
 
 
-# In[27]:
+# In[26]:
 
 
 median_width = 0.4
@@ -455,7 +461,7 @@ ax[2].set_xlabel('SNYC Questionnaire Items')
 plt.tight_layout()
 
 
-# In[28]:
+# In[27]:
 
 
 fig.savefig('./figures/Supplementary_Figure04-ScanLevelCPMResults_onlySignificant.png')
@@ -463,14 +469,14 @@ fig.savefig('./figures/Supplementary_Figure04-ScanLevelCPMResults_onlySignifican
 
 # ## 4.3. Scatter Plots of Observed vs. Predicted Values
 
-# In[29]:
+# In[28]:
 
 
 N_sign_results = (p_values.loc[:,'Non Parametric'] < 0.05).sum()
 print('++ INFO: Number of items predicted significantly: %d ' % N_sign_results)
 
 
-# In[32]:
+# In[29]:
 
 
 fig,ax = plt.subplots(2,int(N_sign_results/2),figsize=(32,10))
