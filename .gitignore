@@ -9,6 +9,14 @@ resources/dataset_info/
 resources_prior_to_sub03/
 notebooks/figures_prior_to_sub03/
 
+resources/cpm/basic_final_avg_accuracies.csv
+resources/cpm/behav_data.csv
+resources/cpm/confounds.csv
+resources/cpm/cpm_predictions_summary-basic-conf_residualized-pearson.pkl
+resources/cpm/cpm_predictions_summary-subject_aware-conf_residualized-pearson.pkl
+resources/cpm/null-Schaefer2018_400Parcels_7Networks_AAL2-basic-conf_residualized-pearson_sum.pkl
+resources/cpm/null-Schaefer2018_400Parcels_7Networks_AAL2-subject_aware-conf_residualized-pearson_sum.pkl
+resources/cpm/fc_data_Schaefer2018_400Parcels_7Networks_AAL2.csv
 resources/nbs/Schaefer2018_400Parcels_7Networks_AAL2/NBS_Data/
 resources/conn/NBS_T2p58_s0.05_Both.txt
 resources/conn/NBS_T2p58_s0.05_SetB_gt_SetA.txt
