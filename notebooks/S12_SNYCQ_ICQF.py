@@ -258,12 +258,12 @@ Qc = Qc[['Intercept','Age (younger)','Age (elder)','Gender (M)','Gender (F)']] #
 # ***
 # Plot the W matrix
 
-# In[20]:
+# In[ ]:
 
 
 W_Supp_Fig = pd.concat([W, pd.DataFrame(index=W.index,columns=C.columns)],axis=1)
 W_plot = W_Supp_Fig.reset_index(drop=True).hvplot.heatmap(cmap='Greens', width=300, height=550, fontscale=1.2, clim=(0,1), shared_axes=False).opts( colorbar_opts={'title':'W Matrix'}, xrotation=90, toolbar=None)
-hv.save(W_plot, osp.join('figures', 'Supplementary_Figure04_W.html'), backend='bokeh')
+hv.save(W_plot, osp.join('figures', 'Supplementary_Figure05W.html'), backend='bokeh')
 W_plot
 
 
@@ -271,12 +271,12 @@ W_plot
 
 # Plot the C matrix
 
-# In[21]:
+# In[ ]:
 
 
 C_Supp_Fig = pd.concat([pd.DataFrame(index=C.index,columns=W.columns), C],axis=1)
 C_plot = C_Supp_Fig.reset_index(drop=True).hvplot.heatmap(cmap='Purples', width=300, height=550, fontscale=1.2, clim=(0,1), shared_axes=False).opts( colorbar_opts={'title':'C Matrix'}, xrotation=90, toolbar=None)
-hv.save(C_plot, osp.join('figures', 'Supplementary_Figure04_C.html'), backend='bokeh')
+hv.save(C_plot, osp.join('figures', 'Supplementary_Figure05_C.html'), backend='bokeh')
 C_plot
 
 
@@ -284,12 +284,12 @@ C_plot
 
 # Plot the Q matrix
 
-# In[22]:
+# In[ ]:
 
 
 Q_Supp_Fig = pd.concat([Q, pd.DataFrame(index=Q.index,columns=C.columns)],axis=1)
 Q_plot = Q_Supp_Fig.hvplot.heatmap(cmap='Oranges', width=300, height=550, fontscale=1.2, clim=(0,100), shared_axes=False).opts( colorbar_opts={'title':'Q Matrix'}, xrotation=90, toolbar=None)
-hv.save(Q_plot, osp.join('figures', 'Supplementary_Figure04_Q.html'), backend='bokeh')
+hv.save(Q_plot, osp.join('figures', 'Supplementary_Figure05_Q.html'), backend='bokeh')
 Q_plot
 
 
@@ -297,12 +297,12 @@ Q_plot
 
 # Plot Qc
 
-# In[23]:
+# In[ ]:
 
 
 Qc_Supp_Fig = pd.concat([pd.DataFrame(index=Qc.index,columns=Q.columns),Qc],axis=1)
 Qc_plot = Qc_Supp_Fig.hvplot.heatmap(cmap='Oranges', width=300, height=550, fontscale=1.2, clim=(0,100), shared_axes=False).opts( colorbar_opts={'title':'Q Matrix'}, xrotation=90, toolbar=None)
-hv.save(Qc_plot, osp.join('figures', 'Supplementary_Figure04_Qc.html'), backend='bokeh')
+hv.save(Qc_plot, osp.join('figures', 'Supplementary_Figure05_Qc.html'), backend='bokeh')
 Qc_plot
 
 
