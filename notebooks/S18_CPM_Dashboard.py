@@ -1,23 +1,13 @@
-# ---
-# jupyter:
-#   jupytext:
-#     formats: ipynb,py
-#     text_representation:
-#       extension: .py
-#       format_name: light
-#       format_version: '1.5'
-#       jupytext_version: 1.16.1
-#   kernelspec:
-#     display_name: FC Instrospection (2023 | 3.10)
-#     language: python
-#     name: fc_introspection_2023_py310
-# ---
+#!/usr/bin/env python
+# coding: utf-8
 
 # # Description
-#
+# 
 # Dashboard to access results for the CPM portion of the analyses.
 
-# +
+# In[1]:
+
+
 import pandas as pd
 import os.path as osp
 from utils.basics import RESOURCES_CPM_DIR, RESOURCES_CONN_DIR
@@ -34,7 +24,6 @@ import matplotlib.pyplot as plt
 from scipy.stats import pearsonr, spearmanr
 from scipy.spatial.distance import squareform
 from utils.plotting import  plot_as_graph, create_graph_from_matrix, hvplot_fc_nwlevel
-#from sfim_lib.plotting.fc_matrices import hvplot_fc_nwlevel
 
 from nilearn.plotting import plot_connectome
 from nxviz.utils import node_table
@@ -44,19 +33,34 @@ from IPython import display
 import warnings
 with warnings.catch_warnings():
     warnings.simplefilter("ignore", category=FutureWarning)
-# -
+
+
+# In[2]:
+
 
 print('++ Packages versions:')
 print('hvplot version: %s' % str(hvplot.__version__))
 print('xr version: %s' % str(xr.__version__))
 print('pandas version: %s' % str(pd.__version__))
 
+
+# In[3]:
+
+
 from nxviz.utils import node_table
+
+
+# In[4]:
+
 
 import os
 port_tunnel = 35707
 #port_tunnel = int(os.environ['PORT2'])
 print('++ INFO: Second Port available: %d' % port_tunnel)
+
+
+# In[5]:
+
 
 ACCURACY_METRIC      = 'pearson'
 CORR_TYPE            = 'pearson'
@@ -71,15 +75,22 @@ ATLAS                = FB_400ROI_ATLAS_NAME
 CPM_NITERATIONS      = 100
 CPM_NULL_NITERATIONS = 10000
 
+
 # # 1. Load CPM Predictions
-#
+# 
 # Load summary of CPM results as created in ```S17_CPM_View_Prediction_Results```
-#
+# 
+
+# In[6]:
+
 
 results_path = osp.join(RESOURCES_CPM_DIR,'cpm_predictions_summary-subject_aware-conf_residualized-pearson.pkl')
 cpm_results_dict = pd.read_pickle(results_path)
 
-# +
+
+# In[7]:
+
+
 null_df       = cpm_results_dict['null_df']
 real_df       = cpm_results_dict['real_df']
 accuracy_null = cpm_results_dict['accuracy_null']
@@ -91,9 +102,10 @@ real_predictions_xr = cpm_results_dict['real_predictions_xr']
 real_df.head()
 
 
-# -
-
 # ## 1.1. Create Dashboard Functions for showing predictions as boxenplots
+
+# In[8]:
+
 
 def get_boxen_plot(behavior):
     median_width = 0.4
@@ -130,7 +142,7 @@ def get_boxen_plot(behavior):
     return fig
 
 
-get_boxen_plot('Thought Pattern 1')
+# In[9]:
 
 
 def get_obs_vs_pred(behavior):
@@ -145,57 +157,53 @@ def get_obs_vs_pred(behavior):
     return fig
 
 
-get_obs_vs_pred('Images')
-
 # # 2. Load CPM Network Models
-#
+# 
 # First, we just load one model as a reference to infer the number of edges. We need this to create empty datastructures that will subsequently populate
+
+# In[ ]:
+
 
 ref_path = osp.join(RESOURCES_CPM_DIR,'swarm_outputs','real',ATLAS,SPLIT_MODE, CONFOUNDS,CORR_TYPE+'_'+E_SUMMARY_METRIC,'Images','cpm_Images_rep-{r}.pkl'.format(r=str(1).zfill(5)))
 print(ref_path)
 ref_data = pd.read_pickle(ref_path)
-#with open(ref_path,'rb') as f:
-#    ref_data = pickle.load(f)
 n_edges = ref_data['models']['pos'].shape[1]
 
-n_edges
 
 # ## 2.1. Load ROI Information
 
 # Next, we load the dtaframe with information about the different ROIs: labels, network membership, centroid, color
 
+# In[11]:
+
+
 ATLASINFO_PATH = osp.join(ATLASES_DIR,ATLAS,f'{ATLAS}.roi_info.csv')
 roi_info       = pd.read_csv(ATLASINFO_PATH)
 
+
 # And get a list of available networks
+
+# In[12]:
+
 
 nw_list = list(roi_info['Network'].unique())
 print(nw_list)
 
+
 # ## 2.2. Load models for all prediction targets
-#
+# 
 # > **NOTE:** Run only one of the two cells in this subsection. See below
-#
+# 
 # If new results are available run the following cell, which takes time, but will load all results into memory. It will also save a pickle file with the new results. That way on successive runs of the notebook you won't have to wait for this cell to complete. Alternatively, you could run the cell below, which looks for the fila and loads it into memory
 
-# %%time
-models = {}
-models_to_vis = {}
-for BEHAVIOR in BEHAVIOR_LIST:
-    models = {(BEHAVIOR_LIST_LABELS[BEHAVIOR],'pos'):pd.DataFrame(index=range(CPM_NITERATIONS), columns=range(n_edges)),
-              (BEHAVIOR_LIST_LABELS[BEHAVIOR],'neg'):pd.DataFrame(index=range(CPM_NITERATIONS), columns=range(n_edges))}
-    df = pd.DataFrame(index=range(CPM_NITERATIONS),columns=['pos','neg','glm'])
-    for r in tqdm(range(CPM_NITERATIONS), desc='Iteration [%s]' % BEHAVIOR_LIST_LABELS[BEHAVIOR]):
-        path = osp.join(RESOURCES_CPM_DIR,'swarm_outputs','real',ATLAS,SPLIT_MODE, CONFOUNDS,CORR_TYPE+'_'+E_SUMMARY_METRIC,BEHAVIOR,'cpm_{b}_rep-{r}.pkl'.format(b=BEHAVIOR,r=str(r+1).zfill(5)))
-        data = pd.read_pickle(path)
-        #with open(path,'rb') as f:
-        #    data = pickle.load(f)
-        # We first averaged the number of times an edge was selected within each 10-fold run (resulting in a number between 0 and 1 for each edge)
-        for tail in ['pos','neg']:
-            models[BEHAVIOR_LIST_LABELS[BEHAVIOR],tail].loc[r,:] = data['models'][tail].mean(axis=0)
-    # and then averaged those fractions across all 100 train-test split iterations
-    models_to_vis[BEHAVIOR_LIST_LABELS[BEHAVIOR],'pos'] = models[BEHAVIOR_LIST_LABELS[BEHAVIOR],'pos'].mean()   
-    models_to_vis[BEHAVIOR_LIST_LABELS[BEHAVIOR],'neg'] = models[BEHAVIOR_LIST_LABELS[BEHAVIOR],'neg'].mean()   
+# In[13]:
+
+
+get_ipython().run_cell_magic('time', '', "models = {}\nmodels_to_vis = {}\nfor BEHAVIOR in BEHAVIOR_LIST:\n    models = {(BEHAVIOR_LIST_LABELS[BEHAVIOR],'pos'):pd.DataFrame(index=range(CPM_NITERATIONS), columns=range(n_edges)),\n              (BEHAVIOR_LIST_LABELS[BEHAVIOR],'neg'):pd.DataFrame(index=range(CPM_NITERATIONS), columns=range(n_edges))}\n    df = pd.DataFrame(index=range(CPM_NITERATIONS),columns=['pos','neg','glm'])\n    for r in tqdm(range(CPM_NITERATIONS), desc='Iteration [%s]' % BEHAVIOR_LIST_LABELS[BEHAVIOR]):\n        path = osp.join(RESOURCES_CPM_DIR,'swarm_outputs','real',ATLAS,SPLIT_MODE, CONFOUNDS,CORR_TYPE+'_'+E_SUMMARY_METRIC,BEHAVIOR,'cpm_{b}_rep-{r}.pkl'.format(b=BEHAVIOR,r=str(r+1).zfill(5)))\n        data = pd.read_pickle(path)\n        # We first averaged the number of times an edge was selected within each 10-fold run (resulting in a number between 0 and 1 for each edge)\n        for tail in ['pos','neg']:\n            models[BEHAVIOR_LIST_LABELS[BEHAVIOR],tail].loc[r,:] = data['models'][tail].mean(axis=0)\n    # and then averaged those fractions across all 100 train-test split iterations\n    models_to_vis[BEHAVIOR_LIST_LABELS[BEHAVIOR],'pos'] = models[BEHAVIOR_LIST_LABELS[BEHAVIOR],'pos'].mean()   \n    models_to_vis[BEHAVIOR_LIST_LABELS[BEHAVIOR],'neg'] = models[BEHAVIOR_LIST_LABELS[BEHAVIOR],'neg'].mean()   \n")
+
+
+# In[14]:
+
 
 if not osp.exists('../resources/cpm/plot_tmp/'):
     os.makedirs('../resources/cpm/plot_tmp/')
@@ -203,19 +211,13 @@ data_to_disk = {'models':models, 'models_to_vis':models_to_vis}
 out_path     = '../resources/cpm/plot_tmp/models.pkl'
 with open(out_path,'wb') as f:
     pickle.dump(data_to_disk,f)
+print('++ Models saved to disk at: %s' % out_path)
 
-# Alternative cell that loads previous results. Much faster, but will not take into account potential new results.
-
-out_path     = '../resources/cpm/plot_tmp/models.pkl'
-with open(out_path,'rb') as f:
-    data_to_disk = pickle.load(f)
-models = data_to_disk['models']
-models_to_vis = data_to_disk['models_to_vis']
-del data_to_disk
-
-BEHAVIOR_LIST_LABELS.values()
 
 # ## 2.3. Compute consensus models for plotting
+
+# In[15]:
+
 
 thresh           = 0.9
 model_consensus,num_edges_toshow,model_consensus_to_plot  = {},{},{}
@@ -229,13 +231,21 @@ for BEHAVIOR in BEHAVIOR_LIST_LABELS.values():
                           index = roi_info.set_index(['ROI_ID','ROI_Name','Hemisphere','Network','RGB']).index,
                           columns= roi_info.set_index(['ROI_ID','ROI_Name','Hemisphere','Network','RGB']).index)
 
+
+# In[16]:
+
+
 num_edges_toshow_DF = pd.Series(num_edges_toshow).reset_index()
 num_edges_toshow_DF.columns = ['Target','Network','# Edges']
 num_edges_toshow_DF.set_index(['Target','Network'],inplace=True)
 num_edges_toshow_DF.groupby('Target').sum()
 
+
 # # Saving Results for CONN visualizations
 # We also write the models to disk in a form that we can later load in CONN
+
+# In[17]:
+
 
 for BEHAVIOR in BEHAVIOR_LIST_LABELS.values():
     aux_fc = model_consensus_to_plot[BEHAVIOR]
@@ -243,18 +253,34 @@ for BEHAVIOR in BEHAVIOR_LIST_LABELS.values():
     np.savetxt(aux_fc_path,aux_fc.values)
     print("++ INFO [CONN OUTPUTS] Saving matrix model to %s" % aux_fc_path)
 
+
 # Create extra files that are ATLAS specific so that we can plot results in CONN
+
+# In[18]:
+
 
 roi_info['ROI_Name'].to_csv(osp.join(RESOURCES_CONN_DIR,'roi_labels.txt'),header=None, index=None)
 
+
+# In[19]:
+
+
 roi_info[['pos_R','pos_A','pos_S']].to_csv(osp.join(RESOURCES_CONN_DIR,'roi_coords.txt'),header=None, index=None)
+
+
+# In[20]:
+
 
 (roi_info[['color_R','color_G','color_B']]/256).round(2).to_csv(osp.join(RESOURCES_CONN_DIR,'roi_colors.txt'),header=None, index=None)
 
+
 # ***
 # # 3. Create Dashboard
-#
+# 
 # 1. Estimate the limits for the colorbar in the NW summary view (connection count mode)
+
+# In[21]:
+
 
 max_counts = []
 for BEHAVIOR in BEHAVIOR_LIST_LABELS.values():
@@ -265,7 +291,11 @@ for BEHAVIOR in BEHAVIOR_LIST_LABELS.values():
 max_counts = np.array(max_counts)
 nw_count_max = int(np.quantile(max_counts,.9))
 
+
 # 2. Create a drop box with all Questions
+
+# In[22]:
+
 
 behav_select     = pn.widgets.Select(name='Questions',options=list(BEHAVIOR_LIST_LABELS.values()),value='Images')
 cmap_pos_select  = pn.widgets.Select(name='Colormap for Positive Matrix', options=['Greys', 'Purples', 'Blues', 'Greens', 'Oranges', 'Reds',
@@ -283,7 +313,11 @@ cmap_neg_select  = pn.widgets.Select(name='Colormap for Negative Matrix', option
 matrix_max_count = pn.widgets.IntSlider(name='Max Num Conns:',start=10, end=300, step=5, value=100)
 menu_tab         = pn.Column(behav_select,cmap_pos_select,cmap_neg_select, matrix_max_count)
 
+
 # 3. Create all elements of the dashboard
+
+# In[23]:
+
 
 circos_show_pos_cb   = pn.widgets.Checkbox(name='Show postively correlated edges', value=True)
 circos_show_neg_cb   = pn.widgets.Checkbox(name='Show negatively correlated edges', value=True)
@@ -291,10 +325,12 @@ circos_show_degree   = pn.widgets.Checkbox(name='Node Size as a function of degr
 circos_layout        = pn.widgets.Select(name='Layout', options=['circos','spring','spectral','kamada_kawai'], value='circos')
 @pn.depends(behav_select,circos_show_pos_cb,circos_show_neg_cb,circos_layout,circos_show_degree)
 def gather_circos_plot(behavior, show_pos, show_neg, layout,show_degree, show_hemi_labels=True):
-    #return plot_as_circos(model_consensus_to_plot[behavior],roi_info,figsize=(8,8),edge_weight=1, title=behavior, show_pos=show_pos, show_neg=show_neg)
     return plot_as_graph(model_consensus_to_plot[behavior],figsize=(12,12),edge_weight=.5, title=behavior, show_pos=show_pos, show_neg=show_neg, 
                          pos_edges_color='#640900', neg_edges_color='#090064', layout=layout, show_degree=show_degree, show_hemi_labels=show_hemi_labels)
 circos_tab = pn.Column(circos_show_pos_cb,circos_show_neg_cb,gather_circos_plot, circos_show_degree,circos_layout)
+
+
+# In[24]:
 
 
 @pn.depends(behav_select)
@@ -304,6 +340,9 @@ def gather_interactive_brain_view(behavior):
     fig, ax = plt.subplots(1,1,figsize=(20,10))
     plot = plot_connectome(model_consensus_to_plot[behavior],roi_info[['pos_R','pos_A','pos_S']], node_color=roi_info['RGB'], node_size=d, axes=ax) #, linewidth=1, colorbar_fontsize=10, node_size=d)
     return plot
+
+
+# In[25]:
 
 
 @pn.depends(behav_select, cmap_pos_select, cmap_neg_select, matrix_max_count)
@@ -320,6 +359,9 @@ def gather_nw_matrix(behavior, pos_cmap, neg_cmap, clim_max_count, clim_min_coun
     return pn.Column(count_card, pcent_card)
 
 
+# In[26]:
+
+
 @pn.depends(behav_select)
 def get_pred_plots(behavior):
     return pn.Card(pn.Row(pn.pane.Matplotlib(get_boxen_plot(behavior), width=150, height=420,tight=True), 
@@ -327,13 +369,19 @@ def get_pred_plots(behavior):
         title='Prediction Power')
 
 
+# In[27]:
+
+
 nws_group_from = pn.widgets.CheckBoxGroup(name='Networks', value=nw_list, options=nw_list, inline=True)
 nws_group_to   = pn.widgets.CheckBoxGroup(name='Networks', value=nw_list, options=nw_list, inline=True)
 only_sel_nw    = pn.widgets.Checkbox(name='Show nodes for selected networks only', value=False)
 
 
-@pn.depends(behav_select,nws_group_from,nws_group_to,only_sel_nw)
-def plot_brain_model(behavior,sel_nws_from,sel_nws_to,sel_nws_only):
+# In[34]:
+
+
+@pn.depends(behav_select,nws_group_from,nws_group_to)
+def plot_brain_model(behavior,sel_nws_from,sel_nws_to):
     fig, ax = plt.subplots(1,1,figsize=(20,10))
     ax.grid(False)
     ax.axis(False)
@@ -349,18 +397,11 @@ def plot_brain_model(behavior,sel_nws_from,sel_nws_to,sel_nws_only):
             plot_model.loc[col_.get_level_values('ROI_ID'),index_.get_level_values('ROI_ID')] = full_model.loc[:,:,:,nwt,:].T.loc[:,:,:,nwf,:].T.values
     plot_model.index = full_model.index
     plot_model.columns = full_model.columns
-    
-    #if sel_nws_only is True:
-    #    plot_model    = plot_model.loc[:,:,:,sel_nws_union,:].T.loc[:,:,:,sel_nws_union,:]
-    #    sel_rois_info = sel_rois_info.set_index('Network').loc[sel_nws_union]
-        
         
     # ==============
-    G,Gnt = create_graph_from_matrix(plot_model)
-    #print(G)
-    #Gnt = node_table(G).sort_index() #[::-1]
+    _,Gnt = create_graph_from_matrix(plot_model)
     # ==============
-    brain_view = plot_connectome(adjacency_matrix=plot_model, 
+    _ = plot_connectome(adjacency_matrix=plot_model, 
                                      node_coords=sel_rois_info[['pos_R', 'pos_A','pos_S']],
                                      node_color=sel_rois_info['RGB'],node_size=5*Gnt['Degree'],
                                      edge_kwargs={'linewidth':0.5},
@@ -368,6 +409,9 @@ def plot_brain_model(behavior,sel_nws_from,sel_nws_to,sel_nws_only):
                                      figure=fig)
     plt.close()
     return pn.pane.Matplotlib(fig)
+
+
+# In[30]:
 
 
 @pn.depends(behav_select)
@@ -386,6 +430,9 @@ def get_conn_counts(behavior):
     negconns_final['Total'] = int((model_consensus_to_plot[behavior]<0).sum().sum()/2)
     return pn.Card(pn.Row(pn.Column(pn.pane.Markdown('### Positive Connections'),pn.pane.DataFrame(posconns_final)),
        pn.Column(pn.pane.Markdown('### Negative Connections'),pn.pane.DataFrame(negconns_final))),title='CPM Model | Connection Counts')
+
+
+# In[31]:
 
 
 @pn.depends(behav_select)
@@ -421,28 +468,59 @@ def get_top10degree_counts(behavior):
     return output
 
 
-brain_view_tab=pn.Column(pn.Row('From:',nws_group_from, background='whitesmoke'),pn.Row('To. :',nws_group_to, background='whitesmoke'),only_sel_nw,plot_brain_model)
+# In[39]:
+
+
+brain_view_tab=pn.Column(pn.Row('From:',nws_group_from),pn.Row('To. :',nws_group_to),only_sel_nw,plot_brain_model)
+
 
 # 4. Create the dashboard
 
-dashboard = pn.Row(pn.Column(menu_tab, pn.Row(get_pred_plots, 
-                                              pn.Tabs(('Connection Counts',get_conn_counts),('Top 10 Degree ROIs',get_top10degree_counts))), pn.Tabs(('Circos Plot',circos_tab),('Brain View',brain_view_tab))), 
-                   pn.Column(gather_nw_matrix))
+# In[46]:
 
-# ### Alternative smaller versions of the dashboard
 
-# + vscode={"languageId": "raw"} active=""
-# dashboard = pn.Row(pn.Column(behav_select, get_pred_plots), 
-#                    pn.Column(gather_nw_matrix))
+template = pn.template.BootstrapTemplate(title='Project Dashboard',
+                                          sidebar=[menu_tab],
+                                          main=pn.Tabs(('Connection Counts',get_conn_counts),
+                                                       ('Network-Level Matrix',gather_nw_matrix),
+                                                       ('Prediction Plots',get_pred_plots),
+                                                       ('Top 10 Degree ROIs',get_top10degree_counts), 
+                                                       ('Circos Plot',circos_tab),
+                                                       ('Brain View',brain_view_tab)))
 
-# + vscode={"languageId": "raw"} active=""
-# dashboard = pn.Row(pn.Column(menu_tab), 
-#                    pn.Column(gather_nw_matrix))
-# -
 
-dashboard_server = dashboard.show(port=port_tunnel,open=False)
+# In[47]:
 
-# Once you are done looking at matrices, you can stop the server running this cell
-dashboard_server.stop()
 
-display.Image('./figures/S17_CPM_Dashboard_screenshot.png')
+dashboard = template.show()
+
+
+# Here is a few screenshots of how the dashboard looks:
+# 
+# ![Img1](./figures/Notebook_Image_Dashboard_NwLevelMatrices.png)
+# 
+# ![Img2](./figures/Notebook_Image_Dashboard_Circos.png)
+# 
+# ![Img3](./figures/Notebook_Image_Dashboard_Prediction.png)
+
+# Also here are the connection counts reported int he manuscript
+
+# In[76]:
+
+
+get_conn_counts('Wakefulness')
+
+
+# In[77]:
+
+
+get_conn_counts('Thought Pattern 1')
+
+
+# In[78]:
+
+
+get_conn_counts('Thought Pattern 2')
+
+
+# 
