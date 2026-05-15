@@ -6,9 +6,7 @@ bash/.ipynb_checkpoints/
 resources/preprocessing_notes/.ipynb_checkpoints/
 notebooks/results/
 resources/dataset_info/
-resources_prior_to_sub03/
-notebooks/figures_prior_to_sub03/
-
+resources/cpm/plot_tmp/
 resources/cpm/basic_final_avg_accuracies.csv
 resources/cpm/behav_data.csv
 resources/cpm/confounds.csv
