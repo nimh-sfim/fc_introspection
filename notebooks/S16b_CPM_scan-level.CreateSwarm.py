@@ -145,7 +145,7 @@ for TARGET in targets:
 # conda generic_2025a
 # 
 # # Compile together the results over the 100 real permutations
-# python /data/SFIMJGC_Introspec/2023_fc_introspection/code/fc_introspection/notebooks/S16b_GatherSwarmResults.py \
+# python /data/SFIMJGC_Introspec/2023_fc_introspection/code/fc_introspection/notebooks/S16_GatherCPMSwarmOutputs.py \
 #    -i /data/SFIMJGC_Introspec/2023_fc_introspection/code/fc_introspection/resources/cpm/swarm_outputs/real/Schaefer2018_400Parcels_7Networks_AAL2/basic/conf_residualized/pearson_sum/ \
 #    -o /data/SFIMJGC_Introspec/2023_fc_introspection/code/fc_introspection/resources/cpm/real-Schaefer2018_400Parcels_7Networks_AAL2-basic-conf_residualized-pearson_sum.pkl \
 #    -n 100
@@ -220,7 +220,7 @@ for TARGET in targets:
 # conda generic_2025a
 # 
 # # Compile together the results over the 10000 null permutations
-# python /data/SFIMJGC_Introspec/2023_fc_introspection/code/fc_introspection/notebooks/S16b_GatherSwarmResults.py \
+# python /data/SFIMJGC_Introspec/2023_fc_introspection/code/fc_introspection/notebooks/S16_GatherCPMSwarmOutputs.py \
 #    -i /data/SFIMJGC_Introspec/2023_fc_introspection/code/fc_introspection/resources/cpm/swarm_outputs/null/Schaefer2018_400Parcels_7Networks_AAL2/basic/conf_residualized/pearson_sum/ \
 #    -o /data/SFIMJGC_Introspec/2023_fc_introspection/code/fc_introspection/resources/cpm/null-Schaefer2018_400Parcels_7Networks_AAL2-basic-conf_residualized-pearson_sum.pkl \
 #    -n 10000 -T -t Factor1
@@ -229,7 +229,7 @@ for TARGET in targets:
 # Once you have ensured all jobs have finished correctly, the following code must be run to gather all outputs and save them on a single pkl file
 # 
 # ```bash
-# python /data/SFIMJGC_Introspec/2023_fc_introspection/code/fc_introspection/notebooks/S16b_GatherSwarmResults.py  \
+# python /data/SFIMJGC_Introspec/2023_fc_introspection/code/fc_introspection/notebooks/S16_GatherCPMSwarmOutputs.py  \
 #    -i /data/SFIMJGC_Introspec/2023_fc_introspection/code/fc_introspection/resources/cpm/swarm_outputs/null/Schaefer2018_400Parcels_7Networks_AAL2/basic/conf_residualized/pearson_sum/ \
 #    -o /data/SFIMJGC_Introspec/2023_fc_introspection/code/fc_introspection/resources/cpm/null-Schaefer2018_400Parcels_7Networks_AAL2-basic-conf_residualized-pearson_sum.pkl \
 #    -n 10000
@@ -238,5 +238,5 @@ for TARGET in targets:
 # At this point, it is advisable to delete the swarm output folders given that all required information is not on the pkl files.
 # 
 # ```bash
-# rm -rf /data/SFIMJGC_Introspec/2023_fc_introspection/code/fc_introspection/resources/cpm/swarm_outputs/
+# rm -rf /data/SFIMJGC_Introspec/2023_fc_introspection/code/fc_introspection/resources/cpm/swarm_outputs/null/Schaefer2018_400Parcels_7Networks_AAL2/basic/
 # ```
