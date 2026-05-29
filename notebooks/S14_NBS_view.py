@@ -86,7 +86,7 @@ for contrast in NBS_CONTRASTS:
 
 # Print number (and percentage) of significant edges per contrast
 
-# In[10]:
+# In[7]:
 
 
 for contrast in NBS_CONTRASTS:
@@ -98,7 +98,7 @@ for contrast in NBS_CONTRASTS:
 
 # Print number (and percentage) of significnat nodes per constrast
 
-# In[11]:
+# In[8]:
 
 
 for contrast in NBS_CONTRASTS:
@@ -108,7 +108,7 @@ for contrast in NBS_CONTRASTS:
         print(f"Significant nodes for {elt}, {contrast}: {N_sig_nodes} ({PC_sig_nodes:.2f}%)")
 
 
-# In[12]:
+# In[9]:
 
 
 for elt in ['T3p1','T2p58']:
@@ -117,13 +117,13 @@ for elt in ['T3p1','T2p58']:
 
 # We will also write the results of NBS into text format that we can load into CONN to generate the brain views of the results
 
-# In[13]:
+# In[10]:
 
 
 RESOURCES_CONN_DIR
 
 
-# In[14]:
+# In[11]:
 
 
 for elt,contrast in data.keys():
@@ -135,7 +135,7 @@ for elt,contrast in data.keys():
 
 # # Plot results at the individual connection level
 
-# In[15]:
+# In[12]:
 
 
 layout = pn.Row()
@@ -156,17 +156,28 @@ print('Saved Notebook_Image_NBS_FullMatrices.html to figures/')
 
 # Same information in the form of circos plots
 
-# In[16]:
+# In[13]:
 
+
+import matplotlib as mpl
+mpl.rcParams['svg.fonttype'] = 'none'
 
 circos_plots = {}
 for elt in ['T3p1','T2p58']:
-    plot = plot_as_graph(data[elt,'SetA_gt_SetB'], edge_weight=.5, show_hemi_labels=False,pos_edges_color='k')
+    plot = plot_as_graph(data[elt,'SetA_gt_SetB'], edge_weight=.25, show_hemi_labels=False,pos_edges_color='k')
     circos_plots[elt] = plot
     if elt == 'T3p1':
-        plot.savefig(osp.join('figures','Figure03_B.png'), bbox_inches='tight')
+        plot.savefig(osp.join('figures','Figure03_B.png'), bbox_inches='tight', dpi=300)
+        plot.savefig(osp.join('figures','Figure03_B.svg'), format='svg', bbox_inches='tight')
     else:
-        plot.savefig(osp.join('figures','Supplementary_Figure07_A.png'), bbox_inches='tight')
+        plot.savefig(osp.join('figures','Supplementary_Figure07_A.png'), bbox_inches='tight', dpi=300)
+        plot.savefig(osp.join('figures','Supplementary_Figure07_A.svg'), format='svg', bbox_inches='tight')
+
+
+# In[14]:
+
+
+data['T3p1','SetA_gt_SetB'].to_csv('./source_data_files/figure_03_bc.csv')
 
 
 # | Edge Threshold (p<0.001) | Edge Threshold (p<0.005) |
@@ -175,7 +186,7 @@ for elt in ['T3p1','T2p58']:
 
 # Top degree regions
 
-# In[17]:
+# In[15]:
 
 
 data['T3p1','SetA_gt_SetB'].sum(axis=1).sort_values(ascending=False), data['T2p58','SetA_gt_SetB'].sum(axis=1).sort_values(ascending=False)
@@ -183,7 +194,7 @@ data['T3p1','SetA_gt_SetB'].sum(axis=1).sort_values(ascending=False), data['T2p5
 
 # Network-level Connection Counts
 
-# In[18]:
+# In[16]:
 
 
 layout = pn.Row()
@@ -195,16 +206,51 @@ for elt in ['T3p1','T2p58']:
         clim_max = 300
         file_name = 'Supplementary_Figure07_C.html'
     plot = hvplot_fc_nwlevel(data[elt,'SetA_gt_SetB'], title='', add_net_colors=True, add_net_labels='both', mode='count', cmap='Greys', clim_max=clim_max, labels_text_color='Greys_r').opts(toolbar=None)
+    if elt == 'T3p1':
+        plot_to_save = plot
     hv.save(plot,osp.join('figures',file_name))
     layout.append(plot)
     
 layout.save(osp.join('figures','Notebook_Image_NBS_ConnectionCounts.html'), progress=True)
 
 
-# In[20]:
+# In[17]:
 
 
-layout
+import holoviews as hv
+
+from bokeh.io import save
+from bokeh.models.plots import Plot
+from bokeh.resources import INLINE
+
+hv.extension("bokeh")
+
+def svg_backend(hv_plot, element):
+    hv_plot.state.output_backend = "svg"
+
+svg_plot = plot_to_save.opts(hooks=[svg_backend])
+
+bokeh_obj = hv.render(svg_plot, backend="bokeh")
+
+# Extra safety for layouts / overlays
+if isinstance(bokeh_obj, Plot):
+    bokeh_obj.output_backend = "svg"
+
+for p in bokeh_obj.select({"type": Plot}):
+    p.output_backend = "svg"
+
+save(
+    bokeh_obj,
+    filename="./figures/Figure03_D.html",
+    resources=INLINE,
+    title="Figure03_D",
+)
+
+
+# In[19]:
+
+
+hvplot_fc_nwlevel(data['T3p1','SetA_gt_SetB'], title='', add_net_colors=True, add_net_labels='both', mode='count', cmap='Greys', clim_max=clim_max, labels_text_color='Greys_r', return_data_only=True).to_csv('./source_data_files/figure_03_d.csv')
 
 
 # | Edge Threshold (p<0.001) | Edge Threshold (p<0.005) |
