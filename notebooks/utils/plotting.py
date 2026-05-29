@@ -520,7 +520,7 @@ def hvplot_fc_nwlevel(data,mode='percent',clim_max=None,clim_min=0, cmap='viridi
         plot = plot * net_segments_x * net_segments_y
     #plot.opts(xlim=(-.5,num_networks-.5), ylim=(-.5,num_networks-.5), xticks=x_ticks_info, xrotation=90, yticks=y_ticks_info)
     plot.opts(xlim=(-.5,num_networks-.5), ylim=(-.5,num_networks-.5), xrotation=90, yticks=y_ticks_info)
-    return plot   
+    return plot
 
 
 # =====================================================================
@@ -709,9 +709,9 @@ def plot_as_graph(data,figsize=(10,10),edge_weight=2,title=None, hemi_gap=5, sho
 
     # 1. Add nodes to the plot
     if show_degree:
-        patches = nodes.node_glyphs( nt, pos, node_color=nt['RGB'], alpha=nt['Alpha'], size=nt['Size'], **{'edgecolor':'k', 'linewidth':0.5})
+        patches = nodes.node_glyphs( nt, pos, node_color=nt['RGB'], alpha=nt['Alpha'], size=nt['Size'], **{'edgecolor':'k', 'linewidth':0.25})
     else:
-        patches = nodes.node_glyphs( nt, pos, node_color=nt['RGB'], alpha=nt['Alpha'], size=nt['Size'], **{'edgecolor':'k', 'linewidth':0.5})
+        patches = nodes.node_glyphs( nt, pos, node_color=nt['RGB'], alpha=nt['Alpha'], size=nt['Size'], **{'edgecolor':'k', 'linewidth':0.25})
     for patch in patches: 
         ax.add_patch(patch)
         
