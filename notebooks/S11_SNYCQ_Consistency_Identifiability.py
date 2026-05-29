@@ -11,7 +11,7 @@
 # 
 # 
 
-# In[45]:
+# In[1]:
 
 
 import pandas as pd
@@ -102,7 +102,7 @@ def count_scans_per_group(sbjs,cluster_info):
 # 5. Plot the results
 # 
 
-# In[6]:
+# In[18]:
 
 
 final_counts = count_scans_per_group(sbjs_sel_scans, emb_plus)
@@ -141,7 +141,23 @@ plt.show()
 # In[7]:
 
 
+fig.savefig('./figures/Figure02_A-ScanMembershipConsistency.svg', format='svg', bbox_inches='tight')
+
+
+# In[8]:
+
+
 fig.savefig(osp.join('figures', 'Figure02_A-ScanMembershipConsistency.png'), bbox_inches='tight')
+
+
+# In[19]:
+
+
+final_counts = pd.DataFrame(final_counts)
+final_counts.columns= ['Count']
+final_counts['Percentage'] = (final_counts['Count'] / final_counts['Count'].sum()) * 100
+final_counts.to_csv('./source_data_files/figure_02_a_scan_membership_consistency.csv', float_format='%.0f', index=True)
+final_counts
 
 
 # ***
@@ -151,7 +167,7 @@ fig.savefig(osp.join('figures', 'Figure02_A-ScanMembershipConsistency.png'), bbo
 # 
 # 1. Identify scans from subjects that were scanned at least twice.
 
-# In[8]:
+# In[20]:
 
 
 # Identify the runs with less than 2 scans
@@ -160,7 +176,7 @@ subjects_lt2 = run_counts[run_counts["NumRuns"] < 2].index.tolist()
 mask = emb_plus.index.get_level_values("Subject").isin(subjects_lt2)
 
 
-# In[9]:
+# In[21]:
 
 
 # These scans / subjects will not enter the identifiability analyses
@@ -169,7 +185,7 @@ scan_list_df[mask]
 
 # 2. Create an index with only the scans from subjects with at least two visits
 
-# In[10]:
+# In[22]:
 
 
 # Remove from the introspection dataframe the entries for scans that are single entries per subject
@@ -180,7 +196,7 @@ print('++ Number of scans used in identifiability analyses: %d scans' % len(scan
 
 # 3. Create a list of the subjects that enter the anlyses
 
-# In[11]:
+# In[23]:
 
 
 # Number of subjects entering the analyses
@@ -194,7 +210,7 @@ print('++ Number of subjects used in identifiability analyses: %d subjects' % le
 # 
 # 
 
-# In[12]:
+# In[24]:
 
 
 # Remove the Vigilance entry to match all other analyses
@@ -204,7 +220,7 @@ print(SNYCQ_for_identifiability.shape)
 
 # 2. Estimate the Identifiability Matrix (correlation of each scan to every other scan) --> This is at the scan level.
 
-# In[13]:
+# In[25]:
 
 
 def get_scan_level_identifiability_matrix(dataframe):
@@ -214,7 +230,7 @@ def get_scan_level_identifiability_matrix(dataframe):
     return Id_matrix
 
 
-# In[15]:
+# In[26]:
 
 
 Id_SNYCQ_scans = get_scan_level_identifiability_matrix(SNYCQ_for_identifiability)
@@ -223,7 +239,7 @@ Id_SNYCQ_scans.head(3).round(2)
 
 # 3. Use the scan-level Identifiability matrix to compute the subject-level identifiability matrix
 
-# In[16]:
+# In[27]:
 
 
 def get_subject_level_identifiability_matrix(scan_level_Id_matrix):
@@ -250,7 +266,7 @@ def get_subject_level_identifiability_matrix(scan_level_Id_matrix):
     return Id_subjects
 
 
-# In[17]:
+# In[28]:
 
 
 Id_SNYCQ_sbjs = get_subject_level_identifiability_matrix(Id_SNYCQ_scans)
@@ -258,7 +274,7 @@ Id_SNYCQ_sbjs = get_subject_level_identifiability_matrix(Id_SNYCQ_scans)
 
 # 4. Compute ISelf, IOther and IDiff
 
-# In[18]:
+# In[29]:
 
 
 Iself  = np.diag(Id_SNYCQ_sbjs.values).mean()
@@ -282,33 +298,54 @@ hm = sns.heatmap(
     cmap='cividis',
     square=True,
     ax=ax,
+    xticklabels=20,
+    yticklabels=20,
     cbar=False   # turn off automatic colorbar
 )
 
-# Add colorbar manually
-cbar = ax.figure.colorbar(hm.get_children()[0], ax=ax, fraction=0.046, pad=0.04)
-cbar.ax.tick_params(labelsize=10)
+# Add colorbar manually (vertical, on the right)
+#cbar = ax.figure.colorbar(hm.get_children()[0], ax=ax, fraction=0.046, pad=0.04)
+#cbar.ax.tick_params(labelsize=13)
+#cbar.set_label('Pearson Correlation', fontsize=13)
+
+#Add colorbar manually (below)
+cbar = ax.figure.colorbar(
+    hm.get_children()[0],
+    ax=ax,
+    orientation='horizontal',
+    fraction=0.04,
+    pad=0.17
+)
+cbar.ax.tick_params(labelsize=12)
 cbar.set_label('Pearson Correlation', fontsize=12)
 
 # Labels and ticks
-ax.set_xticklabels(ax.get_xticklabels(), rotation=90, fontsize=10)
-ax.set_yticklabels(ax.get_yticklabels(), fontsize=10)
-ax.set_xlabel('Subjects')
-ax.set_ylabel('Subjects')
+ax.set_xticklabels(ax.get_xticklabels(), rotation=90, fontsize=12)
+ax.set_yticklabels(ax.get_yticklabels(), rotation=0, fontsize=12)
+ax.set_xlabel('Subjects',fontsize=12)
+ax.set_ylabel('Subjects',fontsize=12)
 
 plt.tight_layout()
 plt.show()
 
 
-# In[21]:
+# In[83]:
 
 
-fig.savefig(osp.join('figures', 'Figure02_B-SNYCQ_IdentifiabilityMatrix.png'), bbox_inches='tight')
+import matplotlib as mpl
+mpl.rcParams['svg.fonttype'] = 'none'
+fig.savefig('./figures/Figure02_B-SNYCQ_IdentifiabilityMatrix.svg', format='svg', bbox_inches='tight')
+
+
+# In[48]:
+
+
+Id_SNYCQ_sbjs.to_csv('./source_data_files/figure_02_b_snycq_identifiability_matrix.csv', float_format='%.4f', index=False, header=False)
 
 
 # 6. Create histograms of values contributing to Iself and Iother
 
-# In[22]:
+# In[49]:
 
 
 # Create mask matrix that only contains 1 for scans that are from the same subject
@@ -323,7 +360,7 @@ across_sbj_mask = ~within_sbj_mask
 within_sbj_mask.values[range(len(within_sbj_mask)),range(len(within_sbj_mask))] = False 
 
 
-# In[23]:
+# In[50]:
 
 
 Iself_values_SNYCQ = Id_SNYCQ_scans[within_sbj_mask].values.flatten()
@@ -332,7 +369,7 @@ Iself_SNYCQ        = Iself_values_SNYCQ.mean()
 print('++ Introspection Iself = %.5f ' % Iself_SNYCQ)
 
 
-# In[24]:
+# In[51]:
 
 
 Iother_values_SNYCQ = Id_SNYCQ_scans[across_sbj_mask].values.flatten()
@@ -341,10 +378,10 @@ Iother_SNYCQ        = Iother_values_SNYCQ.mean()
 print('++ Introspection Iother = %.5f ' % Iother_SNYCQ)
 
 
-# In[28]:
+# In[118]:
 
 
-fig, ax = plt.subplots(figsize=(3,5))
+fig, ax = plt.subplots(figsize=(3.5,5))
 
 sns.kdeplot(Iself_values_SNYCQ, label=r'$I_{Self}$', alpha=0.5, color='blue', fill=True, ax=ax)
 sns.kdeplot(Iother_values_SNYCQ, label=r'$I_{Other}$', alpha=0.5, color='red', fill=True, ax=ax)
@@ -352,7 +389,7 @@ sns.kdeplot(Iother_values_SNYCQ, label=r'$I_{Other}$', alpha=0.5, color='red', f
 # Move legend inside the plot, bottom-left
 ax.legend(
     loc='lower left',
-    bbox_to_anchor=(0.05, 0.80),
+    bbox_to_anchor=(0.0, 0.80),
     frameon=True,
     framealpha=0.8,
     fontsize=12,
@@ -371,17 +408,26 @@ ax.set_xlim(-1., 1)
 plt.show()
 
 
-# In[30]:
+# In[119]:
 
 
+import matplotlib as mpl
+mpl.rcParams['svg.fonttype'] = 'none'
+fig.savefig('./figures/Figure02_C-SNYCQ_IselfAndIother.svg', format='svg', bbox_inches='tight')
 fig.savefig(osp.join('figures', 'Figure02_C-SNYCQ_IselfAndIother.png'), bbox_inches='tight')
+
+
+# In[94]:
+
+
+pd.DataFrame([Iself_values_SNYCQ,Iother_values_SNYCQ],index=['Iself','Iother']).T.to_csv('./source_data_files/figure_02_b_snycq_iself_and_iother.csv', float_format='%.3f', index=False)
 
 
 # ## 2.2. Differential Identifiability based on FC
 # 
 # 1. Load Pre-processed FC matrices for scans in these analyses
 
-# In[31]:
+# In[95]:
 
 
 FC_for_identifiability = read_fc_matrices(scans_for_identifiability,DATA_DIR,FB_400ROI_ATLAS_NAME,'pb06_staticFC')
@@ -389,7 +435,7 @@ FC_for_identifiability = read_fc_matrices(scans_for_identifiability,DATA_DIR,FB_
 
 # 2. Compute the scan-level identifiability matrix
 
-# In[ ]:
+# In[96]:
 
 
 Id_FC_scans = get_scan_level_identifiability_matrix(FC_for_identifiability)
@@ -398,7 +444,7 @@ Id_FC_scans.head(3).round(2)
 
 # 3. Compute the subject-level identifiability matrix
 
-# In[34]:
+# In[97]:
 
 
 Id_FC_sbjs = get_subject_level_identifiability_matrix(Id_FC_scans)
@@ -406,7 +452,7 @@ Id_FC_sbjs = get_subject_level_identifiability_matrix(Id_FC_scans)
 
 # 4. Compute ISelf, IOther and IDiff
 
-# In[35]:
+# In[98]:
 
 
 Iself  = np.diag(Id_FC_sbjs.values).mean()
@@ -419,7 +465,7 @@ print ('++ Identifiability based on Introspection data = %.1f %%' % Idiff)
 
 # 5. Plot the Identifiability Matrix at the subject level
 
-# In[36]:
+# In[100]:
 
 
 fig, ax = plt.subplots(figsize=(5,5))
@@ -430,31 +476,54 @@ hm = sns.heatmap(
     cmap='cividis',
     square=True,
     ax=ax,
+    xticklabels=20,
+    yticklabels=20,
     cbar=False   # turn off automatic colorbar
 )
 
 # Add colorbar manually
-cbar = ax.figure.colorbar(hm.get_children()[0], ax=ax, fraction=0.046, pad=0.04)
-cbar.ax.tick_params(labelsize=10)
+#cbar = ax.figure.colorbar(hm.get_children()[0], ax=ax, fraction=0.046, pad=0.04)
+#cbar.ax.tick_params(labelsize=10)
+#cbar.set_label('Pearson Correlation', fontsize=12)
+
+#Add colorbar manually (below)
+cbar = ax.figure.colorbar(
+    hm.get_children()[0],
+    ax=ax,
+    orientation='horizontal',
+    fraction=0.04,
+    pad=0.17
+)
+cbar.ax.tick_params(labelsize=12)
 cbar.set_label('Pearson Correlation', fontsize=12)
 
 # Labels and ticks
-ax.set_xticklabels(ax.get_xticklabels(), rotation=90, fontsize=10)
-ax.set_yticklabels(ax.get_yticklabels(), fontsize=10)
-ax.set_xlabel('Subjects')
-ax.set_ylabel('Subjects')
+ax.set_xticklabels(ax.get_xticklabels(), rotation=90, fontsize=12)
+ax.set_yticklabels(ax.get_yticklabels(), fontsize=12)
+ax.set_xlabel('Subjects', fontsize=12)
+ax.set_ylabel('Subjects', fontsize=12)
 
 plt.tight_layout()
 plt.show()
 
 
-# In[39]:
+# In[101]:
 
 
 fig.savefig(osp.join('figures', 'Figure02_D-FMRI_IdentifiabilityMatrix.png'), bbox_inches='tight')
+mpl.rcParams['svg.fonttype'] = 'none'
+fig.savefig('./figures/Figure02_D-FMRI_IdentifiabilityMatrix.svg', format='svg', bbox_inches='tight')
 
 
-# In[40]:
+# In[104]:
+
+
+Id_FC_sbjs.to_csv('./source_data_files/figure_02_d_fmri_identifiability_matrix.csv', float_format='%.4f', index=False, header=False)
+
+
+# ***
+
+# In[105]:
 
 
 Iself_values_FC = Id_FC_scans[within_sbj_mask].values.flatten()
@@ -463,7 +532,7 @@ Iself_FC        = Iself_values_FC.mean()
 print('++ Introspection Iself = %.5f ' % Iself_FC)
 
 
-# In[41]:
+# In[106]:
 
 
 Iother_values_FC = Id_FC_scans[across_sbj_mask].values.flatten()
@@ -472,10 +541,10 @@ Iother_FC        = Iother_values_FC.mean()
 print('++ Introspection Iother = %.5f ' % Iother_FC)
 
 
-# In[46]:
+# In[121]:
 
 
-fig, ax = plt.subplots(figsize=(3,5))
+fig, ax = plt.subplots(figsize=(3.5,5))
 
 sns.kdeplot(Iself_values_FC, label=r'$I_{Self}$', alpha=0.5, color='blue', fill=True, ax=ax)
 sns.kdeplot(Iother_values_FC, label=r'$I_{Other}$', alpha=0.5, color='red', fill=True, ax=ax)
@@ -504,10 +573,18 @@ ax.yaxis.set_major_formatter(FormatStrFormatter('%.1f'))
 plt.show()
 
 
-# In[47]:
+# In[122]:
 
 
+mpl.rcParams['svg.fonttype'] = 'none'
+fig.savefig('./figures/Figure02_E-FMRI_IselfAndIother.svg', format='svg', bbox_inches='tight')
 fig.savefig(osp.join('figures', 'Figure02_E-FMRI_IselfAndIother.png'), bbox_inches='tight')
+
+
+# In[126]:
+
+
+pd.DataFrame([Iself_values_FC,Iother_values_FC],index=['Iself','Iother']).T.to_csv('./source_data_files/figure_02_e_fc_iself_and_iother.csv', float_format='%.3f', index=False)
 
 
 # ***
@@ -518,7 +595,7 @@ fig.savefig(osp.join('figures', 'Figure02_E-FMRI_IselfAndIother.png'), bbox_inch
 # 
 # 1. Compute the experimental Identification Rate
 
-# In[48]:
+# In[109]:
 
 
 def get_id_rate(id_matrix_sbj):
@@ -533,7 +610,7 @@ def get_id_rate(id_matrix_sbj):
     return id_rate
 
 
-# In[50]:
+# In[110]:
 
 
 identification_rate_SNYCQ = get_id_rate(Id_SNYCQ_scans)
@@ -542,7 +619,7 @@ print('++ Introspection-based Identification Rate = %.2f %%' % (identification_r
 
 # 2. Do Permutation analysis
 
-# In[51]:
+# In[111]:
 
 
 N_NULL_PERMS = 10000
@@ -558,33 +635,41 @@ for i in tqdm(range(N_NULL_PERMS)):
     SNYCQ_id_rate_null.loc[i,'ID_Rate'] = this_perm_id_rate
 
 
-# In[52]:
+# In[115]:
 
 
-fig,ax = plt.subplots(1,1,figsize=(4,5))
+fig,ax = plt.subplots(1,1,figsize=(3.5,5))
 plot = sns.kdeplot(data=SNYCQ_id_rate_null,x='ID_Rate',fill=True,label='Null Distribution',ax=ax, color='gray')
-plot.set_xlabel("Identification Rate", fontsize=14)
-plot.set_ylabel("Density", fontsize=14)
+plot.set_xlabel("Identification Rate", fontsize=12)
+plot.set_ylabel("Density", fontsize=12)
 # Add the observed value line with label
 plot.axvline(identification_rate_SNYCQ, color='black', linestyle='--', label='Observed value', linewidth=3)
 # Force legend to show both entries
 plot.set_xlim(0,100)
-plot.legend(loc='upper right', fontsize=14)
-ax.set_xticklabels(ax.get_xticklabels(), fontsize=14);
-ax.set_yticklabels(ax.get_yticklabels(), fontsize=14);
+plot.legend(loc='upper right', fontsize=12)
+ax.set_xticklabels(ax.get_xticklabels(), fontsize=12);
+ax.set_yticklabels(ax.get_yticklabels(), fontsize=12);
 
 
-# In[53]:
+# In[131]:
 
 
-fig.savefig(osp.join('figures', 'Figure02_F-FMRI_IdentificationRate.png'), bbox_inches='tight')
+mpl.rcParams['svg.fonttype'] = 'none'
+fig.savefig('./figures/Figure02_F-SNYCQ_IdentificationRate.svg', format='svg', bbox_inches='tight')
+fig.savefig(osp.join('figures', 'Figure02_F-SNYCQ_IdentificationRate.png'), bbox_inches='tight')
+
+
+# In[132]:
+
+
+SNYCQ_id_rate_null.to_csv('./source_data_files/figure_02_f_fmri_IDrate_null_distribution.csv', float_format='%.4f', index=False, header=False)
 
 
 # ## 3.2. Identification Rate based on FC data
 # 
 # 1. Get expiremantal identification rate
 
-# In[54]:
+# In[127]:
 
 
 Id_Rate_FC = get_id_rate(Id_FC_scans)
@@ -593,7 +678,7 @@ print('++ FC-based Identification Rate = %.2f %%' % (Id_Rate_FC))
 
 # 2. Bootstraping analysis
 
-# In[55]:
+# In[128]:
 
 
 N_NULL_PERMS = 10000
@@ -609,24 +694,38 @@ for i in tqdm(range(N_NULL_PERMS)):
     FC_id_rate_null.loc[i,'ID_Rate'] = this_perm_id_rate
 
 
-# In[56]:
+# In[129]:
 
 
-fig,ax = plt.subplots(1,1,figsize=(4,5))
+fig,ax = plt.subplots(1,1,figsize=(3.5,5))
 plot = sns.kdeplot(data=FC_id_rate_null,x='ID_Rate',fill=True,label='Null Distribution',ax=ax, color='gray')
-plot.set_xlabel("Identification Rate", fontsize=14)
-plot.set_ylabel("Density", fontsize=14)
+plot.set_xlabel("Identification Rate", fontsize=12)
+plot.set_ylabel("Density", fontsize=12)
 # Add the observed value line with label
 plot.axvline(Id_Rate_FC, color='black', linestyle='--', label='Observed value', linewidth=3)
 # Force legend to show both entries
 plot.set_xlim(0,100)
-plot.legend(loc='upper right', fontsize=14)
-ax.set_xticklabels(ax.get_xticklabels(), fontsize=14);
-ax.set_yticklabels(ax.get_yticklabels(), fontsize=14);
+plot.legend(loc='upper right', fontsize=12)
+ax.set_xticklabels(ax.get_xticklabels(), fontsize=12);
+ax.set_yticklabels(ax.get_yticklabels(), fontsize=12);
 
 
-# In[57]:
+# In[133]:
 
 
+mpl.rcParams['svg.fonttype'] = 'none'
+fig.savefig('./figures/Figure02_G-FMRI_IdentificationRate.svg', format='svg', bbox_inches='tight')
 fig.savefig(osp.join('figures', 'Figure02_G-FMRI_IdentificationRate.png'), bbox_inches='tight')  
+
+
+# In[134]:
+
+
+FC_id_rate_null.to_csv('./source_data_files/figure_02_g_fmri_IDrate_null_distribution.csv', float_format='%.4f', index=False, header=False)
+
+
+# In[ ]:
+
+
+
 
