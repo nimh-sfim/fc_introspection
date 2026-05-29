@@ -161,7 +161,7 @@ def get_obs_vs_pred(behavior):
 # 
 # First, we just load one model as a reference to infer the number of edges. We need this to create empty datastructures that will subsequently populate
 
-# In[ ]:
+# In[10]:
 
 
 ref_path = osp.join(RESOURCES_CPM_DIR,'swarm_outputs','real',ATLAS,SPLIT_MODE, CONFOUNDS,CORR_TYPE+'_'+E_SUMMARY_METRIC,'Images','cpm_Images_rep-{r}.pkl'.format(r=str(1).zfill(5)))
@@ -216,7 +216,7 @@ print('++ Models saved to disk at: %s' % out_path)
 
 # ## 2.3. Compute consensus models for plotting
 
-# In[15]:
+# In[14]:
 
 
 thresh           = 0.9
@@ -232,7 +232,7 @@ for BEHAVIOR in BEHAVIOR_LIST_LABELS.values():
                           columns= roi_info.set_index(['ROI_ID','ROI_Name','Hemisphere','Network','RGB']).index)
 
 
-# In[16]:
+# In[15]:
 
 
 num_edges_toshow_DF = pd.Series(num_edges_toshow).reset_index()
@@ -244,7 +244,7 @@ num_edges_toshow_DF.groupby('Target').sum()
 # # Saving Results for CONN visualizations
 # We also write the models to disk in a form that we can later load in CONN
 
-# In[17]:
+# In[16]:
 
 
 for BEHAVIOR in BEHAVIOR_LIST_LABELS.values():
@@ -256,19 +256,19 @@ for BEHAVIOR in BEHAVIOR_LIST_LABELS.values():
 
 # Create extra files that are ATLAS specific so that we can plot results in CONN
 
-# In[18]:
+# In[17]:
 
 
 roi_info['ROI_Name'].to_csv(osp.join(RESOURCES_CONN_DIR,'roi_labels.txt'),header=None, index=None)
 
 
-# In[19]:
+# In[18]:
 
 
 roi_info[['pos_R','pos_A','pos_S']].to_csv(osp.join(RESOURCES_CONN_DIR,'roi_coords.txt'),header=None, index=None)
 
 
-# In[20]:
+# In[19]:
 
 
 (roi_info[['color_R','color_G','color_B']]/256).round(2).to_csv(osp.join(RESOURCES_CONN_DIR,'roi_colors.txt'),header=None, index=None)
@@ -279,7 +279,7 @@ roi_info[['pos_R','pos_A','pos_S']].to_csv(osp.join(RESOURCES_CONN_DIR,'roi_coor
 # 
 # 1. Estimate the limits for the colorbar in the NW summary view (connection count mode)
 
-# In[21]:
+# In[20]:
 
 
 max_counts = []
@@ -294,7 +294,7 @@ nw_count_max = int(np.quantile(max_counts,.9))
 
 # 2. Create a drop box with all Questions
 
-# In[22]:
+# In[21]:
 
 
 behav_select     = pn.widgets.Select(name='Questions',options=list(BEHAVIOR_LIST_LABELS.values()),value='Images')
@@ -316,7 +316,7 @@ menu_tab         = pn.Column(behav_select,cmap_pos_select,cmap_neg_select, matri
 
 # 3. Create all elements of the dashboard
 
-# In[23]:
+# In[22]:
 
 
 circos_show_pos_cb   = pn.widgets.Checkbox(name='Show postively correlated edges', value=True)
@@ -330,7 +330,7 @@ def gather_circos_plot(behavior, show_pos, show_neg, layout,show_degree, show_he
 circos_tab = pn.Column(circos_show_pos_cb,circos_show_neg_cb,gather_circos_plot, circos_show_degree,circos_layout)
 
 
-# In[24]:
+# In[23]:
 
 
 @pn.depends(behav_select)
@@ -342,7 +342,7 @@ def gather_interactive_brain_view(behavior):
     return plot
 
 
-# In[25]:
+# In[24]:
 
 
 @pn.depends(behav_select, cmap_pos_select, cmap_neg_select, matrix_max_count)
@@ -359,7 +359,7 @@ def gather_nw_matrix(behavior, pos_cmap, neg_cmap, clim_max_count, clim_min_coun
     return pn.Column(count_card, pcent_card)
 
 
-# In[26]:
+# In[25]:
 
 
 @pn.depends(behav_select)
@@ -369,7 +369,7 @@ def get_pred_plots(behavior):
         title='Prediction Power')
 
 
-# In[27]:
+# In[26]:
 
 
 nws_group_from = pn.widgets.CheckBoxGroup(name='Networks', value=nw_list, options=nw_list, inline=True)
@@ -377,7 +377,7 @@ nws_group_to   = pn.widgets.CheckBoxGroup(name='Networks', value=nw_list, option
 only_sel_nw    = pn.widgets.Checkbox(name='Show nodes for selected networks only', value=False)
 
 
-# In[34]:
+# In[27]:
 
 
 @pn.depends(behav_select,nws_group_from,nws_group_to)
@@ -411,7 +411,7 @@ def plot_brain_model(behavior,sel_nws_from,sel_nws_to):
     return pn.pane.Matplotlib(fig)
 
 
-# In[30]:
+# In[28]:
 
 
 @pn.depends(behav_select)
@@ -432,7 +432,7 @@ def get_conn_counts(behavior):
        pn.Column(pn.pane.Markdown('### Negative Connections'),pn.pane.DataFrame(negconns_final))),title='CPM Model | Connection Counts')
 
 
-# In[31]:
+# In[29]:
 
 
 @pn.depends(behav_select)
@@ -468,7 +468,7 @@ def get_top10degree_counts(behavior):
     return output
 
 
-# In[39]:
+# In[30]:
 
 
 brain_view_tab=pn.Column(pn.Row('From:',nws_group_from),pn.Row('To. :',nws_group_to),only_sel_nw,plot_brain_model)
@@ -476,7 +476,7 @@ brain_view_tab=pn.Column(pn.Row('From:',nws_group_from),pn.Row('To. :',nws_group
 
 # 4. Create the dashboard
 
-# In[46]:
+# In[31]:
 
 
 template = pn.template.BootstrapTemplate(title='Project Dashboard',
@@ -489,7 +489,7 @@ template = pn.template.BootstrapTemplate(title='Project Dashboard',
                                                        ('Brain View',brain_view_tab)))
 
 
-# In[47]:
+# In[ ]:
 
 
 dashboard = template.show()
@@ -505,22 +505,103 @@ dashboard = template.show()
 
 # Also here are the connection counts reported int he manuscript
 
-# In[76]:
+# In[33]:
 
 
 get_conn_counts('Wakefulness')
 
 
-# In[77]:
+# In[34]:
 
 
 get_conn_counts('Thought Pattern 1')
 
 
-# In[78]:
+# In[35]:
 
 
 get_conn_counts('Thought Pattern 2')
 
 
 # 
+
+# ### Graphical Elements shown in figures are saved here
+# 
+# 1. Circos plots and the models they represent
+
+# In[ ]:
+
+
+behaviors_to_save = ['Wakefulness','Thought Pattern 1','Thought Pattern 2']
+figure_names = ['Figure06A','Figure07A','Figure07F']
+source_data_filenames = ['figure_06_abd','figure_07_ace','figure_07_fhj']
+for behavior,figure_name, source_data_filename in zip(behaviors_to_save,figure_names,source_data_filenames):
+    print(f'++ Working on [{behavior}]')
+    plot = plot_as_graph(model_consensus_to_plot[behavior],figsize=(12,12),edge_weight=.25, title=behavior, show_pos=True, show_neg=True, 
+                         pos_edges_color='#640900', neg_edges_color='#090064', layout='circos', show_degree=True, show_hemi_labels=False)
+    plot.savefig(osp.join('figures',f'{figure_name}.png'), bbox_inches='tight', dpi=300)
+    plot.savefig(osp.join('figures',f'{figure_name}.svg'), format='svg', bbox_inches='tight')
+    model_consensus_to_plot[behavior].to_csv(f'./source_data_files/{source_data_filename}.csv')
+
+
+# In[38]:
+
+
+behaviors_to_save = ['Images','Surroundings','Past']
+source_data_filenames = ['figure_08_ab','figure_08_cd','figure_08_ef']
+for behavior,figure_name, source_data_filename in zip(behaviors_to_save,figure_names,source_data_filenames):
+    print(f'++ Working on [{behavior}]')
+    model_consensus_to_plot[behavior].to_csv(f'./source_data_files/{source_data_filename}.csv')
+
+
+# 2. Nw-Level summaries and the data they show
+
+# In[ ]:
+
+
+import holoviews as hv
+
+from bokeh.io import save
+from bokeh.models.plots import Plot
+from bokeh.resources import INLINE
+
+hv.extension("bokeh")
+
+def svg_backend(hv_plot, element):
+    hv_plot.state.output_backend = "svg"
+
+nwlevel_plots_to_save, nwlevel_data_to_save = {},{}
+source_data_filenames = {('Wakefulness','pos'):'./source_data_files/figure_06_c.csv',('Wakefulness','neg'):'./source_data_files/figure_06_e.csv',
+                         ('Thought Pattern 1','pos'):'./source_data_files/figure_07_b.csv', ('Thought Pattern 1','neg'):'./source_data_files/figure_07_d.csv',
+                         ('Thought Pattern 2','pos'):'./source_data_files/figure_07_g.csv', ('Thought Pattern 2','neg'):'./source_data_files/figure_07_i.csv'}
+
+nwlevel_plot_filenames = {('Wakefulness','pos'):'Figure06C',('Wakefulness','neg'):'Figure06E',
+                         ('Thought Pattern 1','pos'):'Figure07B', ('Thought Pattern 1','neg'):'Figure07D',
+                         ('Thought Pattern 2','pos'):'Figure07G', ('Thought Pattern 2','neg'):'Figure07I'}
+
+for behavior in behaviors_to_save:
+    # Matrix plots
+    nwlevel_plots_to_save[(behavior,'pos')] = hvplot_fc_nwlevel(model_consensus_to_plot[behavior]>0,title='',mode='count', add_net_colors=True, add_net_labels='both', cmap='Reds', labels_text_color='red', clim_min=0, clim_max=100).opts(toolbar=None)
+    nwlevel_plots_to_save[(behavior,'neg')] = hvplot_fc_nwlevel(model_consensus_to_plot[behavior]<0,title='',mode='count', add_net_colors=True, add_net_labels='both', cmap='Blues', labels_text_color='blue', clim_min=0, clim_max=100).opts(toolbar=None)
+    for model_sign in ['pos','neg']:
+        svg_plot = nwlevel_plots_to_save[(behavior,model_sign)].opts(hooks=[svg_backend])
+        bokeh_obj = hv.render(svg_plot, backend="bokeh")
+        # Extra safety for layouts / overlays
+        if isinstance(bokeh_obj, Plot):
+            bokeh_obj.output_backend = "svg"
+        for p in bokeh_obj.select({"type": Plot}):
+            p.output_backend = "svg"
+        print(f'++ Saving [{behavior},{model_sign}] Nw-Level matrix to ./figures/{nwlevel_plot_filenames[(behavior,model_sign)]}.html')
+        save(bokeh_obj, filename=f"./figures/{nwlevel_plot_filenames[(behavior,model_sign)]}.html",resources=INLINE, title=nwlevel_plot_filenames[(behavior,model_sign)])
+    # Source Data Files
+    nwlevel_data_to_save[(behavior,'pos')] = hvplot_fc_nwlevel(model_consensus_to_plot[behavior]>0,title='',mode='count', add_net_colors=True, add_net_labels='both', cmap='Reds', labels_text_color='red', clim_min=0, clim_max=100, return_data_only=True)
+    nwlevel_data_to_save[(behavior,'neg')] = hvplot_fc_nwlevel(model_consensus_to_plot[behavior]<0,title='',mode='count', add_net_colors=True, add_net_labels='both', cmap='Reds', labels_text_color='red', clim_min=0, clim_max=100, return_data_only=True)
+    nwlevel_data_to_save[(behavior,'pos')].to_csv(source_data_filenames[(behavior,'pos')])
+    nwlevel_data_to_save[(behavior,'neg')].to_csv(source_data_filenames[(behavior,'neg')])
+
+
+# In[ ]:
+
+
+
+
