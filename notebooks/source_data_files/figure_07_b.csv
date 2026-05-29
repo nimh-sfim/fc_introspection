@@ -1,0 +1,9 @@
+Network1,Vis,SomMot,DorsAttn,SalVentAttn,Limbic,Cont,Default,Subcortical
+Vis,3,3,0,1,0,0,2,0
+SomMot,3,2,0,0,0,1,43,0
+DorsAttn,0,0,1,2,0,13,3,0
+SalVentAttn,1,0,2,3,1,25,41,0
+Limbic,0,0,0,1,0,0,1,0
+Cont,0,1,13,25,0,7,17,0
+Default,2,43,3,41,1,17,25,3
+Subcortical,0,0,0,0,0,0,3,0

@@ -1,0 +1,470 @@
+Factor 1,Factor 2,Set Label
+0.63,0.36,Set B
+0.64,0.57,Set B
+0.48,0.65,Ambiguous
+0.46,0.65,Ambiguous
+0.52,0.33,Set B
+0.93,0.20,Set B
+0.44,0.66,Ambiguous
+0.39,0.56,Set A
+0.36,0.47,Set A
+0.57,0.36,Set B
+0.65,0.37,Set B
+0.65,0.42,Set B
+0.49,0.32,Set B
+0.44,0.55,Set A
+0.21,0.49,Set A
+0.18,0.67,Set A
+0.15,0.81,Set A
+0.75,0.70,Set B
+0.60,0.58,Set B
+0.57,0.93,Set A
+0.70,0.92,Set B
+0.51,0.47,Set B
+0.26,0.50,Set A
+0.18,0.41,Set A
+0.11,0.57,Set A
+0.18,0.41,Set A
+0.38,0.35,Set A
+0.49,0.49,Set A
+0.31,0.66,Set A
+0.34,0.59,Set A
+0.71,0.41,Set B
+0.68,0.59,Ambiguous
+0.65,0.54,Ambiguous
+0.63,0.52,Ambiguous
+0.63,0.43,Ambiguous
+0.55,0.64,Set A
+0.86,0.26,Set B
+0.70,0.04,Set B
+0.67,0.31,Set B
+0.60,0.42,Set B
+0.46,0.51,Ambiguous
+0.28,0.51,Set A
+0.39,0.57,Set A
+0.81,0.16,Set B
+0.72,0.30,Set B
+0.57,0.42,Set B
+0.45,0.74,Set A
+0.66,0.34,Set B
+0.60,0.43,Set B
+0.50,0.66,Ambiguous
+0.59,0.44,Set B
+0.37,0.58,Set A
+0.35,0.61,Set A
+0.41,0.61,Set A
+0.42,0.61,Set A
+0.73,0.42,Set B
+0.36,0.53,Set A
+0.34,0.61,Ambiguous
+0.40,0.80,Set A
+0.48,0.60,Set B
+0.88,0.53,Set B
+0.88,0.48,Set B
+0.37,0.33,Set A
+0.11,0.49,Set A
+0.90,0.37,Set B
+0.85,0.68,Set B
+0.76,0.83,Set B
+0.68,0.68,Set B
+0.82,0.18,Set B
+0.61,0.15,Set B
+0.65,0.17,Set B
+0.50,0.37,Ambiguous
+0.64,0.38,Ambiguous
+0.58,0.44,Ambiguous
+0.53,0.52,Ambiguous
+0.64,0.33,Ambiguous
+0.53,0.59,Set B
+0.48,0.45,Set A
+0.41,0.55,Ambiguous
+0.70,0.39,Set B
+0.67,0.40,Set B
+0.83,0.36,Set B
+0.70,0.43,Set B
+0.61,0.57,Set A
+0.41,0.46,Set A
+0.36,0.60,Set A
+0.70,0.42,Set B
+0.48,0.88,Ambiguous
+0.85,0.63,Set B
+0.87,0.58,Set B
+0.77,0.51,Set B
+0.83,0.22,Set B
+0.37,0.53,Set A
+0.28,0.48,Set A
+0.52,0.54,Set A
+0.83,0.42,Set B
+0.90,0.07,Set B
+0.72,0.19,Set B
+0.78,0.02,Set B
+0.74,0.07,Ambiguous
+0.93,0.07,Set B
+0.79,0.40,Ambiguous
+0.25,0.65,Set A
+0.59,0.42,Ambiguous
+0.82,0.30,Set B
+0.44,0.50,Set A
+0.60,0.53,Set B
+0.58,0.58,Set B
+0.49,0.49,Ambiguous
+0.47,0.51,Ambiguous
+0.47,0.38,Ambiguous
+0.58,0.24,Set B
+0.68,0.26,Set B
+0.49,0.40,Set A
+0.70,0.48,Set B
+0.46,0.61,Set A
+0.61,0.59,Ambiguous
+0.57,0.56,Set B
+0.00,0.83,Set A
+0.61,0.42,Set B
+0.60,0.55,Set B
+0.51,0.49,Set B
+0.68,0.51,Set B
+0.86,0.16,Set B
+0.65,0.33,Set B
+0.21,0.32,Set A
+0.47,0.25,Set A
+0.43,0.41,Set A
+0.43,0.43,Set A
+0.09,1.00,Set A
+0.12,1.00,Set A
+0.25,1.00,Set A
+0.42,0.32,Set A
+0.63,0.31,Set B
+0.62,0.33,Set B
+0.66,0.30,Set B
+0.95,0.18,Set B
+0.86,0.19,Set B
+0.86,0.22,Set B
+0.92,0.00,Ambiguous
+0.71,0.22,Set A
+0.78,0.16,Set B
+0.94,0.08,Set B
+0.63,0.44,Set B
+0.58,0.50,Ambiguous
+0.69,0.52,Set B
+0.70,0.38,Set B
+0.85,0.42,Set B
+0.76,0.35,Set B
+0.64,0.66,Set B
+0.79,0.46,Set B
+0.74,0.01,Set B
+0.71,0.00,Set B
+0.65,0.03,Set B
+0.52,0.45,Ambiguous
+0.54,0.49,Set B
+0.31,0.36,Set A
+0.17,0.20,Set A
+0.45,0.65,Set A
+0.46,0.43,Set A
+0.55,0.36,Ambiguous
+0.59,0.41,Set B
+0.65,0.84,Set B
+0.80,0.55,Set B
+0.48,0.23,Ambiguous
+0.65,0.58,Set B
+0.73,0.66,Set B
+0.76,0.50,Set B
+0.73,0.53,Set B
+0.64,0.40,Set B
+0.88,0.03,Set B
+0.27,0.70,Set A
+0.65,0.34,Set B
+0.54,0.00,Ambiguous
+0.24,0.64,Set A
+0.34,0.59,Set A
+0.37,0.36,Set A
+0.63,0.53,Set B
+0.54,0.58,Ambiguous
+0.55,0.52,Ambiguous
+0.62,0.53,Set B
+0.59,0.41,Ambiguous
+0.64,0.42,Set B
+0.44,0.39,Ambiguous
+0.58,0.40,Set B
+0.79,0.00,Set B
+0.87,0.00,Set B
+0.82,0.01,Set B
+0.92,0.02,Set B
+0.86,0.00,Set B
+0.51,0.18,Set A
+0.70,0.21,Set B
+0.65,0.39,Set B
+0.67,0.36,Set B
+0.55,0.60,Ambiguous
+0.72,0.17,Ambiguous
+0.77,0.18,Set B
+0.68,0.11,Ambiguous
+0.69,0.08,Ambiguous
+0.70,0.11,Set B
+0.66,0.11,Set B
+0.86,0.03,Set B
+0.87,0.42,Set B
+0.45,0.54,Ambiguous
+0.59,0.43,Set B
+0.47,0.26,Set A
+0.42,0.01,Set A
+0.39,0.00,Set A
+0.48,0.00,Set A
+0.34,0.17,Set A
+0.65,0.46,Set B
+0.75,0.49,Set B
+0.58,0.37,Set B
+0.59,0.19,Ambiguous
+0.41,0.42,Set A
+0.58,0.32,Set B
+0.90,0.29,Set B
+0.75,0.42,Set B
+0.62,0.62,Set B
+0.44,0.77,Set A
+0.87,0.21,Set B
+0.84,0.25,Set B
+0.70,0.34,Set B
+0.67,0.43,Set B
+0.40,0.73,Set A
+0.36,0.57,Set A
+0.35,0.67,Set A
+0.51,0.53,Ambiguous
+0.51,0.10,Set A
+0.50,0.28,Ambiguous
+0.30,0.89,Set A
+0.83,0.23,Ambiguous
+0.49,0.38,Ambiguous
+0.46,0.28,Ambiguous
+0.30,0.42,Set A
+0.89,0.00,Set B
+0.91,0.00,Set B
+0.91,0.02,Set B
+0.85,0.06,Set B
+0.75,0.35,Set B
+0.69,0.26,Set B
+0.57,0.38,Set B
+0.37,0.64,Set A
+0.57,0.46,Set B
+0.60,0.52,Set B
+0.57,0.40,Ambiguous
+0.71,0.35,Set B
+0.58,0.38,Ambiguous
+0.55,0.51,Ambiguous
+0.54,0.31,Ambiguous
+0.71,0.63,Set B
+0.69,0.51,Set B
+0.65,0.47,Set B
+0.55,0.46,Ambiguous
+0.26,0.35,Set A
+0.39,0.24,Ambiguous
+0.20,0.22,Set A
+0.00,0.73,Set A
+0.85,0.23,Set B
+0.81,0.49,Set B
+0.75,0.37,Set B
+0.73,0.38,Set B
+0.89,0.27,Set B
+0.88,0.20,Set B
+0.95,0.14,Set B
+0.95,0.12,Set B
+0.85,0.56,Set B
+0.87,0.56,Set B
+0.63,0.50,Set B
+0.55,0.38,Ambiguous
+0.58,0.19,Ambiguous
+0.45,0.49,Ambiguous
+0.55,0.36,Ambiguous
+0.54,0.43,Set B
+0.44,0.43,Ambiguous
+0.61,0.41,Set B
+0.49,0.50,Set B
+0.80,0.17,Set B
+0.81,0.36,Set B
+0.82,0.33,Set B
+0.83,0.21,Set B
+0.81,0.07,Set B
+0.83,0.35,Set B
+0.71,0.44,Set B
+0.40,0.41,Set A
+0.70,0.02,Set B
+0.74,0.33,Set B
+0.72,0.28,Set B
+0.78,0.29,Set B
+0.73,0.23,Set B
+0.52,0.45,Set A
+0.54,0.34,Ambiguous
+0.69,0.19,Set B
+0.66,0.18,Set B
+0.62,0.00,Ambiguous
+0.63,0.00,Ambiguous
+0.51,0.12,Ambiguous
+0.57,0.14,Set B
+0.81,0.00,Set B
+0.86,0.08,Set B
+0.81,0.34,Set B
+0.74,0.23,Ambiguous
+0.57,0.51,Ambiguous
+0.64,0.36,Set B
+0.36,0.52,Set A
+0.50,0.44,Set A
+0.39,0.51,Set A
+0.45,0.43,Set A
+0.52,0.70,Set A
+0.51,0.54,Ambiguous
+0.32,0.48,Set A
+0.34,0.70,Set A
+0.03,0.64,Set A
+0.16,0.54,Set A
+0.95,0.15,Set B
+0.95,0.27,Set B
+0.66,0.46,Set B
+0.53,0.45,Ambiguous
+0.63,0.68,Set B
+0.64,0.38,Set B
+0.41,0.28,Set A
+0.59,0.10,Set B
+0.54,0.10,Ambiguous
+0.49,0.34,Ambiguous
+0.61,0.47,Set B
+0.42,0.53,Set A
+0.62,0.16,Set B
+0.61,0.29,Ambiguous
+0.48,0.51,Ambiguous
+0.49,0.46,Ambiguous
+0.58,0.41,Ambiguous
+0.43,0.34,Ambiguous
+0.72,0.48,Set B
+0.39,0.38,Set A
+0.42,0.24,Set A
+0.89,0.01,Set B
+0.35,0.95,Set A
+0.61,0.73,Ambiguous
+0.25,0.82,Set A
+0.27,0.57,Set A
+0.78,0.08,Set B
+0.76,0.33,Set B
+0.43,0.59,Set A
+0.56,0.47,Set B
+0.53,0.43,Set A
+0.25,0.40,Set A
+0.68,0.10,Ambiguous
+0.45,0.18,Set A
+0.82,0.00,Set B
+0.63,0.08,Ambiguous
+0.43,0.39,Set A
+0.91,0.30,Set B
+0.82,0.41,Set B
+0.60,0.33,Set B
+0.73,0.31,Set B
+0.65,0.30,Set B
+0.75,0.43,Set B
+0.39,0.31,Set A
+0.42,0.45,Set A
+0.55,0.32,Set B
+0.58,0.35,Set B
+0.38,0.22,Set A
+0.38,0.24,Set A
+0.57,0.28,Set A
+0.53,0.29,Set A
+0.80,0.33,Set B
+0.69,0.34,Set B
+0.41,0.50,Set A
+0.22,0.84,Set A
+0.52,0.31,Ambiguous
+0.54,0.25,Set B
+0.47,0.46,Set A
+0.65,0.25,Set B
+0.50,0.60,Ambiguous
+0.55,0.42,Ambiguous
+0.70,0.18,Set B
+0.63,0.44,Set B
+0.53,0.40,Ambiguous
+0.59,0.27,Set B
+0.51,0.21,Ambiguous
+0.53,0.22,Ambiguous
+0.32,0.78,Set A
+0.44,0.46,Set A
+0.31,0.32,Set A
+0.53,0.50,Set A
+0.68,0.42,Set B
+0.18,0.92,Set A
+0.71,0.45,Set B
+0.49,0.44,Set A
+0.50,0.26,Set A
+0.38,0.42,Set A
+0.85,0.32,Set B
+0.67,0.52,Set B
+0.77,0.43,Set B
+0.80,0.45,Set B
+0.88,0.00,Set B
+0.82,0.13,Set B
+0.66,0.41,Set B
+0.61,0.40,Set B
+0.73,0.28,Set B
+0.75,0.25,Set B
+0.59,0.16,Ambiguous
+0.25,0.19,Set A
+0.58,0.39,Set B
+0.60,0.50,Set B
+0.81,0.48,Set B
+0.64,0.81,Set B
+0.85,0.00,Set B
+0.88,0.07,Set B
+0.45,0.32,Set A
+0.74,0.00,Set B
+0.81,0.20,Set B
+0.64,0.07,Set B
+0.57,0.41,Ambiguous
+0.59,0.41,Set B
+0.47,0.58,Set A
+0.50,0.61,Ambiguous
+0.44,0.63,Set A
+0.50,0.57,Ambiguous
+0.57,0.03,Set A
+0.26,0.97,Set A
+0.25,0.81,Set A
+0.77,0.32,Set B
+0.80,0.28,Set B
+0.61,0.48,Set B
+0.61,0.40,Set B
+0.51,0.49,Set B
+0.44,0.71,Set A
+0.45,0.60,Ambiguous
+0.59,0.57,Set B
+0.92,0.34,Set B
+0.88,0.40,Set B
+0.68,0.33,Set B
+0.68,0.22,Set B
+0.42,0.46,Ambiguous
+0.74,0.42,Set B
+0.61,0.49,Set B
+0.46,0.58,Ambiguous
+0.75,0.50,Set B
+0.25,0.38,Set A
+0.32,0.37,Set A
+0.28,0.32,Set A
+0.23,0.40,Set A
+0.61,0.20,Set B
+0.74,0.22,Set B
+0.52,0.36,Set B
+0.81,0.16,Set B
+0.65,0.25,Set B
+0.72,0.49,Set B
+0.66,0.10,Ambiguous
+0.57,0.23,Ambiguous
+0.46,0.33,Set A
+0.56,0.29,Set B
+0.60,0.11,Ambiguous
+0.68,0.30,Set B
+0.62,0.57,Set B
+0.96,0.37,Set B
+0.60,0.51,Ambiguous
+0.59,0.43,Set B
+0.74,0.23,Set B
+0.64,0.27,Set B
+0.55,0.40,Set B
+0.74,0.14,Set B
+0.65,0.16,Set B
+0.60,0.10,Set B
+0.68,0.33,Set B
+0.64,0.30,Set B
+0.52,0.29,Set B
+0.53,0.27,Ambiguous
