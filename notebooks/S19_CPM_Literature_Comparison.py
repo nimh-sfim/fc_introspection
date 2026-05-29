@@ -130,14 +130,15 @@ data2plot_R = data2plot_R.reset_index(drop=True)
 data2plot_R['Category'].value_counts()
 
 
-# In[ ]:
+# In[25]:
 
 
+plt.rcParams['font.family'] = 'Arial'
 label_pos_extra = np.array([0,.02,0,-.02,-.045,-.07])
-fig, ax = plt.subplots(1,1,figsize=(4,5))
+fig, ax = plt.subplots(1,1,figsize=(4.4,5))
 sns.set(font_scale=1)
 sns.set_style('white')
-sns.boxplot(data=data2plot_R,x='Category',y='Pearson R',saturation=0.3)
+sns.boxplot(data=data2plot_R,x='Category',y='Pearson R',saturation=0.3,hue='Category')
 sns.swarmplot(data=data2plot_R,x='Category',y='Pearson R', hue='Category',s=3)
 for i, TARGET in enumerate(['Wakefulness','Thought Pattern 2','Surroundings','Thought Pattern 1','Images','Past']):
     ax.hlines(our_acc.loc[TARGET,'Pearson R'],-.5,2.5,'k', linestyles='dashed', label=TARGET, lw=1)
@@ -148,14 +149,30 @@ plt.ylim((0.0,.7))
 plt.xlim((-.5,2.5))
 
 
+# ### Saving image and source data files
+
+# In[26]:
+
+
+import matplotlib as mpl
+mpl.rcParams['svg.fonttype'] = 'none'
+fig.savefig('./figures/Figure05_D.svg', format='svg', bbox_inches='tight')
+
+
+# In[30]:
+
+
+data2plot_R.to_csv('./source_data_files/figure_05_d_literature.csv', index=0)
+
+
+# In[31]:
+
+
+our_acc.loc[['Wakefulness','Thought Pattern 2','Surroundings','Thought Pattern 1','Images','Past'],'Pearson R'].to_csv('./source_data_files/figure_05_d_our_acc.csv', float_format='%.3f')
+
+
 # In[16]:
 
 
 fig.savefig('./figures/Figure05_D.png')
-
-
-# In[ ]:
-
-
-
 
