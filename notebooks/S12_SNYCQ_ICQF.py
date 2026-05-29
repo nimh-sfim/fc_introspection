@@ -59,6 +59,7 @@ from utils.basics import RESOURCES_SNYCQ_DIR, ORIG_DEMO_PATH
 # Load Clustering Results
 emb_plus  = pd.read_csv(osp.join(RESOURCES_SNYCQ_DIR, 'SNYCQ_tsne_embeddings_plus.csv'), index_col=[0,1])
 emb_plus.drop(['TSNE1','TSNE2','TSNE3'],axis=1,inplace=True)
+print(emb_plus.shape)
 emb_plus.head(3)
 
 
@@ -76,21 +77,97 @@ data_to_plot.index        = np.arange(SNYCQ_to_plot.shape[0])
 data_to_plot.index.name   = 'Questions'
 data_to_plot.columns      = SNYCQ_to_plot.columns
 data_to_plot.columns.name = 'Scans'
-f_data = data_to_plot.hvplot.heatmap(width=375, height=900, cmap='viridis', fontscale=1.5, xlabel='Questions', title='', shared_axes=False).opts(xrotation=90, colorbar_opts={'title':'Response:'}, toolbar=None)
+f_data = data_to_plot.hvplot.heatmap(width=325, height=900, cmap='viridis', fontscale=1.25, xlabel='Questions', title='', shared_axes=False).opts(xrotation=90, colorbar_opts={'title':'Response:'}, toolbar=None)
 f_data
 
+
+# ![SNYCQ Heatmap](./figures/Figure01_A-SNYCQ_Heatmap.png)
+# 
+# ### Saving Publication Ready Panel and Source Data
 
 # In[6]:
 
 
-hv.save(f_data, osp.join('figures', 'Figure01_A-SNYCQ_Heatmap.html'), backend='bokeh')
+import holoviews as hv
+
+from bokeh.io import save
+from bokeh.models.plots import Plot
+from bokeh.resources import INLINE
+
+hv.extension("bokeh")
+
+def svg_backend(hv_plot, element):
+    hv_plot.state.output_backend = "svg"
+
+svg_plot = f_data.opts(hooks=[svg_backend])
+
+bokeh_obj = hv.render(svg_plot, backend="bokeh")
+
+# Extra safety for layouts / overlays
+if isinstance(bokeh_obj, Plot):
+    bokeh_obj.output_backend = "svg"
+
+for p in bokeh_obj.select({"type": Plot}):
+    p.output_backend = "svg"
+
+save(
+    bokeh_obj,
+    filename="./figures/Figure01_A-SNYCQ_Heatmap.html",
+    resources=INLINE,
+    title="Figure01_A",
+)
 
 
-# ![SNYCQ Heatmap](./figures/Figure01_A-SNYCQ_Heatmap.png)
+# In[7]:
+
+
+from utils.basics import get_sbj_scan_list
+_, _, SNYCQ_wVigilance = get_sbj_scan_list(when='post_motion', return_snycq=True)
+SNYCQ_to_plot_b=SNYCQ_wVigilance.loc[emb_plus.index,'Vigilance']
+SNYCQ_to_plot_b.name='Wakefulness'
+data_to_plot              = pd.DataFrame(SNYCQ_to_plot_b.values)
+data_to_plot.index        = np.arange(SNYCQ_to_plot_b.shape[0])
+data_to_plot.index.name   = 'Questions'
+data_to_plot.columns      = ['Wakefulness']
+data_to_plot.columns.name = 'Scans'
+f_data = data_to_plot.hvplot.heatmap(width=70, height=900, cmap='viridis', fontscale=1.25, title='', shared_axes=False).opts(xrotation=90, toolbar=None, colorbar=False)
+f_data
+
+
+# In[8]:
+
+
+def svg_backend(hv_plot, element):
+    hv_plot.state.output_backend = "svg"
+
+svg_plot = f_data.opts(hooks=[svg_backend])
+
+bokeh_obj = hv.render(svg_plot, backend="bokeh")
+
+# Extra safety for layouts / overlays
+if isinstance(bokeh_obj, Plot):
+    bokeh_obj.output_backend = "svg"
+
+for p in bokeh_obj.select({"type": Plot}):
+    p.output_backend = "svg"
+
+save(
+    bokeh_obj,
+    filename="./figures/Figure01_A-SNYCQ_Heatmap_Top.html",
+    resources=INLINE,
+    title="Figure01_A_Top",
+)
+
+
+# In[9]:
+
+
+pd.concat([SNYCQ_to_plot_b,SNYCQ_to_plot],axis=1).to_csv('./source_data_files/figure_01_a.csv', float_format='%.1f', index=None)
+
 
 # # 2. Load and Encode Basic Demographics
 
-# In[7]:
+# In[10]:
 
 
 # Extract final list of scans and subjects
@@ -98,7 +175,7 @@ scan_list = emb_plus.index.to_list()
 sbj_list  = list(emb_plus.index.get_level_values(level='Subject').unique()) 
 
 
-# In[8]:
+# In[11]:
 
 
 # Extract SNYCQ items
@@ -106,7 +183,7 @@ SNYCQ = emb_plus[['People','Positive','Negative','Past','Future','Myself','Intru
 SNYCQ_items = SNYCQ.columns
 
 
-# In[9]:
+# In[12]:
 
 
 # Load demographic data
@@ -120,7 +197,7 @@ demographics.head(3)
 # 
 # The age and gender are available in ```string``` form. They need to be converted to numerical for ICQF. The following cells do that and create the ```C``` or ```confounds``` matrix for ICQF
 
-# In[10]:
+# In[13]:
 
 
 # Convert age classes into numerical labels
@@ -130,7 +207,7 @@ age_translation_dict = {k:v for (k,v) in zip(ageclass,normal_ageclass)}
 print(age_translation_dict)
 
 
-# In[11]:
+# In[14]:
 
 
 # Convert Gender and Age into numerical labels
@@ -151,7 +228,7 @@ for sbj,run in scan_list:
 
 # Now, that everything is available we create the ```C``` matrix, which contains an intercept (all ones), age and its decreasing counterpart, gender and its oposite counterpart.
 
-# In[12]:
+# In[15]:
 
 
 confounds               = pd.DataFrame(index=SNYCQ.index,columns=['age','Gender (M)'])
@@ -240,9 +317,23 @@ with open('../resources/snycq/SNYCQ_icqf_results.pkl', 'wb') as file:
     pickle.dump(data_to_save, file)
 
 
+# In[16]:
+
+
+import pickle
+
+with open('../resources/snycq/SNYCQ_icqf_results.pkl', 'rb') as file:
+    loaded_data = pickle.load(file)
+
+optimal_MF_data = loaded_data['optimal_MF_data']
+optimal_stat = loaded_data['optimal_stat']
+embed_stat_list = loaded_data['embed_stat_list']
+clf = loaded_data['clf']
+
+
 # ## 3.3. Extract results obtainecd with optimal hyper-parameters
 
-# In[19]:
+# In[17]:
 
 
 DIM = clf.n_components
@@ -258,7 +349,7 @@ Qc = Qc[['Intercept','Age (younger)','Age (elder)','Gender (M)','Gender (F)']] #
 # ***
 # Plot the W matrix
 
-# In[ ]:
+# In[18]:
 
 
 W_Supp_Fig = pd.concat([W, pd.DataFrame(index=W.index,columns=C.columns)],axis=1)
@@ -267,11 +358,11 @@ hv.save(W_plot, osp.join('figures', 'Supplementary_Figure05W.html'), backend='bo
 W_plot
 
 
-# ![W](./figures/Supplementary_Figure04_W.png)
+# ![W](./figures/Supplementary_Figure05_W.png)
 
 # Plot the C matrix
 
-# In[ ]:
+# In[19]:
 
 
 C_Supp_Fig = pd.concat([pd.DataFrame(index=C.index,columns=W.columns), C],axis=1)
@@ -280,11 +371,11 @@ hv.save(C_plot, osp.join('figures', 'Supplementary_Figure05_C.html'), backend='b
 C_plot
 
 
-# ![C](./figures/Supplementary_Figure04_C.png)
+# ![C](./figures/Supplementary_Figure05_C.png)
 
 # Plot the Q matrix
 
-# In[ ]:
+# In[20]:
 
 
 Q_Supp_Fig = pd.concat([Q, pd.DataFrame(index=Q.index,columns=C.columns)],axis=1)
@@ -293,11 +384,11 @@ hv.save(Q_plot, osp.join('figures', 'Supplementary_Figure05_Q.html'), backend='b
 Q_plot
 
 
-# ![Q](./figures/Supplementary_Figure04_Q.png)
+# ![Q](./figures/Supplementary_Figure05_Q.png)
 
 # Plot Qc
 
-# In[ ]:
+# In[52]:
 
 
 Qc_Supp_Fig = pd.concat([pd.DataFrame(index=Qc.index,columns=Q.columns),Qc],axis=1)
@@ -306,7 +397,7 @@ hv.save(Qc_plot, osp.join('figures', 'Supplementary_Figure05_Qc.html'), backend=
 Qc_plot
 
 
-# ![Qc](./figures/Supplementary_Figure04_Qc.png)
+# ![Qc](./figures/Supplementary_Figure05_Qc.png)
 
 # ***
 # 
@@ -314,76 +405,169 @@ Qc_plot
 # 
 # Next, we will generate a scatter plot where each scan is represented by a point in the 2D ICQF space. Scans will be colored according to Set Membership previously stablished by performing Gaussian Misture Modeling of the data in the original 11D space.
 
-# In[33]:
+# In[21]:
 
 
 W_wSetLabels = pd.concat([W,emb_plus['Set Label']],axis=1)
 
 
-# In[25]:
+# In[22]:
 
 
-W_scat = W_wSetLabels.hvplot.scatter(
-    x='Factor 1',
-    y='Factor 2',
-    aspect='square',
-    color='Set Label',
-    cmap=["#ff7f0e", "#ffffff", "#1f77b4"],
-    legend='bottom_left',
-    line_color='black',
-    line_width=0.5,
-    alpha=0.7
+import holoviews as hv
+
+hv.extension("bokeh")
+
+W_scat_hv = hv.Scatter(
+    W_wSetLabels,
+    kdims=["Factor 1"],
+    vdims=["Factor 2", "Set Label"],
 ).opts(
-        fontsize={
-            'ticks': 12,
-            'labels': 14,
-            'legend': 14,
-            'title': 16
-        }
-    ,toolbar=None)
-hv.save(W_scat, osp.join('figures', 'Figure01_C-SNYCQ_ICQF_Scatter.html'), backend='bokeh')
-W_scat
+    aspect="square",
+    color="Set Label",
+    cmap=["#ff7f0e", "#ffffff", "#1f77b4"],
+    legend_position="bottom_left",
+    line_color="black",
+    line_width=0.5,
+    alpha=0.7,
+    size=6,          # adjust to match hvplot's default marker size
+    toolbar=None,
+    fontsize={
+        "ticks": 12,
+        "labels": 14,
+        "legend": 14,
+        "title": 16,
+    },
+)
+W_scat_hv
 
 
 # ![W Scatter Plot](./figures/Figure01_C-SNYCQ_ICQF_Scatter.png)
+# 
+# ### Save Publication Ready Panel and Data Souce File
+
+# In[23]:
+
+
+svg_plot = W_scat_hv.opts(hooks=[svg_backend])
+
+bokeh_obj = hv.render(svg_plot, backend="bokeh")
+
+if isinstance(bokeh_obj, Plot):
+    bokeh_obj.output_backend = "svg"
+
+for p in bokeh_obj.select({"type": Plot}):
+    p.output_backend = "svg"
+
+save(
+    bokeh_obj,
+    filename="./figures/Figure01_C-SNYCQ_ICQF_Scatter_main.html",
+    resources=INLINE,
+    title="Figure01_C-SNYCQ_ICQF_Scatter_main",
+)
+
+
+# In[24]:
+
+
+W_wSetLabels.to_csv('./source_data_files/figure_01_c_main.csv', float_format='%.2f', index=None)
+
 
 # ## 4.1. Heatmap with relationship between Factor 1 (TP1) and original sNYCQ items 
 
-# In[26]:
+# In[25]:
 
 
 F1_vals_to_plot = pd.DataFrame(Q.sort_values(by='Factor 1', ascending=True)['Factor 1'].round(0).astype(int)).T
-f = F1_vals_to_plot.hvplot.heatmap(cmap='Bone', clim=(0,110), width=700, height=175,colorbar=False, yaxis=None).opts(toolbar=None, line_color='k', line_width=1)
-TP1_vector = f * hv.Labels(f).opts(opts.Labels(text_color='white', xrotation=45, fontsize={'labels':12,'xticks':14}))
-hv.save(TP1_vector, osp.join('figures', 'Figure01_D-SNYCQ_ICQF_TP1_Values.html'), backend='bokeh')
+f = F1_vals_to_plot.hvplot.heatmap(cmap='Bone', clim=(0,110), width=700, height=100,colorbar=False, yaxis=None).opts(toolbar=None, line_color='k', line_width=1)
+TP1_vector = f * hv.Labels(f).opts(opts.Labels(text_color='white', xrotation=0, fontsize={ 'labels':12,'xticks':14}))
+#hv.save(TP1_vector, osp.join('figures', 'Figure01_D-SNYCQ_ICQF_TP1_Values.html'), backend='bokeh')
 TP1_vector
 
 
 # ![TP1 Values](./figures/Figure01_D-SNYCQ_ICQF_TP1_Values.png)
+# 
+# ### Save Punblication Ready and Source Data
+
+# In[26]:
+
+
+svg_plot = TP1_vector.opts(hooks=[svg_backend])
+
+bokeh_obj = hv.render(svg_plot, backend="bokeh")
+
+if isinstance(bokeh_obj, Plot):
+    bokeh_obj.output_backend = "svg"
+
+for p in bokeh_obj.select({"type": Plot}):
+    p.output_backend = "svg"
+
+save(
+    bokeh_obj,
+    filename="./figures/Figure01_D-SNYCQ_ICQF_TP1_Values.html",
+    resources=INLINE,
+    title="Figure01_D-SNYCQ_ICQF_TP1_Values",
+)
+
+
+# In[29]:
+
+
+F1_vals_to_plot.to_csv('./source_data_files/figure_01_d.csv', float_format='%.0f', index=None)
+
 
 # ## 4.2. Heatmap with relationship between Factor 2 (TP2) and original sNYCQ items
 
-# In[27]:
+# In[ ]:
 
 
 F2_vals_to_plot = pd.DataFrame(Q.sort_values(by='Factor 2', ascending=True)['Factor 2'].round(0).astype(int))
 f = F2_vals_to_plot.hvplot.heatmap(cmap='Bone', clim=(0,110), width=200, height=700,colorbar=False, xaxis=None).opts(toolbar=None, line_color='k', line_width=1)
-TP2_vector = f * hv.Labels(f).opts(opts.Labels(text_color='white', xrotation=45, fontsize={'labels':12,'yticks':14}))
-hv.save(TP2_vector, osp.join('figures', 'Figure01_E-SNYCQ_ICQF_TP2_Values.html'), backend='bokeh')
+TP2_vector = f * hv.Labels(f).opts(opts.Labels(text_color='white', xrotation=90, fontsize={'labels':12,'yticks':14}))
+#hv.save(TP2_vector, osp.join('figures', 'Figure01_E-SNYCQ_ICQF_TP2_Values.html'), backend='bokeh')
 TP2_vector
 
 
 # ![TP2 Values](./figures/Figure01_D-SNYCQ_ICQF_TP2_Values.png)
+# 
+# ### Save Publication Ready and source data
+
+# In[31]:
+
+
+svg_plot = TP2_vector.opts(hooks=[svg_backend])
+
+bokeh_obj = hv.render(svg_plot, backend="bokeh")
+
+if isinstance(bokeh_obj, Plot):
+    bokeh_obj.output_backend = "svg"
+
+for p in bokeh_obj.select({"type": Plot}):
+    p.output_backend = "svg"
+
+save(
+    bokeh_obj,
+    filename="./figures/Figure01_E-SNYCQ_ICQF_TP2_Values.html",
+    resources=INLINE,
+    title="Figure01_E-SNYCQ_ICQF_TP2_Values",
+)
+
+
+# In[33]:
+
+
+F2_vals_to_plot.to_csv('./source_data_files/figure_01_e.csv', float_format='%.0f')
+
 
 # ## 4.3 Plot examples of scans sitting on both corners of the embedding
 
-# In[28]:
+# In[34]:
 
 
 sorted_q = Q.sort_values(by=['Factor 1','Factor 2'],ascending=False).index
 
 
-# In[30]:
+# In[35]:
 
 
 top_left_scans = W[(W['Factor 1']<0.35) & (W['Factor 2']>0.9)].index
@@ -394,8 +578,39 @@ top_left_scans_plot
 
 
 # ![Top Left Scans](./figures/Figure01_C-SNYCQ_ICQF_TopLeftScans.png)
+# 
+# ### Saving SVG and Data source
 
-# In[31]:
+# In[42]:
+
+
+svg_plot = top_left_scans_plot.opts(hooks=[svg_backend])
+
+bokeh_obj = hv.render(svg_plot, backend="bokeh")
+
+if isinstance(bokeh_obj, Plot):
+    bokeh_obj.output_backend = "svg"
+
+for p in bokeh_obj.select({"type": Plot}):
+    p.output_backend = "svg"
+
+save(
+    bokeh_obj,
+    filename="./figures/Figure01_C-SNYCQ_ICQF_TopLeftScans.html",
+    resources=INLINE,
+    title="Figure01_C-SNYCQ_ICQF_TopLeftScans",
+)
+
+
+# In[39]:
+
+
+a[sorted_q].to_csv('./source_data_files/figure_01_c_top_left_scans.csv', float_format='%.0f', index=None)
+
+
+# Let's now show a few representaive scans from the bottom right corner
+
+# In[44]:
 
 
 bot_right_scans = W[(W['Factor 1']>0.9) & (W['Factor 2']<0.1)].index
@@ -406,6 +621,35 @@ bot_right_scans_plot
 
 
 # ![Bottom Right Scans](./figures/Figure01_C-SNYCQ_ICQF_BotRightScans.png)
+# 
+# ### Save a SVG and Data Source
+
+# In[43]:
+
+
+svg_plot = bot_right_scans_plot.opts(hooks=[svg_backend])
+
+bokeh_obj = hv.render(svg_plot, backend="bokeh")
+
+if isinstance(bokeh_obj, Plot):
+    bokeh_obj.output_backend = "svg"
+
+for p in bokeh_obj.select({"type": Plot}):
+    p.output_backend = "svg"
+
+save(
+    bokeh_obj,
+    filename="./figures/Figure01_C-SNYCQ_ICQF_BotRightScans.html",
+    resources=INLINE,
+    title="Figure01_C-SNYCQ_ICQF_BotRightScans",
+)
+
+
+# In[45]:
+
+
+a[sorted_q].to_csv('./source_data_files/figure_01_c_bot_right_scans.csv', float_format='%.0f', index=None)
+
 
 # Save ICQF embedding to disk
 
