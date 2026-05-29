@@ -385,7 +385,7 @@ NBS_mw.loc[NBS_mw['pval'] > pBonf_NBS, 'U (pBonf<0.05)'] = np.nan
 NBS_mw.loc[NBS_mw['pval'] > 0.05, 'U (p<0.05)'] = np.nan
 
 
-# In[23]:
+# In[20]:
 
 
 plot = NBS_cohen_d.hvplot.heatmap(height=600, fontscale=1,line_color='k',line_width=1, width=245, clim=(-2,2), cmap='RdBu_r').opts(xrotation=90, 
@@ -395,10 +395,42 @@ NBS_ttest.drop('pval',axis=1).hvplot.heatmap(height=600, fontscale=1,cmap='RdBu_
 NBS_mw.drop('pval',axis=1).hvplot.heatmap(height=600, fontscale=1,cmap='RdBu_r',line_color='k',line_width=1, width=275).opts(xrotation=90, clabel='Mann-Whitney U statistic')
 
 
+# ### Saving figure in SVG format and also source data file
+
 # In[25]:
 
 
-hv.save(plot, './figures/Figure04.html')
+NBS_cohen_d.to_csv('./source_data_files/figure_04_a.csv')
+NBS_ttest.to_csv('./source_data_files/figure_04_b.csv')
+NBS_mw.to_csv('./source_data_files/figure_04_c.csv')
+
+
+# In[21]:
+
+
+import holoviews as hv
+
+from bokeh.io import save
+from bokeh.models.plots import Plot
+from bokeh.resources import INLINE
+
+hv.extension("bokeh")
+
+bokeh_obj = hv.render(plot, backend="bokeh")
+
+# Set SVG backend on every Bokeh plot inside the rendered object
+if isinstance(bokeh_obj, Plot):
+    bokeh_obj.output_backend = "svg"
+
+for p in bokeh_obj.select({"type": Plot}):
+    p.output_backend = "svg"
+
+save(
+    bokeh_obj,
+    filename="./figures/Figure04.html",
+    resources=INLINE,
+    title="Figure04",
+)
 
 
 # ![Figure04](./figures/Figure04.png)
@@ -515,7 +547,7 @@ print(CPM_pBonf)
 
 # 7. Plot the results based both in R and Spearman R
 
-# In[38]:
+# In[35]:
 
 
 plot = show_results(CPM_R,CPM_Rp,CPM_pBonf,clabel='Pearson Correlation (R) | pBONF < 0.05') 
@@ -524,3 +556,43 @@ plot
 
 
 # ![Figure09](./figures/Figure09.png)
+
+# In[36]:
+
+
+hv.extension("bokeh")
+
+bokeh_obj = hv.render(plot, backend="bokeh")
+
+# Set SVG backend on every Bokeh plot inside the rendered object
+if isinstance(bokeh_obj, Plot):
+    bokeh_obj.output_backend = "svg"
+
+for p in bokeh_obj.select({"type": Plot}):
+    p.output_backend = "svg"
+
+save(
+    bokeh_obj,
+    filename="./figures/Figure09.html",
+    resources=INLINE,
+    title="Figure09",
+)
+
+
+# In[38]:
+
+
+CPM_R.to_csv('./source_data_files/figure09_R.csv')
+
+
+# In[43]:
+
+
+CPM_Rp.to_csv('./source_data_files/figure09_p.csv', float_format='%.5f')
+
+
+# In[ ]:
+
+
+
+
