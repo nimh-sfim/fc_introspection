@@ -197,7 +197,7 @@ pval_ord.name         = 'pval'
 n_comps = corr_ord.shape[0]*(corr_ord.shape[0]-1)/2
 
 
-# In[15]:
+# In[ ]:
 
 
 # Plot: correlation heatmap with bold black outline for pBonf < 0.05
@@ -213,10 +213,52 @@ plot = show_correlations_with_statistics(
     clim=(-0.7, 0.7)
 )
 
-pn.Row(plot).save(osp.join('figures', 'Figure01_B-SNYCQcorr.html'))
-
 
 # ![Figure 01 - Panel B](./figures/Figure01_B-SNYCQcorr.png)
+# 
+# ### Saving Publication ready format data and figure panel
+# 
+# We will save now the panel as HTML in a way that we can then export to PDF via the "Print..." option of the browser
+
+# In[16]:
+
+
+import holoviews as hv
+
+from bokeh.io import save
+from bokeh.models.plots import Plot
+from bokeh.resources import INLINE
+
+hv.extension("bokeh")
+
+def svg_backend(hv_plot, element):
+    hv_plot.state.output_backend = "svg"
+
+svg_plot = plot.opts(hooks=[svg_backend])
+
+bokeh_obj = hv.render(svg_plot, backend="bokeh")
+
+# Extra safety for layouts / overlays
+if isinstance(bokeh_obj, Plot):
+    bokeh_obj.output_backend = "svg"
+
+for p in bokeh_obj.select({"type": Plot}):
+    p.output_backend = "svg"
+
+save(
+    bokeh_obj,
+    filename="./figures/Figure01_B-SNYCQcorr.html",
+    resources=INLINE,
+    title="Figure01_B",
+)
+
+
+# In[17]:
+
+
+corr_ord.to_csv('./source_data_files/figure_01_b.csv',float_format='%.2f')
+print('Saving source data for Figure 01B: SNYCQ correlation matrix with significant correlations outlined in black [./source_data_files/figure_01_b.csv]')
+
 
 # ***
 # # 4. Dimensionality Reduction with T-SNE
@@ -228,7 +270,7 @@ pn.Row(plot).save(osp.join('figures', 'Figure01_B-SNYCQcorr.html'))
 # |dimensionality|  {1,2,3}|
 # | perplexity | {5,9,10,13,15,18,20,30,40,50} |
 
-# In[16]:
+# In[18]:
 
 
 def choose_tsne_perplexity(X, random_state=RANDOM_STATE,n_components=[1,2,3]):
@@ -259,7 +301,7 @@ best_nc, best_perp, tw_table = choose_tsne_perplexity(X_scaled_kept_df.values, R
 
 # Now we show what were the values that maximized the trustworthiness of the T-SNE embeddings
 
-# In[17]:
+# In[19]:
 
 
 print(f"[t-SNE tuning] Selected perplexity = {best_perp}")
@@ -269,7 +311,7 @@ print(f"[t-SNE tuning] Trustworthiness = {tw_table['trustworthiness'].max()}")
 
 # ## 4.2. Compute T-SNE with optimal dimensionality and perplexity
 
-# In[18]:
+# In[20]:
 
 
 tsne = TSNE(
@@ -287,7 +329,7 @@ else:
 # 
 # To aid with the interpretation of how T-SNE dimensions relate to the original items in the SNYC survey, we modeled each of the SNYCQ items as a linear function of the three T-SNE coordinates. We then used these coefficients to draw biplot arrows depicting the directions of maximal change for each SNYCQ item in the 3D T-NSE embedding space.
 
-# In[19]:
+# In[21]:
 
 
 def compute_biplot_arrows(emb_df, features_df, feature_names):
@@ -320,7 +362,7 @@ def compute_biplot_arrows(emb_df, features_df, feature_names):
     return arrows_df
 
 
-# In[20]:
+# In[22]:
 
 
 tsne_arrows = compute_biplot_arrows(emb,X_raw_kept_df,SNYCQ_items)
@@ -332,14 +374,14 @@ tsne_arrows['beta_z'] = tsne_arrows['beta_z'] * 5
 
 # ## 4.4. Plot the T-SNE embedding colored by one SNYCQ item
 
-# In[21]:
+# In[23]:
 
 
 # Create a new DF with both th original values and the dimensions in T-SNE (for plotting purposes)
 emb_plus = pd.concat([emb, X_raw_kept_df], axis=1)
 
 
-# In[22]:
+# In[24]:
 
 
 tsne_camera_object = dict(
@@ -427,7 +469,7 @@ fig.update_layout(
 fig.show()
 
 
-# In[23]:
+# In[25]:
 
 
 fig.write_html(osp.join('figures', 'FigureXX-SNYCQtsne_colorby_People.html'))
@@ -454,7 +496,7 @@ fig.write_html(osp.join('figures', 'FigureXX-SNYCQtsne_colorby_People.html'))
 # 
 # The next cell computes the GMM clustering for K = 2
 
-# In[24]:
+# In[26]:
 
 
 K          = 2
@@ -465,7 +507,7 @@ labels_gmm = proba.argmax(axis=1)
 
 # Now we do the same using KMeans for comparison
 
-# In[25]:
+# In[27]:
 
 
 km = KMeans(n_clusters=K, random_state=RANDOM_STATE, n_init=10).fit(X_scaled_kept_df.values)
@@ -478,7 +520,7 @@ labels_km = km.predict(X_scaled_kept_df.values)
 # 
 # 1. Compute the SI for each clustering result
 
-# In[26]:
+# In[28]:
 
 
 sil_gmm = silhouette_score(X_scaled_kept_df.values, labels_gmm)
@@ -487,7 +529,7 @@ sil_km  = silhouette_score(X_scaled_kept_df.values, labels_km)
 
 # 2. Compute the ARI comparing both methods
 
-# In[27]:
+# In[29]:
 
 
 ari_km_gmm = adjusted_rand_score(labels_km, labels_gmm)
@@ -495,7 +537,7 @@ ari_km_gmm = adjusted_rand_score(labels_km, labels_gmm)
 
 # 3. Print the computed statistics
 
-# In[28]:
+# In[30]:
 
 
 print(f"[GMM k=2 sph] silhouette={sil_gmm:.3f}")
@@ -509,7 +551,7 @@ print(f"[Sizes] GMM clusters: {np.bincount(labels_gmm)}")
 
 # ## 5.3. Bootstraing Analysis for GMM
 
-# In[29]:
+# In[31]:
 
 
 def subsample_labels(model, X, frac=0.8, seed=0):
@@ -549,14 +591,14 @@ print("Bootstrap ARI (GMM) mean±sd:    %.2f +/- %.2f" %(gm_mean_ari, gm_sd_ari)
 # 
 # One additional bonus of GMM over K-means is that GMM not being a hard clustering algorithm, it outputs cluster membershup probabilities. We will use these to detect scans with ambiguous membership. Such scans will not be included in the population differences analyses later on.
 
-# In[30]:
+# In[32]:
 
 
 proba_df = pd.DataFrame(proba, index=idx_kept, columns=['P(c1)','P(c2)'])
 proba_df.hvplot.hist('P(c1)', title='Probability Distribution for Membership in Cluster 1')
 
 
-# In[31]:
+# In[33]:
 
 
 # store probabilities & an ambiguity flag
@@ -566,7 +608,7 @@ ambiguity = np.maximum(1 - p1, p1) < (AMBIG_THRESH)
 
 # Save final cluster/sets labels in a new pandas dataframe: ```group_info_df```
 
-# In[32]:
+# In[34]:
 
 
 # Store that information with clear labels in a pandas Dataframe
@@ -600,7 +642,7 @@ print('++ INFO: Saved t-SNE embeddings with scaled features and group info to CS
 
 # ## 5.5. Plot the T-SNE embedding again, but this time with scans colored according to set membership
 
-# In[35]:
+# In[36]:
 
 
 tsne_camera_object = dict(
@@ -675,13 +717,27 @@ fig.update_layout(
 fig.show()
 
 
-# In[36]:
+# In[37]:
 
 
 fig.write_html(osp.join('figures', 'Figure01_K_SNYCQtsneWclusters.html'))
 
 
 # ![TSNE with clusters](./figures/Figure01_K-SNYCQtnseWclusters.png)
+
+# ### Save Publication Ready Figure Panel and Data source
+
+# In[38]:
+
+
+fig.write_image(osp.join('figures', 'Figure01_K_SNYCQtsneWclusters.svg'))
+
+
+# In[39]:
+
+
+emb_plus[['TSNE1', 'TSNE2', 'TSNE3','Set Label']].to_csv('./source_data_files/figure_01_k.csv', float_format='%.3f', index=False)
+
 
 # ***
 # ## 6. Explore how Sets A and B differ in terms of SNYCQ items, vigilance, head motion and basic demographics
@@ -697,7 +753,7 @@ fig.write_html(osp.join('figures', 'Figure01_K_SNYCQtsneWclusters.html'))
 
 # ## 6.1. Examination of differences in age distribution
 
-# In[37]:
+# In[43]:
 
 
 # Load Demographic Data
@@ -729,7 +785,7 @@ age_counts_per_group = age_counts_per_group.infer_objects()
 age_counts_per_group = age_counts_per_group.sort_values(by='Age Range', ascending=True)
 
 
-# In[38]:
+# In[44]:
 
 
 A = age_counts_per_group.set_index(['Group','Age Range']).loc['A',:]['# Scans']
@@ -738,19 +794,48 @@ W, w_p = wilcoxon(A,B, alternative='two-sided', method='exact')
 print('++ AGE ACROSS SETS: Wilcoxon = %.2f (p = %.2f)' % (W,w_p))
 
 
-# In[39]:
+# In[ ]:
 
 
 # Generate graph that will get later added to a Grid with information about all variables
 age_bar_plot = age_counts_per_group.hvplot.bar(x='Age Range',by='Group', alpha=0.5, xlabel='Age',cmap=["#1f77b4","#ff7f0e"]).opts(toolbar=None, xrotation=90, width=250, height=200, fontscale=1)
-hv.save(age_bar_plot, osp.join('figures', 'Figure01_I-AgePerSet.html'))
 
 
 # ![Age per set](./figures/Figure01_I-AgePerSet.png)
 
+# ### Save publication ready and source data for Figure 01I
+
+# In[48]:
+
+
+age_counts_per_group.to_csv('./source_data_files/figure_01_i.csv', index=False)
+
+
+# In[50]:
+
+
+svg_plot = age_bar_plot.opts(hooks=[svg_backend])
+
+bokeh_obj = hv.render(svg_plot, backend="bokeh")
+
+# Extra safety for layouts / overlays
+if isinstance(bokeh_obj, Plot):
+    bokeh_obj.output_backend = "svg"
+
+for p in bokeh_obj.select({"type": Plot}):
+    p.output_backend = "svg"
+
+save(
+    bokeh_obj,
+    filename="./figures/Figure01_I-AgePerSet.html",
+    resources=INLINE,
+    title="Figure01_I",
+)
+
+
 # ## 6.2. Examination of differneces in gender distribution
 
-# In[40]:
+# In[51]:
 
 
 # Extract information about age
@@ -772,18 +857,48 @@ sex_counts_per_group = sex_counts_per_group.infer_objects()
 sex_counts_per_group
 
 
-# In[41]:
+# In[52]:
 
 
 sex_bar_plot = sex_counts_per_group.hvplot.bar(stacked=True, xlabel='', legend='top_left', title='', ylabel='# Scans', color=['white','gray']).opts(toolbar=None, width=250, height=200, fontscale=1)
-hv.save(sex_bar_plot, osp.join('figures', 'Figure01_J-SexPerSet.html'))
+#hv.save(sex_bar_plot, osp.join('figures', 'Figure01_J-SexPerSet.html'))
 
 
 # ![Sex per Set](./figures/Figure01_J-SexPerSet.png)
+# 
+# ### Save Publication Ready and Data Source
+
+# In[56]:
+
+
+svg_plot = sex_bar_plot.opts(hooks=[svg_backend])
+
+bokeh_obj = hv.render(svg_plot, backend="bokeh")
+
+# Extra safety for layouts / overlays
+if isinstance(bokeh_obj, Plot):
+    bokeh_obj.output_backend = "svg"
+
+for p in bokeh_obj.select({"type": Plot}):
+    p.output_backend = "svg"
+
+save(
+    bokeh_obj,
+    filename="./figures/Figure01_J-SexPerSet.html",
+    resources=INLINE,
+    title="Figure01_J",
+)
+
+
+# In[55]:
+
+
+sex_counts_per_group.to_csv('./source_data_files/figure_01_j.csv')
+
 
 # ## 6.3. Examination of diffrences in head motion
 
-# In[42]:
+# In[57]:
 
 
 # Load motion information for each scan
@@ -797,7 +912,7 @@ U, u_p     = mannwhitneyu(mot_A,mot_B,alternative='two-sided')
 print('++ AGE ACROSS SETS: Mann-Whiteney U    = %.2f (p = %.2f)' % (U,u_p))
 
 
-# In[43]:
+# In[ ]:
 
 
 mot_A = mot_info.loc[scans_in_A,'Mean Rel Motion']
@@ -806,15 +921,44 @@ overlay = mot_A.hvplot.hist(label='Set A', c=group_colors['Set A'], title='', wi
           mot_B.hvplot.hist(label='Set B', c=group_colors['Set B'], alpha=0.5, shared_axes=False, bins=20, normed=True) * \
           mot_A.hvplot.kde(label='Set A', c=group_colors['Set A'],  alpha=0.5, shared_axes=False) * \
           mot_B.hvplot.kde(label='Set B', c=group_colors['Set B'], alpha=0.5, shared_axes=False)
-hv.save(overlay, osp.join('figures', 'Figure01_H-MotionPerSet.html'))
 
 
 # ![Motion per set](./figures/Figure01_H-MotionPerSet.png)
+# 
+# ### Save Publication ready figure and Source Data
+
+# In[59]:
+
+
+svg_plot = overlay.opts(hooks=[svg_backend])
+
+bokeh_obj = hv.render(svg_plot, backend="bokeh")
+
+# Extra safety for layouts / overlays
+if isinstance(bokeh_obj, Plot):
+    bokeh_obj.output_backend = "svg"
+
+for p in bokeh_obj.select({"type": Plot}):
+    p.output_backend = "svg"
+
+save(
+    bokeh_obj,
+    filename="./figures/Figure01_H-MotionPerSet.html",
+    resources=INLINE,
+    title="Figure01_H",
+)
+
+
+# In[64]:
+
+
+pd.concat([mot_A.reset_index(drop=True), mot_B.reset_index(drop=True)], axis=1, keys=['Set A','Set B']).to_csv('./source_data_files/figure_01_h.csv', index=False)
+
 
 # ## 6.4 Examination of Vigilance
 # 
 
-# In[44]:
+# In[65]:
 
 
 vigilance = SNYCQ_wVigilance['Vigilance']
@@ -828,7 +972,7 @@ U, u_p      = mannwhitneyu(vigilance_A,vigilance_B,alternative='two-sided')
 print('++ VIGILANCE ACROSS SETS: Mann-Whiteney U    = %.2f (p = %.2f)' % (U,u_p))
 
 
-# In[45]:
+# In[66]:
 
 
 vigilance_A      = vigilance.loc[scans_in_A]
@@ -837,14 +981,43 @@ overlay = vigilance_A.hvplot.hist(label='Set A', c=group_colors['Set A'], title=
           vigilance_B.hvplot.hist(label='Set B', c=group_colors['Set B'], alpha=0.5, shared_axes=False, bins=[0,10,20,30,40,50,60,70,80,90,100], normed=True) * \
           vigilance_A.hvplot.kde(label='Set A', c=group_colors['Set A'],  alpha=0.5, shared_axes=False) * \
           vigilance_B.hvplot.kde(label='Set B', c=group_colors['Set B'], alpha=0.5, shared_axes=False)
-hv.save(overlay, osp.join('figures', 'Figure01_G-VigilancePerSet.html'))
+#hv.save(overlay, osp.join('figures', 'Figure01_G-VigilancePerSet.html'))
 
 
 # ![Wakefulness per set](./figures/Figure01_G-VigilancePerSet.png)
+# ### Save Publication Ready Panel and Source Data
+
+# In[67]:
+
+
+svg_plot = overlay.opts(hooks=[svg_backend])
+
+bokeh_obj = hv.render(svg_plot, backend="bokeh")
+
+# Extra safety for layouts / overlays
+if isinstance(bokeh_obj, Plot):
+    bokeh_obj.output_backend = "svg"
+
+for p in bokeh_obj.select({"type": Plot}):
+    p.output_backend = "svg"
+
+save(
+    bokeh_obj,
+    filename="./figures/Figure01_G-VigilancePerSet.html",
+    resources=INLINE,
+    title="Figure01_G",
+)
+
+
+# In[68]:
+
+
+pd.concat([vigilance_A.reset_index(drop=True), vigilance_B.reset_index(drop=True)], axis=1, keys=['Set A','Set B']).to_csv('./source_data_files/figure_01_g.csv', index=False)
+
 
 # ## 6.5. Examination of differences in SNYCQ items
 
-# In[46]:
+# In[69]:
 
 
 def cohens_d(x0, x1):
@@ -909,7 +1082,7 @@ def calculate_stats_per_set(df, items, label_col='Set Label', method="bootstrap"
     return out_df
 
 
-# In[47]:
+# In[70]:
 
 
 non_ambiguous_scans = emb_plus[emb_plus['Set Label']!='Ambiguous'].index
@@ -917,10 +1090,17 @@ data_items          = SNYCQ_wVigilance.loc[non_ambiguous_scans,:]
 data_labels         = emb_plus.loc[non_ambiguous_scans,'Set Label']
 data                = pd.concat([data_items,data_labels],axis=1)
 stats_per_set       = calculate_stats_per_set(data,[c for c in data_items.columns if c !='Vigilance'],'Set Label')
-stats_per_set.sort_values(by="d(Set B - Set A)", ascending=False).round(2)[['Set A (mean)','Set B (mean)','d(Set B - Set A)','MW (U)','MW (p)']]
+table_02 = stats_per_set.sort_values(by="d(Set B - Set A)", ascending=False).round(2)[['Set A (mean)','Set B (mean)','d(Set B - Set A)','MW (U)','MW (p)']]
+table_02
 
 
-# In[48]:
+# In[71]:
+
+
+table_02.to_csv('./source_data_files/table_02.csv', float_format='%.2f')
+
+
+# In[72]:
 
 
 layout                = pn.GridBox(ncols=4)
@@ -947,7 +1127,7 @@ layout.save( osp.join('figures', 'Supplementary_Figure02.html'))
 
 # Provide the same information in more concise manner in the form of a radar plot
 
-# In[49]:
+# In[79]:
 
 
 def plot_radar_means_with_ci(
@@ -988,7 +1168,7 @@ def plot_radar_means_with_ci(
     pad = max(1.0, 0.05 * (rmax - rmin))
 
     # plot
-    plt.figure(figsize=(7, 7))
+    fig = plt.figure(figsize=(7, 7))
     ax = plt.subplot(111, polar=True)
 
     # mean lines
@@ -1016,9 +1196,10 @@ def plot_radar_means_with_ci(
 
     plt.tight_layout()
     plt.show()
+    return fig
 
 
-# In[50]:
+# In[80]:
 
 
 # Plot (keep your preferred order of spokes)
@@ -1026,11 +1207,25 @@ plot = plot_radar_means_with_ci(stats_per_set, order=list(items_in_descending_d)
                           title="SNYCQ per-cluster means with 95% CI")
 
 
+# ### Save Publication Ready Panel and Source Data for the Radar Plot
+
+# In[88]:
+
+
+stats_per_set.to_csv('./source_data_files/figure_01_f.csv', float_format='%.2f')
+
+
+# In[85]:
+
+
+plot.savefig('./figures/Figure01_F.svg', format='svg', bbox_inches='tight')
+
+
 # ***
 # 
 # # Distribution of SNYCQ values (Supplementary Figure 1)
 
-# In[51]:
+# In[86]:
 
 
 layout = None
