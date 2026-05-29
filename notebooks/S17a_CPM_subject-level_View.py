@@ -103,7 +103,7 @@ null_predictions_xr = null_predictions_xr.assign_coords({'Behavior':[BEHAVIOR_LA
 # 
 # We first compute accuracies in terms of the 
 
-# In[9]:
+# In[8]:
 
 
 get_ipython().run_cell_magic('time', '', "accuracy_real          = {BEHAVIOR:pd.DataFrame(index=range(Niters_real), columns=['Accuracy']) for BEHAVIOR in BEHAVIOR_LABELS}\naccuracy_real_Spearman = {BEHAVIOR:pd.DataFrame(index=range(Niters_real), columns=['Accuracy']) for BEHAVIOR in BEHAVIOR_LABELS}\n\np_values          = pd.DataFrame(index=BEHAVIOR_LABELS,columns=['Non Parametric','Parametric'])\np_values_Spearman = pd.DataFrame(index=BEHAVIOR_LABELS,columns=['Non Parametric','Parametric'])\n\nfor BEHAVIOR in BEHAVIOR_LABELS:\n    for niter in tqdm(range(Niters_real), desc=BEHAVIOR):\n        observed  = pd.Series(real_predictions_xr.loc[BEHAVIOR,niter,:,'observed'].values)\n        if E_SUMMARY_METRIC == 'ridge':\n            predicted = pd.Series(real_predictions_xr.loc[BEHAVIOR,niter,:,'predicted (ridge)'].values)\n        else:\n            predicted = pd.Series(real_predictions_xr.loc[BEHAVIOR,niter,:,'predicted (glm)'].values)\n        accuracy_real[BEHAVIOR].loc[niter]  = observed.corr(predicted, method='pearson')\n        accuracy_real_Spearman[BEHAVIOR].loc[niter]  = observed.corr(predicted, method='spearman')\n        _,p_values.loc[BEHAVIOR,'Parametric'] = pearsonr(observed,predicted)\n        _,p_values_Spearman.loc[BEHAVIOR,'Parametric'] = spearmanr(observed,predicted)\n")
@@ -111,7 +111,7 @@ get_ipython().run_cell_magic('time', '', "accuracy_real          = {BEHAVIOR:pd.
 
 # Get median accuracies across all 100 real attempts
 
-# In[11]:
+# In[9]:
 
 
 median_accuracies = pd.DataFrame(columns=['Pearson R','Spearman R'], index=BEHAVIOR_LABELS)
@@ -131,7 +131,7 @@ print(f'++ INFO: Median accuracies saved to ../resources/cpm/{SPLIT_MODE}_final_
 
 # Print accuracies reported in Table 4
 
-# In[14]:
+# In[10]:
 
 
 median_accuracies['Pearson R'].infer_objects().round(2)
@@ -139,7 +139,7 @@ median_accuracies['Pearson R'].infer_objects().round(2)
 
 # ## 2.2. Null data
 
-# In[15]:
+# In[11]:
 
 
 get_ipython().run_cell_magic('time', '', "accuracy_null = {BEHAVIOR:pd.DataFrame(index=range(Niters_null), columns=['Accuracy']) for BEHAVIOR in BEHAVIOR_LABELS}\nfor BEHAVIOR in BEHAVIOR_LABELS:\n    for niter in tqdm(range(Niters_null), desc=BEHAVIOR):\n        observed  = pd.Series(null_predictions_xr.loc[BEHAVIOR,niter,:,'observed'].values)\n        if E_SUMMARY_METRIC == 'ridge':\n            predicted = pd.Series(null_predictions_xr.loc[BEHAVIOR,niter,:,'predicted (ridge)'].values)\n        else:\n            predicted = pd.Series(null_predictions_xr.loc[BEHAVIOR,niter,:,'predicted (glm)'].values)\n        accuracy_null[BEHAVIOR].loc[niter]  = observed.corr(predicted, method=ACCURACY_METRIC)\n")
@@ -153,7 +153,7 @@ get_ipython().run_cell_magic('time', '', "accuracy_null = {BEHAVIOR:pd.DataFrame
 # 
 # We use the formula on section 2.4.4 from Finn & Bandettini ["Movie-watching outperforms rest for functional connectivity-based prediction of behavior"](https://www.sciencedirect.com/science/article/pii/S1053811921002408) NeuroImage 2021
 
-# In[16]:
+# In[12]:
 
 
 p_values.columns.name = 'p-value'
@@ -163,7 +163,7 @@ for BEHAVIOR in BEHAVIOR_LABELS:
 
 # Now we apply the FDRbh correction
 
-# In[17]:
+# In[13]:
 
 
 (reject_bonf, p_values['Non Parametric, FDRbh'], _, _ ) = multipletests(p_values['Non Parametric'],alpha=0.05,method='fdr_bh')
@@ -171,7 +171,7 @@ for BEHAVIOR in BEHAVIOR_LABELS:
 
 # Here we now show the remaining columns in Table 4
 
-# In[20]:
+# In[14]:
 
 
 p_values.infer_objects().round(3)[['Parametric','Non Parametric','Non Parametric, FDRbh']]
@@ -181,7 +181,7 @@ p_values.infer_objects().round(3)[['Parametric','Non Parametric','Non Parametric
 # # 4. Generate Prediction-reporting Figures
 # 
 
-# In[21]:
+# In[15]:
 
 
 import warnings
@@ -190,13 +190,13 @@ warnings.simplefilter(action='ignore', category=FutureWarning)
 
 # We create a new dataframe with the accuracy for all iterations in tidy form (ideal for plotting with sns functions)
 
-# In[24]:
+# In[16]:
 
 
 get_ipython().run_cell_magic('time', '', "rows = []\n\nfor BEHAVIOR in BEHAVIOR_LABELS:\n    for i in tqdm(range(Niters_null), desc=BEHAVIOR):\n        rows.append({\n            'Question': BEHAVIOR,\n            'Iteration': i,\n            'R': accuracy_null[BEHAVIOR].loc[i].values[0]\n        })\n\nnull_df = pd.DataFrame(rows, columns=['Question', 'Iteration', 'R'])\n")
 
 
-# In[25]:
+# In[17]:
 
 
 get_ipython().run_cell_magic('time', '', "rows = []\n\nfor BEHAVIOR in BEHAVIOR_LABELS:\n    for i in tqdm(range(Niters_real), desc=BEHAVIOR):\n        rows.append({\n            'Question': BEHAVIOR,\n            'Iteration': i,\n            'R': accuracy_real[BEHAVIOR].loc[i].values[0]\n        })\n\nreal_df = pd.DataFrame(rows, columns=['Question', 'Iteration', 'R'])\n")
@@ -219,14 +219,14 @@ print('++ INFO: Data written to disk [%s]' % output_path)
 # ## 4.1. Plot without statistical annotations
 # 
 
-# In[27]:
+# In[18]:
 
 
 median_width = 0.4
 sns.set(style='whitegrid')
 
 
-# In[28]:
+# In[19]:
 
 
 fig,ax = plt.subplots(1,1,figsize=(15,5))
@@ -244,7 +244,7 @@ ax.set_xlabel('SNYCQ Item')
 
 # ## 4.2. Plot with Statistical Annotations
 
-# In[29]:
+# In[20]:
 
 
 fig,ax = plt.subplots(1,1,figsize=(15,5))
@@ -278,11 +278,11 @@ ax.set_xlabel('SNYCQ Item')
 
 # We will also plot the same results, but separated in three different panels. One for the wakefulness question, one for the two factors, and one for the 11 questions entering the Sparse Box-Constrained Non-Negative Matrix Factorization. This might come handy for presentations, yet it is exactly the same information as above.
 
-# In[30]:
+# In[36]:
 
 
 median_width = 0.4
-sns.set(style='whitegrid')
+sns.set(style='whitegrid', font_scale=1.3)
 fig,ax = plt.subplots(1,3 ,figsize=(20,5), gridspec_kw={'width_ratios': [1,2,14]})
 # Vigilance
 sns.boxenplot(data=null_df[null_df['Question']=='Wakefulness'],x='Question',y='R', color='lightgray', ax=ax[0]) 
@@ -306,7 +306,7 @@ for tick, text in zip(ax[0].get_xticks(), ax[0].get_xticklabels()):
     elif p <= 1.00e-04:
         annot = '****'
     max_val = real_df.set_index('Question').max()['R']
-    ax[0].annotate(annot, xy=(tick, max_val+0.02), ha='center', fontsize=15)
+    ax[0].annotate(annot, xy=(tick, max_val+0.02), ha='center', fontsize=20)
     
 ax[0].set_ylim(-.3,.4)
 ax[0].set_ylabel('Prediction Accuracy: R(Observed,Predicted)');
@@ -334,8 +334,8 @@ for tick, text in zip(ax[1].get_xticks(), ax[1].get_xticklabels()):
     elif p <= 1.00e-04:
         annot = '****'
     max_val = real_df.set_index('Question').max()['R']
-    ax[1].annotate(annot, xy=(tick, max_val+0.02), ha='center', fontsize=15)
-ax[1].set_xticklabels(['Pattern 1','Pattern 2'])
+    ax[1].annotate(annot, xy=(tick, max_val+0.02), ha='center', fontsize=20)
+ax[1].set_xticklabels(['TP 1','TP 2'])
 ax[1].set_ylim(-.3,.4)
 ax[1].set_ylabel('Prediction Accuracy: R(Observed,Predicted)');
 ax[1].set_xlabel('Thought Patterns')
@@ -365,7 +365,7 @@ for tick, text in zip(ax[2].get_xticks(), ax[2].get_xticklabels()):
         annot = '****'
         print(text, '%.2f' % median_val)
     max_val = real_df.set_index('Question').max()['R']
-    ax[2].annotate(annot, xy=(tick, max_val+0.02), ha='center', fontsize=15)
+    ax[2].annotate(annot, xy=(tick, max_val+0.02), ha='center')
     
 ax[2].set_ylim(-.3,.4)
 ax[2].set_ylabel('Prediction Accuracy: R(Observed,Predicted)');
@@ -378,6 +378,26 @@ plt.tight_layout()
 
 fig.savefig('./figures/Figure05_AC-CPMsubject-level-acc.png')
 
+
+# ### Save as SVG and also source data file
+
+# In[37]:
+
+
+import matplotlib as mpl
+mpl.rcParams['svg.fonttype'] = 'none'
+fig.savefig('./figures/Figure05_AC-CPMsubject-level-acc.svg', format='svg', bbox_inches='tight')
+
+
+# In[42]:
+
+
+real_df.to_csv('./source_data_files/figure05_real_iterations.csv', float_format='%.4f')
+null_df.to_csv('./source_data_files/figure05_null_iterations.csv', float_format='%.4f')
+
+
+# ***
+# # Additional visualizations of the same results (for talks)
 
 # In[32]:
 
