@@ -1,12 +1,12 @@
 close all
 clear all
-what_to_show = ['neg']; % Options: 'pos','neg','both'
-pred_target = 'Past';
+what_to_show = ['pos']; % Options: 'pos','neg','both'
+pred_target = 'Wakefulness';
 
 % Start Parallel Pool (for efficiency)
 % ------------------------------------
-addpath('/opt/matlab/conn')
-addpath('/opt/matlab/spm12')
+%addpath('/opt/matlab/conn')
+%addpath('/opt/matlab/spm12')
 
 % Colors for NBS results
 pos_edges_color = [237, 125, 49]/255;
