@@ -55,7 +55,7 @@ nbs_lit['% Sig. Edges'] = nbs_lit['% Sig. Edges'].str.rstrip('%').astype('float'
 nbs_lit['% Sig. Nodes'] = nbs_lit['% Sig. Nodes'].str.rstrip('%').astype('float')
 
 
-# In[8]:
+# In[11]:
 
 
 N_SIG_CONNS = 458
@@ -74,8 +74,24 @@ axs[1].set_ylabel('Percentage of Nodes in Significant Edges')
 axs[1].axhline(y=100*N_SIG_NODES/380, color='r', linestyle='--', linewidth=1)
 
 
-# In[10]:
+# In[12]:
 
 
+import matplotlib as mpl
+mpl.rcParams['svg.fonttype'] = 'none'
 fig.savefig('./figures/Figure03_EF.png', dpi=300, bbox_inches='tight')
+fig.savefig('./figures/Figure03_EF.svg', format='svg', bbox_inches='tight')
+
+
+# In[14]:
+
+
+nbs_lit['% Sig. Edges'].to_csv('./source_data_files/figure_03_e.csv')
+nbs_lit['% Sig. Nodes'].to_csv('./source_data_files/figure_03_f.csv')
+
+
+# In[ ]:
+
+
+
 
