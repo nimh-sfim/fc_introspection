@@ -348,9 +348,10 @@ NBS_mw    = pd.DataFrame(columns=['U','pval'])
 NBS_cohen_d = pd.DataFrame(columns=['d'])
 
 
-# In[18]:
+# In[25]:
 
 
+df_source_data = []
 for category,surveys in NBS_surveys_per_category.items():
     for survey in surveys:
         df_survey   = pd.read_csv(survey_data_paths[survey], sep='\t', index_col=0)
@@ -363,11 +364,20 @@ for category,surveys in NBS_surveys_per_category.items():
             df                            = df.reset_index(drop=True).set_index('Group')
             set_a_values = df.loc['SetA'].values.squeeze()
             set_b_values = df.loc['SetB'].values.squeeze()
+            df_source_data.append({'Survey':survey,'Metric':metric,'# Items in Set A':set_a_values.shape[0],'# Items in Set B':set_b_values.shape[0]})
             NBS_ttest.loc[metric,'T'],NBS_ttest.loc[metric,'pval'] =    ttest_ind(set_a_values, set_b_values, alternative='two-sided')
             NBS_mw.loc[metric,'U'],   NBS_mw.loc[metric,'pval']    = mannwhitneyu(set_a_values, set_b_values, alternative='two-sided')
             NBS_cohen_d.loc[metric,'d'] = cohens_d(set_b_values,set_a_values)
 NBS_ttest = NBS_ttest.infer_objects()
 NBS_mw    = NBS_mw.infer_objects()
+
+df_source_data = pd.DataFrame(df_source_data)
+
+
+# In[28]:
+
+
+df_source_data.to_csv('./source_data_files/figure4_and_figure9_sample_sizes.csv')
 
 
 # In[19]:
