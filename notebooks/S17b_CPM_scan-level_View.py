@@ -70,7 +70,7 @@ get_ipython().run_cell_magic('time', '', "real_results_path = osp.join(RESOURCES
 
 # Updating Behavior coordinate dimensions for proper labeling of final figures so that they agree with the main text
 
-# In[6]:
+# In[5]:
 
 
 real_predictions_xr = real_predictions_xr.assign_coords({'Behavior':[BEHAVIOR_LABELS_DICT[b] for b in real_predictions_xr.Behavior.values]})
@@ -78,13 +78,13 @@ real_predictions_xr = real_predictions_xr.assign_coords({'Behavior':[BEHAVIOR_LA
 
 # ## 1.2. Randomized data
 
-# In[7]:
+# In[6]:
 
 
 get_ipython().run_cell_magic('time', '', "null_results_path = osp.join(RESOURCES_CPM_DIR,f'null-{ATLAS}-{SPLIT_MODE}-{CONFOUNDS}-{CORR_TYPE}_{E_SUMMARY_METRIC}.pkl')\nprint('++ INFO: Loading null predictions from: %s' % null_results_path)\nwith open(null_results_path,'rb') as f:\n     null_predictions_xr = pickle.load(f)\n_, Niters_null, _, _ = null_predictions_xr.shape\nprint('++ INFO: Shape of null predictions: Num Targets=%d, Num Iterations=%d, Num Scans=%d, Num Vars=%d' % (Nbehavs, Niters_null, Nscans, Nresults))\n")
 
 
-# In[8]:
+# In[7]:
 
 
 null_predictions_xr = null_predictions_xr.assign_coords({'Behavior':[BEHAVIOR_LABELS_DICT[b] for b in null_predictions_xr.Behavior.values]})
@@ -95,7 +95,7 @@ null_predictions_xr = null_predictions_xr.assign_coords({'Behavior':[BEHAVIOR_LA
 # 
 # ## 2.1. Real data
 
-# In[9]:
+# In[8]:
 
 
 get_ipython().run_cell_magic('time', '', "accuracy_real          = {BEHAVIOR:pd.DataFrame(index=range(Niters_real), columns=['Accuracy']) for BEHAVIOR in BEHAVIOR_LABELS}\n\np_values          = pd.DataFrame(index=BEHAVIOR_LABELS,columns=['Non Parametric','Parametric'])\n\nfor BEHAVIOR in BEHAVIOR_LABELS:\n    for niter in tqdm(range(Niters_real), desc=BEHAVIOR):\n        observed  = pd.Series(real_predictions_xr.loc[BEHAVIOR,niter,:,'observed'].values)\n        if E_SUMMARY_METRIC == 'ridge':\n            predicted = pd.Series(real_predictions_xr.loc[BEHAVIOR,niter,:,'predicted (ridge)'].values)\n        else:\n            predicted = pd.Series(real_predictions_xr.loc[BEHAVIOR,niter,:,'predicted (glm)'].values)\n        accuracy_real[BEHAVIOR].loc[niter]  = observed.corr(predicted, method='pearson')\n        _,p_values.loc[BEHAVIOR,'Parametric'] = pearsonr(observed,predicted)\n")
@@ -103,7 +103,7 @@ get_ipython().run_cell_magic('time', '', "accuracy_real          = {BEHAVIOR:pd.
 
 # Compute mean across all attemps
 
-# In[10]:
+# In[9]:
 
 
 median_accuracies = pd.DataFrame(columns=['Pearson R'], index=BEHAVIOR_LABELS)
@@ -119,7 +119,7 @@ median_accuracies.to_csv(median_accuracies_path)
 print('++ INFO: Median accuracies saved to: %s' % median_accuracies_path)
 
 
-# In[12]:
+# In[10]:
 
 
 display(median_accuracies.infer_objects().round(2))
@@ -127,7 +127,7 @@ display(median_accuracies.infer_objects().round(2))
 
 # ## 2.2. Null data
 
-# In[13]:
+# In[11]:
 
 
 get_ipython().run_cell_magic('time', '', "accuracy_null = {BEHAVIOR:pd.DataFrame(index=range(Niters_null), columns=['Accuracy']) for BEHAVIOR in BEHAVIOR_LABELS}\nfor BEHAVIOR in BEHAVIOR_LABELS:\n    for niter in tqdm(range(Niters_null), desc=BEHAVIOR):\n        observed  = pd.Series(null_predictions_xr.loc[BEHAVIOR,niter,:,'observed'].values)\n        if E_SUMMARY_METRIC == 'ridge':\n            predicted = pd.Series(null_predictions_xr.loc[BEHAVIOR,niter,:,'predicted (ridge)'].values)\n        else:\n            predicted = pd.Series(null_predictions_xr.loc[BEHAVIOR,niter,:,'predicted (glm)'].values)\n        accuracy_null[BEHAVIOR].loc[niter]  = observed.corr(predicted, method=ACCURACY_METRIC)\n")
@@ -140,7 +140,7 @@ get_ipython().run_cell_magic('time', '', "accuracy_null = {BEHAVIOR:pd.DataFrame
 # 
 # We use the formula on section 2.4.4 from Finn & Bandettini ["Movie-watching outperforms rest for functional connectivity-based prediction of behavior"](https://www.sciencedirect.com/science/article/pii/S1053811921002408) NeuroImage 2021
 
-# In[14]:
+# In[12]:
 
 
 p_values.columns.name = 'p-value'
@@ -150,13 +150,13 @@ for BEHAVIOR in BEHAVIOR_LABELS:
 
 # Add values after correcting for multiple comparisons using FDR
 
-# In[15]:
+# In[13]:
 
 
 (reject_bonf, p_values['Non Parametric, FDRbh'], _, _ ) = multipletests(p_values['Non Parametric'],alpha=0.05,method='fdr_bh')
 
 
-# In[16]:
+# In[14]:
 
 
 with pd.option_context("display.float_format", lambda x: "%0.1e" % x):
@@ -166,20 +166,20 @@ with pd.option_context("display.float_format", lambda x: "%0.1e" % x):
 # ***
 # # 4. Generate Prediction-reporting Figures
 
-# In[17]:
+# In[15]:
 
 
 import warnings
 warnings.simplefilter(action='ignore', category=FutureWarning)
 
 
-# In[18]:
+# In[16]:
 
 
 get_ipython().run_cell_magic('time', '', 'rows = []\n\nfor behavior in BEHAVIOR_LABELS:\n    for i in tqdm(range(Niters_null), desc=behavior):\n        r_value = accuracy_null[behavior].loc[i].values[0]\n\n        rows.append({\n            "Question": behavior,\n            "Iteration": i,\n            "R": r_value\n        })\n\nnull_df = pd.DataFrame(rows, columns=["Question", "Iteration", "R"])\n')
 
 
-# In[19]:
+# In[17]:
 
 
 get_ipython().run_cell_magic('time', '', 'rows = []\n\nfor behavior in BEHAVIOR_LABELS:\n    for i in tqdm(range(Niters_real), desc=behavior):\n        rows.append({\n            "Question": behavior,\n            "Iteration": i,\n            "R": accuracy_real[behavior].loc[i].values[0],\n        })\n\nreal_df = pd.DataFrame(rows, columns=["Question", "Iteration", "R"])\n')
@@ -202,14 +202,14 @@ print('++ INFO: Data written to disk [%s]' % output_path)
 # ## 4.1. Without statistical annotations
 # 
 
-# In[21]:
+# In[18]:
 
 
 median_width = 0.4
 sns.set(style='whitegrid')
 
 
-# In[22]:
+# In[19]:
 
 
 fig,ax = plt.subplots(1,1,figsize=(15,5))
@@ -227,7 +227,7 @@ ax.set_xlabel('SNYCQ Item')
 
 # ## 4.2. With Statistical Annotations
 
-# In[23]:
+# In[20]:
 
 
 fig,ax = plt.subplots(1,1,figsize=(15,5))
@@ -261,7 +261,7 @@ ax.set_xlabel('SNYCQ Item')
 
 # We will also plot the same results, but separated in three different panels. One for the wakefulness question, one for the two factors, and one for the 11 questions entering the Sparse Box-Constrained Non-Negative Matrix Factorization. This might come handy for presentations, yet it is exactly the same information as above.
 
-# In[24]:
+# In[21]:
 
 
 median_width = 0.4
@@ -361,6 +361,19 @@ plt.tight_layout()
 
 fig.savefig('./figures/Supplementary_Figure04-ScanLevelCPMResults.png')
 
+
+# ### Save Source Data Files
+
+# In[22]:
+
+
+real_df.to_csv('./source_data_files/suppfig04_real_iterations.csv', float_format='%.4f')
+null_df.to_csv('./source_data_files/suppfig04_null_iterations.csv', float_format='%.4f')
+
+
+# ***
+# 
+# # Other Visualizations not used
 
 # In[26]:
 
