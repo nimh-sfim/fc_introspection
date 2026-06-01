@@ -140,7 +140,7 @@ print(f"[Outliers] Flagged {(~keep).sum()} / {len(md2)}; keeping {keep.sum()}")
 # 
 # To explore the structure of in-scanner experience reports, we first computed the Pearson’s correlation between the 11 in-scanner experience items.
 
-# In[10]:
+# In[ ]:
 
 
 # Compute correlation matrix
@@ -197,7 +197,7 @@ pval_ord.name         = 'pval'
 n_comps = corr_ord.shape[0]*(corr_ord.shape[0]-1)/2
 
 
-# In[ ]:
+# In[15]:
 
 
 # Plot: correlation heatmap with bold black outline for pBonf < 0.05
@@ -270,7 +270,7 @@ print('Saving source data for Figure 01B: SNYCQ correlation matrix with signific
 # |dimensionality|  {1,2,3}|
 # | perplexity | {5,9,10,13,15,18,20,30,40,50} |
 
-# In[18]:
+# In[16]:
 
 
 def choose_tsne_perplexity(X, random_state=RANDOM_STATE,n_components=[1,2,3]):
@@ -301,7 +301,7 @@ best_nc, best_perp, tw_table = choose_tsne_perplexity(X_scaled_kept_df.values, R
 
 # Now we show what were the values that maximized the trustworthiness of the T-SNE embeddings
 
-# In[19]:
+# In[17]:
 
 
 print(f"[t-SNE tuning] Selected perplexity = {best_perp}")
@@ -311,7 +311,7 @@ print(f"[t-SNE tuning] Trustworthiness = {tw_table['trustworthiness'].max()}")
 
 # ## 4.2. Compute T-SNE with optimal dimensionality and perplexity
 
-# In[20]:
+# In[18]:
 
 
 tsne = TSNE(
@@ -329,7 +329,7 @@ else:
 # 
 # To aid with the interpretation of how T-SNE dimensions relate to the original items in the SNYC survey, we modeled each of the SNYCQ items as a linear function of the three T-SNE coordinates. We then used these coefficients to draw biplot arrows depicting the directions of maximal change for each SNYCQ item in the 3D T-NSE embedding space.
 
-# In[21]:
+# In[19]:
 
 
 def compute_biplot_arrows(emb_df, features_df, feature_names):
@@ -362,7 +362,7 @@ def compute_biplot_arrows(emb_df, features_df, feature_names):
     return arrows_df
 
 
-# In[22]:
+# In[20]:
 
 
 tsne_arrows = compute_biplot_arrows(emb,X_raw_kept_df,SNYCQ_items)
@@ -374,14 +374,14 @@ tsne_arrows['beta_z'] = tsne_arrows['beta_z'] * 5
 
 # ## 4.4. Plot the T-SNE embedding colored by one SNYCQ item
 
-# In[23]:
+# In[21]:
 
 
 # Create a new DF with both th original values and the dimensions in T-SNE (for plotting purposes)
 emb_plus = pd.concat([emb, X_raw_kept_df], axis=1)
 
 
-# In[24]:
+# In[22]:
 
 
 tsne_camera_object = dict(
@@ -496,7 +496,7 @@ fig.write_html(osp.join('figures', 'FigureXX-SNYCQtsne_colorby_People.html'))
 # 
 # The next cell computes the GMM clustering for K = 2
 
-# In[26]:
+# In[23]:
 
 
 K          = 2
@@ -507,7 +507,7 @@ labels_gmm = proba.argmax(axis=1)
 
 # Now we do the same using KMeans for comparison
 
-# In[27]:
+# In[24]:
 
 
 km = KMeans(n_clusters=K, random_state=RANDOM_STATE, n_init=10).fit(X_scaled_kept_df.values)
@@ -520,7 +520,7 @@ labels_km = km.predict(X_scaled_kept_df.values)
 # 
 # 1. Compute the SI for each clustering result
 
-# In[28]:
+# In[25]:
 
 
 sil_gmm = silhouette_score(X_scaled_kept_df.values, labels_gmm)
@@ -529,7 +529,7 @@ sil_km  = silhouette_score(X_scaled_kept_df.values, labels_km)
 
 # 2. Compute the ARI comparing both methods
 
-# In[29]:
+# In[26]:
 
 
 ari_km_gmm = adjusted_rand_score(labels_km, labels_gmm)
@@ -537,7 +537,7 @@ ari_km_gmm = adjusted_rand_score(labels_km, labels_gmm)
 
 # 3. Print the computed statistics
 
-# In[30]:
+# In[27]:
 
 
 print(f"[GMM k=2 sph] silhouette={sil_gmm:.3f}")
@@ -551,7 +551,7 @@ print(f"[Sizes] GMM clusters: {np.bincount(labels_gmm)}")
 
 # ## 5.3. Bootstraing Analysis for GMM
 
-# In[31]:
+# In[28]:
 
 
 def subsample_labels(model, X, frac=0.8, seed=0):
@@ -591,14 +591,14 @@ print("Bootstrap ARI (GMM) mean±sd:    %.2f +/- %.2f" %(gm_mean_ari, gm_sd_ari)
 # 
 # One additional bonus of GMM over K-means is that GMM not being a hard clustering algorithm, it outputs cluster membershup probabilities. We will use these to detect scans with ambiguous membership. Such scans will not be included in the population differences analyses later on.
 
-# In[32]:
+# In[29]:
 
 
 proba_df = pd.DataFrame(proba, index=idx_kept, columns=['P(c1)','P(c2)'])
 proba_df.hvplot.hist('P(c1)', title='Probability Distribution for Membership in Cluster 1')
 
 
-# In[33]:
+# In[30]:
 
 
 # store probabilities & an ambiguity flag
@@ -608,7 +608,7 @@ ambiguity = np.maximum(1 - p1, p1) < (AMBIG_THRESH)
 
 # Save final cluster/sets labels in a new pandas dataframe: ```group_info_df```
 
-# In[34]:
+# In[31]:
 
 
 # Store that information with clear labels in a pandas Dataframe
@@ -642,7 +642,7 @@ print('++ INFO: Saved t-SNE embeddings with scaled features and group info to CS
 
 # ## 5.5. Plot the T-SNE embedding again, but this time with scans colored according to set membership
 
-# In[36]:
+# In[33]:
 
 
 tsne_camera_object = dict(
@@ -753,7 +753,7 @@ emb_plus[['TSNE1', 'TSNE2', 'TSNE3','Set Label']].to_csv('./source_data_files/fi
 
 # ## 6.1. Examination of differences in age distribution
 
-# In[43]:
+# In[34]:
 
 
 # Load Demographic Data
@@ -785,7 +785,7 @@ age_counts_per_group = age_counts_per_group.infer_objects()
 age_counts_per_group = age_counts_per_group.sort_values(by='Age Range', ascending=True)
 
 
-# In[44]:
+# In[35]:
 
 
 A = age_counts_per_group.set_index(['Group','Age Range']).loc['A',:]['# Scans']
@@ -794,7 +794,7 @@ W, w_p = wilcoxon(A,B, alternative='two-sided', method='exact')
 print('++ AGE ACROSS SETS: Wilcoxon = %.2f (p = %.2f)' % (W,w_p))
 
 
-# In[ ]:
+# In[36]:
 
 
 # Generate graph that will get later added to a Grid with information about all variables
@@ -835,7 +835,7 @@ save(
 
 # ## 6.2. Examination of differneces in gender distribution
 
-# In[51]:
+# In[37]:
 
 
 # Extract information about age
@@ -898,7 +898,7 @@ sex_counts_per_group.to_csv('./source_data_files/figure_01_j.csv')
 
 # ## 6.3. Examination of diffrences in head motion
 
-# In[57]:
+# In[38]:
 
 
 # Load motion information for each scan
@@ -912,7 +912,7 @@ U, u_p     = mannwhitneyu(mot_A,mot_B,alternative='two-sided')
 print('++ AGE ACROSS SETS: Mann-Whiteney U    = %.2f (p = %.2f)' % (U,u_p))
 
 
-# In[ ]:
+# In[39]:
 
 
 mot_A = mot_info.loc[scans_in_A,'Mean Rel Motion']
@@ -958,7 +958,7 @@ pd.concat([mot_A.reset_index(drop=True), mot_B.reset_index(drop=True)], axis=1, 
 # ## 6.4 Examination of Vigilance
 # 
 
-# In[65]:
+# In[40]:
 
 
 vigilance = SNYCQ_wVigilance['Vigilance']
@@ -972,7 +972,7 @@ U, u_p      = mannwhitneyu(vigilance_A,vigilance_B,alternative='two-sided')
 print('++ VIGILANCE ACROSS SETS: Mann-Whiteney U    = %.2f (p = %.2f)' % (U,u_p))
 
 
-# In[66]:
+# In[41]:
 
 
 vigilance_A      = vigilance.loc[scans_in_A]
@@ -1017,7 +1017,7 @@ pd.concat([vigilance_A.reset_index(drop=True), vigilance_B.reset_index(drop=True
 
 # ## 6.5. Examination of differences in SNYCQ items
 
-# In[69]:
+# In[42]:
 
 
 def cohens_d(x0, x1):
@@ -1082,7 +1082,7 @@ def calculate_stats_per_set(df, items, label_col='Set Label', method="bootstrap"
     return out_df
 
 
-# In[70]:
+# In[43]:
 
 
 non_ambiguous_scans = emb_plus[emb_plus['Set Label']!='Ambiguous'].index
@@ -1100,7 +1100,7 @@ table_02
 table_02.to_csv('./source_data_files/table_02.csv', float_format='%.2f')
 
 
-# In[72]:
+# In[ ]:
 
 
 layout                = pn.GridBox(ncols=4)
@@ -1121,6 +1121,13 @@ for item in items_in_descending_d:
     overlay = overlay.opts(show_legend=False,shared_axes=False, toolbar=None)
     layout.append(overlay)
 layout.save( osp.join('figures', 'Supplementary_Figure02.html'))
+
+
+# In[48]:
+
+
+SNYCQ.loc[set_a_scans].to_csv('./source_data_files/suppfig_02_parta.csv',index=False)
+SNYCQ.loc[set_b_scans].to_csv('./source_data_files/suppfig_02_partb.csv',index=False)
 
 
 # ![Supplementary Figure 02](./figures/Supplementary_Figure02.png)
@@ -1225,7 +1232,7 @@ plot.savefig('./figures/Figure01_F.svg', format='svg', bbox_inches='tight')
 # 
 # # Distribution of SNYCQ values (Supplementary Figure 1)
 
-# In[86]:
+# In[ ]:
 
 
 layout = None
@@ -1240,5 +1247,11 @@ hv.save(layout, osp.join('figures', 'Supplementary_Figure01.html'))
 
 
 # ![Supplementary Figure 01](./figures/Supplementary_Figure01.png)
+
+# In[51]:
+
+
+SNYCQ.to_csv('./source_data_files/suppfig_01.csv',index=False)
+
 
 # 
