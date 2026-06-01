@@ -174,10 +174,11 @@ for elt in ['T3p1','T2p58']:
         plot.savefig(osp.join('figures','Supplementary_Figure07_A.svg'), format='svg', bbox_inches='tight')
 
 
-# In[14]:
+# In[ ]:
 
 
 data['T3p1','SetA_gt_SetB'].to_csv('./source_data_files/figure_03_bc.csv')
+data['T2p58','SetA_gt_SetB'].to_csv('./source_data_files/suppfig_07_ab.csv')
 
 
 # | Edge Threshold (p<0.001) | Edge Threshold (p<0.005) |
@@ -251,6 +252,7 @@ save(
 
 
 hvplot_fc_nwlevel(data['T3p1','SetA_gt_SetB'], title='', add_net_colors=True, add_net_labels='both', mode='count', cmap='Greys', clim_max=clim_max, labels_text_color='Greys_r', return_data_only=True).to_csv('./source_data_files/figure_03_d.csv')
+hvplot_fc_nwlevel(data['T2p58','SetA_gt_SetB'], title='', add_net_colors=True, add_net_labels='both', mode='count', cmap='Greys', clim_max=clim_max, labels_text_color='Greys_r', return_data_only=True).to_csv('./source_data_files/suppfig_07_c.csv')
 
 
 # | Edge Threshold (p<0.001) | Edge Threshold (p<0.005) |
