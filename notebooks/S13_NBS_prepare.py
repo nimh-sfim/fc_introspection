@@ -208,6 +208,12 @@ print('++ INFO[%s]: Augmented design matrix saved to disk %s' % (ATLAS_NAME,DESI
 print('++ INFO[%s]: Augmented design matrix shape %s' % (ATLAS_NAME, str(DESING_MATRIX_SBJAWARE.shape)))
 
 
+# In[ ]:
+
+
+np.savetxt('./source_data_files/suppfig_06.csv',DESING_MATRIX_SBJAWARE,delimiter=',',fmt='%d')
+
+
 # In[14]:
 
 
