@@ -167,7 +167,7 @@ pd.concat([SNYCQ_to_plot_b,SNYCQ_to_plot],axis=1).to_csv('./source_data_files/fi
 
 # # 2. Load and Encode Basic Demographics
 
-# In[10]:
+# In[6]:
 
 
 # Extract final list of scans and subjects
@@ -175,7 +175,7 @@ scan_list = emb_plus.index.to_list()
 sbj_list  = list(emb_plus.index.get_level_values(level='Subject').unique()) 
 
 
-# In[11]:
+# In[7]:
 
 
 # Extract SNYCQ items
@@ -183,7 +183,7 @@ SNYCQ = emb_plus[['People','Positive','Negative','Past','Future','Myself','Intru
 SNYCQ_items = SNYCQ.columns
 
 
-# In[12]:
+# In[8]:
 
 
 # Load demographic data
@@ -197,7 +197,7 @@ demographics.head(3)
 # 
 # The age and gender are available in ```string``` form. They need to be converted to numerical for ICQF. The following cells do that and create the ```C``` or ```confounds``` matrix for ICQF
 
-# In[13]:
+# In[9]:
 
 
 # Convert age classes into numerical labels
@@ -207,7 +207,7 @@ age_translation_dict = {k:v for (k,v) in zip(ageclass,normal_ageclass)}
 print(age_translation_dict)
 
 
-# In[14]:
+# In[10]:
 
 
 # Convert Gender and Age into numerical labels
@@ -228,7 +228,7 @@ for sbj,run in scan_list:
 
 # Now, that everything is available we create the ```C``` matrix, which contains an intercept (all ones), age and its decreasing counterpart, gender and its oposite counterpart.
 
-# In[15]:
+# In[11]:
 
 
 confounds               = pd.DataFrame(index=SNYCQ.index,columns=['age','Gender (M)'])
@@ -317,7 +317,7 @@ with open('../resources/snycq/SNYCQ_icqf_results.pkl', 'wb') as file:
     pickle.dump(data_to_save, file)
 
 
-# In[16]:
+# In[12]:
 
 
 import pickle
@@ -333,7 +333,7 @@ clf = loaded_data['clf']
 
 # ## 3.3. Extract results obtainecd with optimal hyper-parameters
 
-# In[17]:
+# In[13]:
 
 
 DIM = clf.n_components
@@ -349,7 +349,7 @@ Qc = Qc[['Intercept','Age (younger)','Age (elder)','Gender (M)','Gender (F)']] #
 # ***
 # Plot the W matrix
 
-# In[18]:
+# In[14]:
 
 
 W_Supp_Fig = pd.concat([W, pd.DataFrame(index=W.index,columns=C.columns)],axis=1)
@@ -360,9 +360,15 @@ W_plot
 
 # ![W](./figures/Supplementary_Figure05_W.png)
 
+# In[21]:
+
+
+W_Supp_Fig.to_csv('./source_data_files/suppfig_05_b.csv',index=None,float_format='%.2f')
+
+
 # Plot the C matrix
 
-# In[19]:
+# In[22]:
 
 
 C_Supp_Fig = pd.concat([pd.DataFrame(index=C.index,columns=W.columns), C],axis=1)
@@ -373,9 +379,15 @@ C_plot
 
 # ![C](./figures/Supplementary_Figure05_C.png)
 
+# In[23]:
+
+
+C_Supp_Fig.to_csv('./source_data_files/suppfig_05_c.csv',index=None,float_format='%.2f')
+
+
 # Plot the Q matrix
 
-# In[20]:
+# In[24]:
 
 
 Q_Supp_Fig = pd.concat([Q, pd.DataFrame(index=Q.index,columns=C.columns)],axis=1)
@@ -386,9 +398,15 @@ Q_plot
 
 # ![Q](./figures/Supplementary_Figure05_Q.png)
 
+# In[25]:
+
+
+Q_Supp_Fig.to_csv('./source_data_files/suppfig_05_d.csv',index=None,float_format='%.2f')
+
+
 # Plot Qc
 
-# In[52]:
+# In[26]:
 
 
 Qc_Supp_Fig = pd.concat([pd.DataFrame(index=Qc.index,columns=Q.columns),Qc],axis=1)
@@ -398,6 +416,12 @@ Qc_plot
 
 
 # ![Qc](./figures/Supplementary_Figure05_Qc.png)
+
+# In[27]:
+
+
+Qc_Supp_Fig.to_csv('./source_data_files/suppfig_05_e.csv',index=None,float_format='%.2f')
+
 
 # ***
 # 
