@@ -1,0 +1,1401 @@
+,Question,Iteration,R
+0,Thought Pattern 1,0,0.4247
+1,Thought Pattern 1,1,0.4411
+2,Thought Pattern 1,2,0.4022
+3,Thought Pattern 1,3,0.4293
+4,Thought Pattern 1,4,0.4370
+5,Thought Pattern 1,5,0.4064
+6,Thought Pattern 1,6,0.4196
+7,Thought Pattern 1,7,0.3958
+8,Thought Pattern 1,8,0.4318
+9,Thought Pattern 1,9,0.4443
+10,Thought Pattern 1,10,0.4323
+11,Thought Pattern 1,11,0.3988
+12,Thought Pattern 1,12,0.4271
+13,Thought Pattern 1,13,0.4055
+14,Thought Pattern 1,14,0.4336
+15,Thought Pattern 1,15,0.4239
+16,Thought Pattern 1,16,0.4442
+17,Thought Pattern 1,17,0.4203
+18,Thought Pattern 1,18,0.4198
+19,Thought Pattern 1,19,0.4249
+20,Thought Pattern 1,20,0.4319
+21,Thought Pattern 1,21,0.4121
+22,Thought Pattern 1,22,0.4019
+23,Thought Pattern 1,23,0.4050
+24,Thought Pattern 1,24,0.4194
+25,Thought Pattern 1,25,0.4056
+26,Thought Pattern 1,26,0.4436
+27,Thought Pattern 1,27,0.4138
+28,Thought Pattern 1,28,0.4215
+29,Thought Pattern 1,29,0.4393
+30,Thought Pattern 1,30,0.3979
+31,Thought Pattern 1,31,0.4179
+32,Thought Pattern 1,32,0.4097
+33,Thought Pattern 1,33,0.4326
+34,Thought Pattern 1,34,0.3888
+35,Thought Pattern 1,35,0.4542
+36,Thought Pattern 1,36,0.4291
+37,Thought Pattern 1,37,0.4556
+38,Thought Pattern 1,38,0.4233
+39,Thought Pattern 1,39,0.4338
+40,Thought Pattern 1,40,0.4116
+41,Thought Pattern 1,41,0.4126
+42,Thought Pattern 1,42,0.4248
+43,Thought Pattern 1,43,0.4212
+44,Thought Pattern 1,44,0.4260
+45,Thought Pattern 1,45,0.3983
+46,Thought Pattern 1,46,0.4226
+47,Thought Pattern 1,47,0.4288
+48,Thought Pattern 1,48,0.4237
+49,Thought Pattern 1,49,0.4467
+50,Thought Pattern 1,50,0.4407
+51,Thought Pattern 1,51,0.4214
+52,Thought Pattern 1,52,0.3995
+53,Thought Pattern 1,53,0.4020
+54,Thought Pattern 1,54,0.4259
+55,Thought Pattern 1,55,0.4147
+56,Thought Pattern 1,56,0.4186
+57,Thought Pattern 1,57,0.4049
+58,Thought Pattern 1,58,0.4159
+59,Thought Pattern 1,59,0.4129
+60,Thought Pattern 1,60,0.4245
+61,Thought Pattern 1,61,0.4022
+62,Thought Pattern 1,62,0.4254
+63,Thought Pattern 1,63,0.4359
+64,Thought Pattern 1,64,0.4121
+65,Thought Pattern 1,65,0.4115
+66,Thought Pattern 1,66,0.4322
+67,Thought Pattern 1,67,0.4301
+68,Thought Pattern 1,68,0.4516
+69,Thought Pattern 1,69,0.4270
+70,Thought Pattern 1,70,0.4112
+71,Thought Pattern 1,71,0.4142
+72,Thought Pattern 1,72,0.4457
+73,Thought Pattern 1,73,0.4009
+74,Thought Pattern 1,74,0.4252
+75,Thought Pattern 1,75,0.4269
+76,Thought Pattern 1,76,0.3945
+77,Thought Pattern 1,77,0.4514
+78,Thought Pattern 1,78,0.4213
+79,Thought Pattern 1,79,0.4140
+80,Thought Pattern 1,80,0.4265
+81,Thought Pattern 1,81,0.4198
+82,Thought Pattern 1,82,0.4183
+83,Thought Pattern 1,83,0.4445
+84,Thought Pattern 1,84,0.4137
+85,Thought Pattern 1,85,0.4408
+86,Thought Pattern 1,86,0.4208
+87,Thought Pattern 1,87,0.4171
+88,Thought Pattern 1,88,0.4289
+89,Thought Pattern 1,89,0.4255
+90,Thought Pattern 1,90,0.4201
+91,Thought Pattern 1,91,0.4432
+92,Thought Pattern 1,92,0.4103
+93,Thought Pattern 1,93,0.3816
+94,Thought Pattern 1,94,0.4261
+95,Thought Pattern 1,95,0.4013
+96,Thought Pattern 1,96,0.4564
+97,Thought Pattern 1,97,0.4309
+98,Thought Pattern 1,98,0.4394
+99,Thought Pattern 1,99,0.4199
+100,Thought Pattern 2,0,0.3970
+101,Thought Pattern 2,1,0.4213
+102,Thought Pattern 2,2,0.3813
+103,Thought Pattern 2,3,0.3820
+104,Thought Pattern 2,4,0.4138
+105,Thought Pattern 2,5,0.4043
+106,Thought Pattern 2,6,0.3939
+107,Thought Pattern 2,7,0.4071
+108,Thought Pattern 2,8,0.4231
+109,Thought Pattern 2,9,0.4069
+110,Thought Pattern 2,10,0.3983
+111,Thought Pattern 2,11,0.3920
+112,Thought Pattern 2,12,0.3901
+113,Thought Pattern 2,13,0.3888
+114,Thought Pattern 2,14,0.3879
+115,Thought Pattern 2,15,0.4015
+116,Thought Pattern 2,16,0.4067
+117,Thought Pattern 2,17,0.3985
+118,Thought Pattern 2,18,0.4167
+119,Thought Pattern 2,19,0.4116
+120,Thought Pattern 2,20,0.4054
+121,Thought Pattern 2,21,0.3971
+122,Thought Pattern 2,22,0.4071
+123,Thought Pattern 2,23,0.3933
+124,Thought Pattern 2,24,0.4096
+125,Thought Pattern 2,25,0.3905
+126,Thought Pattern 2,26,0.4005
+127,Thought Pattern 2,27,0.4061
+128,Thought Pattern 2,28,0.4005
+129,Thought Pattern 2,29,0.4132
+130,Thought Pattern 2,30,0.4029
+131,Thought Pattern 2,31,0.4098
+132,Thought Pattern 2,32,0.4048
+133,Thought Pattern 2,33,0.4011
+134,Thought Pattern 2,34,0.3891
+135,Thought Pattern 2,35,0.4178
+136,Thought Pattern 2,36,0.3902
+137,Thought Pattern 2,37,0.3952
+138,Thought Pattern 2,38,0.4071
+139,Thought Pattern 2,39,0.4183
+140,Thought Pattern 2,40,0.3901
+141,Thought Pattern 2,41,0.4045
+142,Thought Pattern 2,42,0.4179
+143,Thought Pattern 2,43,0.4085
+144,Thought Pattern 2,44,0.4202
+145,Thought Pattern 2,45,0.3913
+146,Thought Pattern 2,46,0.3940
+147,Thought Pattern 2,47,0.4108
+148,Thought Pattern 2,48,0.4101
+149,Thought Pattern 2,49,0.4245
+150,Thought Pattern 2,50,0.4058
+151,Thought Pattern 2,51,0.3983
+152,Thought Pattern 2,52,0.4042
+153,Thought Pattern 2,53,0.4106
+154,Thought Pattern 2,54,0.4101
+155,Thought Pattern 2,55,0.4038
+156,Thought Pattern 2,56,0.4033
+157,Thought Pattern 2,57,0.4100
+158,Thought Pattern 2,58,0.4061
+159,Thought Pattern 2,59,0.4050
+160,Thought Pattern 2,60,0.4122
+161,Thought Pattern 2,61,0.3850
+162,Thought Pattern 2,62,0.3953
+163,Thought Pattern 2,63,0.4105
+164,Thought Pattern 2,64,0.3770
+165,Thought Pattern 2,65,0.4052
+166,Thought Pattern 2,66,0.4056
+167,Thought Pattern 2,67,0.4013
+168,Thought Pattern 2,68,0.4234
+169,Thought Pattern 2,69,0.3818
+170,Thought Pattern 2,70,0.3823
+171,Thought Pattern 2,71,0.4075
+172,Thought Pattern 2,72,0.4141
+173,Thought Pattern 2,73,0.3952
+174,Thought Pattern 2,74,0.4127
+175,Thought Pattern 2,75,0.4154
+176,Thought Pattern 2,76,0.3688
+177,Thought Pattern 2,77,0.4087
+178,Thought Pattern 2,78,0.4186
+179,Thought Pattern 2,79,0.3990
+180,Thought Pattern 2,80,0.3842
+181,Thought Pattern 2,81,0.4031
+182,Thought Pattern 2,82,0.4089
+183,Thought Pattern 2,83,0.3990
+184,Thought Pattern 2,84,0.4130
+185,Thought Pattern 2,85,0.3757
+186,Thought Pattern 2,86,0.4049
+187,Thought Pattern 2,87,0.3990
+188,Thought Pattern 2,88,0.4100
+189,Thought Pattern 2,89,0.4065
+190,Thought Pattern 2,90,0.3732
+191,Thought Pattern 2,91,0.3954
+192,Thought Pattern 2,92,0.3738
+193,Thought Pattern 2,93,0.3964
+194,Thought Pattern 2,94,0.4103
+195,Thought Pattern 2,95,0.4073
+196,Thought Pattern 2,96,0.4132
+197,Thought Pattern 2,97,0.3931
+198,Thought Pattern 2,98,0.4102
+199,Thought Pattern 2,99,0.4129
+200,Wakefulness,0,0.4372
+201,Wakefulness,1,0.4500
+202,Wakefulness,2,0.4368
+203,Wakefulness,3,0.4176
+204,Wakefulness,4,0.4342
+205,Wakefulness,5,0.4392
+206,Wakefulness,6,0.4298
+207,Wakefulness,7,0.4388
+208,Wakefulness,8,0.4396
+209,Wakefulness,9,0.4524
+210,Wakefulness,10,0.4329
+211,Wakefulness,11,0.4388
+212,Wakefulness,12,0.4416
+213,Wakefulness,13,0.4379
+214,Wakefulness,14,0.4494
+215,Wakefulness,15,0.4287
+216,Wakefulness,16,0.4556
+217,Wakefulness,17,0.4328
+218,Wakefulness,18,0.4301
+219,Wakefulness,19,0.4309
+220,Wakefulness,20,0.4426
+221,Wakefulness,21,0.4399
+222,Wakefulness,22,0.4352
+223,Wakefulness,23,0.4339
+224,Wakefulness,24,0.4318
+225,Wakefulness,25,0.4376
+226,Wakefulness,26,0.4350
+227,Wakefulness,27,0.4368
+228,Wakefulness,28,0.4308
+229,Wakefulness,29,0.4422
+230,Wakefulness,30,0.4257
+231,Wakefulness,31,0.4368
+232,Wakefulness,32,0.4324
+233,Wakefulness,33,0.4431
+234,Wakefulness,34,0.4296
+235,Wakefulness,35,0.4461
+236,Wakefulness,36,0.4411
+237,Wakefulness,37,0.4342
+238,Wakefulness,38,0.4327
+239,Wakefulness,39,0.4426
+240,Wakefulness,40,0.4282
+241,Wakefulness,41,0.4385
+242,Wakefulness,42,0.4446
+243,Wakefulness,43,0.4468
+244,Wakefulness,44,0.4385
+245,Wakefulness,45,0.4391
+246,Wakefulness,46,0.4477
+247,Wakefulness,47,0.4370
+248,Wakefulness,48,0.4420
+249,Wakefulness,49,0.4323
+250,Wakefulness,50,0.4452
+251,Wakefulness,51,0.4269
+252,Wakefulness,52,0.4480
+253,Wakefulness,53,0.4309
+254,Wakefulness,54,0.4393
+255,Wakefulness,55,0.4413
+256,Wakefulness,56,0.4448
+257,Wakefulness,57,0.4372
+258,Wakefulness,58,0.4432
+259,Wakefulness,59,0.4322
+260,Wakefulness,60,0.4299
+261,Wakefulness,61,0.4357
+262,Wakefulness,62,0.4325
+263,Wakefulness,63,0.4475
+264,Wakefulness,64,0.4356
+265,Wakefulness,65,0.4400
+266,Wakefulness,66,0.4482
+267,Wakefulness,67,0.4328
+268,Wakefulness,68,0.4432
+269,Wakefulness,69,0.4435
+270,Wakefulness,70,0.4413
+271,Wakefulness,71,0.4311
+272,Wakefulness,72,0.4379
+273,Wakefulness,73,0.4363
+274,Wakefulness,74,0.4442
+275,Wakefulness,75,0.4383
+276,Wakefulness,76,0.4345
+277,Wakefulness,77,0.4478
+278,Wakefulness,78,0.4484
+279,Wakefulness,79,0.4388
+280,Wakefulness,80,0.4327
+281,Wakefulness,81,0.4212
+282,Wakefulness,82,0.4511
+283,Wakefulness,83,0.4389
+284,Wakefulness,84,0.4375
+285,Wakefulness,85,0.4351
+286,Wakefulness,86,0.4482
+287,Wakefulness,87,0.4338
+288,Wakefulness,88,0.4481
+289,Wakefulness,89,0.4432
+290,Wakefulness,90,0.4434
+291,Wakefulness,91,0.4405
+292,Wakefulness,92,0.4378
+293,Wakefulness,93,0.4350
+294,Wakefulness,94,0.4461
+295,Wakefulness,95,0.4400
+296,Wakefulness,96,0.4363
+297,Wakefulness,97,0.4409
+298,Wakefulness,98,0.4415
+299,Wakefulness,99,0.4423
+300,Images,0,0.3586
+301,Images,1,0.3698
+302,Images,2,0.3744
+303,Images,3,0.3636
+304,Images,4,0.3861
+305,Images,5,0.3495
+306,Images,6,0.3917
+307,Images,7,0.3548
+308,Images,8,0.3604
+309,Images,9,0.3589
+310,Images,10,0.3633
+311,Images,11,0.3664
+312,Images,12,0.3882
+313,Images,13,0.3692
+314,Images,14,0.3657
+315,Images,15,0.3642
+316,Images,16,0.3621
+317,Images,17,0.3723
+318,Images,18,0.3807
+319,Images,19,0.3701
+320,Images,20,0.3526
+321,Images,21,0.3739
+322,Images,22,0.3681
+323,Images,23,0.3528
+324,Images,24,0.3748
+325,Images,25,0.3473
+326,Images,26,0.3738
+327,Images,27,0.3788
+328,Images,28,0.3798
+329,Images,29,0.3805
+330,Images,30,0.3640
+331,Images,31,0.3623
+332,Images,32,0.3819
+333,Images,33,0.3726
+334,Images,34,0.3573
+335,Images,35,0.3661
+336,Images,36,0.3655
+337,Images,37,0.3654
+338,Images,38,0.3697
+339,Images,39,0.3548
+340,Images,40,0.3498
+341,Images,41,0.3337
+342,Images,42,0.3784
+343,Images,43,0.3379
+344,Images,44,0.3700
+345,Images,45,0.3667
+346,Images,46,0.3680
+347,Images,47,0.3471
+348,Images,48,0.3847
+349,Images,49,0.3693
+350,Images,50,0.3901
+351,Images,51,0.3811
+352,Images,52,0.3589
+353,Images,53,0.3515
+354,Images,54,0.3677
+355,Images,55,0.3641
+356,Images,56,0.3503
+357,Images,57,0.3415
+358,Images,58,0.3615
+359,Images,59,0.3663
+360,Images,60,0.3975
+361,Images,61,0.3699
+362,Images,62,0.3633
+363,Images,63,0.3782
+364,Images,64,0.3398
+365,Images,65,0.3441
+366,Images,66,0.3676
+367,Images,67,0.3632
+368,Images,68,0.3799
+369,Images,69,0.3516
+370,Images,70,0.3457
+371,Images,71,0.3698
+372,Images,72,0.3630
+373,Images,73,0.3462
+374,Images,74,0.3746
+375,Images,75,0.3637
+376,Images,76,0.3611
+377,Images,77,0.3662
+378,Images,78,0.3753
+379,Images,79,0.3635
+380,Images,80,0.3508
+381,Images,81,0.3649
+382,Images,82,0.3566
+383,Images,83,0.3683
+384,Images,84,0.3791
+385,Images,85,0.3705
+386,Images,86,0.3769
+387,Images,87,0.3371
+388,Images,88,0.3832
+389,Images,89,0.3749
+390,Images,90,0.3410
+391,Images,91,0.3489
+392,Images,92,0.3834
+393,Images,93,0.3655
+394,Images,94,0.3661
+395,Images,95,0.3501
+396,Images,96,0.3922
+397,Images,97,0.3734
+398,Images,98,0.3719
+399,Images,99,0.3782
+400,Words,0,0.4306
+401,Words,1,0.4167
+402,Words,2,0.4228
+403,Words,3,0.4219
+404,Words,4,0.4191
+405,Words,5,0.4328
+406,Words,6,0.4426
+407,Words,7,0.4415
+408,Words,8,0.4039
+409,Words,9,0.4358
+410,Words,10,0.4503
+411,Words,11,0.4469
+412,Words,12,0.4500
+413,Words,13,0.4162
+414,Words,14,0.4579
+415,Words,15,0.4543
+416,Words,16,0.4545
+417,Words,17,0.4451
+418,Words,18,0.4057
+419,Words,19,0.4335
+420,Words,20,0.4316
+421,Words,21,0.4417
+422,Words,22,0.4078
+423,Words,23,0.4199
+424,Words,24,0.3922
+425,Words,25,0.4365
+426,Words,26,0.4366
+427,Words,27,0.4430
+428,Words,28,0.3895
+429,Words,29,0.4555
+430,Words,30,0.4043
+431,Words,31,0.4362
+432,Words,32,0.4328
+433,Words,33,0.4244
+434,Words,34,0.4256
+435,Words,35,0.4120
+436,Words,36,0.4579
+437,Words,37,0.4232
+438,Words,38,0.4216
+439,Words,39,0.4537
+440,Words,40,0.4475
+441,Words,41,0.4132
+442,Words,42,0.4390
+443,Words,43,0.4369
+444,Words,44,0.4448
+445,Words,45,0.4401
+446,Words,46,0.4258
+447,Words,47,0.4161
+448,Words,48,0.4342
+449,Words,49,0.4389
+450,Words,50,0.4328
+451,Words,51,0.4641
+452,Words,52,0.4223
+453,Words,53,0.4248
+454,Words,54,0.4359
+455,Words,55,0.4372
+456,Words,56,0.4281
+457,Words,57,0.4442
+458,Words,58,0.4465
+459,Words,59,0.4382
+460,Words,60,0.4629
+461,Words,61,0.4247
+462,Words,62,0.4331
+463,Words,63,0.4369
+464,Words,64,0.4324
+465,Words,65,0.4557
+466,Words,66,0.4492
+467,Words,67,0.4337
+468,Words,68,0.4662
+469,Words,69,0.4216
+470,Words,70,0.4381
+471,Words,71,0.4172
+472,Words,72,0.4474
+473,Words,73,0.4354
+474,Words,74,0.4255
+475,Words,75,0.4516
+476,Words,76,0.4229
+477,Words,77,0.4185
+478,Words,78,0.4433
+479,Words,79,0.4675
+480,Words,80,0.4251
+481,Words,81,0.4137
+482,Words,82,0.4310
+483,Words,83,0.4523
+484,Words,84,0.4119
+485,Words,85,0.4162
+486,Words,86,0.4436
+487,Words,87,0.4456
+488,Words,88,0.4244
+489,Words,89,0.4587
+490,Words,90,0.4196
+491,Words,91,0.4066
+492,Words,92,0.4471
+493,Words,93,0.4304
+494,Words,94,0.4568
+495,Words,95,0.4366
+496,Words,96,0.4361
+497,Words,97,0.4514
+498,Words,98,0.4402
+499,Words,99,0.4217
+500,People,0,0.3443
+501,People,1,0.3250
+502,People,2,0.3428
+503,People,3,0.3401
+504,People,4,0.3301
+505,People,5,0.3154
+506,People,6,0.3198
+507,People,7,0.3412
+508,People,8,0.3379
+509,People,9,0.3292
+510,People,10,0.3013
+511,People,11,0.3260
+512,People,12,0.3421
+513,People,13,0.3139
+514,People,14,0.3285
+515,People,15,0.3255
+516,People,16,0.3270
+517,People,17,0.2903
+518,People,18,0.3244
+519,People,19,0.3452
+520,People,20,0.3099
+521,People,21,0.3206
+522,People,22,0.2863
+523,People,23,0.2919
+524,People,24,0.2953
+525,People,25,0.3068
+526,People,26,0.3184
+527,People,27,0.3090
+528,People,28,0.2975
+529,People,29,0.3145
+530,People,30,0.2818
+531,People,31,0.3340
+532,People,32,0.3247
+533,People,33,0.3431
+534,People,34,0.3209
+535,People,35,0.3424
+536,People,36,0.3092
+537,People,37,0.3386
+538,People,38,0.3088
+539,People,39,0.3363
+540,People,40,0.3032
+541,People,41,0.3162
+542,People,42,0.3431
+543,People,43,0.3376
+544,People,44,0.3192
+545,People,45,0.3027
+546,People,46,0.3123
+547,People,47,0.3207
+548,People,48,0.3250
+549,People,49,0.3262
+550,People,50,0.3000
+551,People,51,0.3149
+552,People,52,0.3098
+553,People,53,0.3006
+554,People,54,0.3296
+555,People,55,0.3105
+556,People,56,0.3456
+557,People,57,0.3095
+558,People,58,0.3107
+559,People,59,0.3232
+560,People,60,0.3316
+561,People,61,0.3138
+562,People,62,0.3426
+563,People,63,0.3230
+564,People,64,0.3283
+565,People,65,0.3388
+566,People,66,0.3112
+567,People,67,0.3361
+568,People,68,0.3532
+569,People,69,0.3169
+570,People,70,0.3360
+571,People,71,0.3304
+572,People,72,0.3430
+573,People,73,0.3141
+574,People,74,0.3443
+575,People,75,0.3168
+576,People,76,0.3091
+577,People,77,0.3435
+578,People,78,0.3319
+579,People,79,0.3180
+580,People,80,0.3365
+581,People,81,0.3130
+582,People,82,0.3088
+583,People,83,0.3257
+584,People,84,0.3035
+585,People,85,0.3166
+586,People,86,0.3286
+587,People,87,0.3351
+588,People,88,0.3257
+589,People,89,0.3139
+590,People,90,0.3392
+591,People,91,0.3243
+592,People,92,0.3130
+593,People,93,0.2898
+594,People,94,0.3339
+595,People,95,0.3284
+596,People,96,0.3171
+597,People,97,0.3339
+598,People,98,0.3426
+599,People,99,0.3045
+600,Myself,0,0.3235
+601,Myself,1,0.3740
+602,Myself,2,0.3096
+603,Myself,3,0.3079
+604,Myself,4,0.3191
+605,Myself,5,0.3406
+606,Myself,6,0.3453
+607,Myself,7,0.3029
+608,Myself,8,0.3229
+609,Myself,9,0.3435
+610,Myself,10,0.3219
+611,Myself,11,0.3124
+612,Myself,12,0.3200
+613,Myself,13,0.3296
+614,Myself,14,0.3304
+615,Myself,15,0.3499
+616,Myself,16,0.3457
+617,Myself,17,0.3006
+618,Myself,18,0.3016
+619,Myself,19,0.3301
+620,Myself,20,0.3167
+621,Myself,21,0.3316
+622,Myself,22,0.3100
+623,Myself,23,0.3356
+624,Myself,24,0.3170
+625,Myself,25,0.3361
+626,Myself,26,0.3297
+627,Myself,27,0.3476
+628,Myself,28,0.3037
+629,Myself,29,0.3493
+630,Myself,30,0.3121
+631,Myself,31,0.3233
+632,Myself,32,0.3393
+633,Myself,33,0.2939
+634,Myself,34,0.3193
+635,Myself,35,0.3218
+636,Myself,36,0.3127
+637,Myself,37,0.3438
+638,Myself,38,0.3384
+639,Myself,39,0.3248
+640,Myself,40,0.3549
+641,Myself,41,0.3217
+642,Myself,42,0.3316
+643,Myself,43,0.3521
+644,Myself,44,0.3490
+645,Myself,45,0.3767
+646,Myself,46,0.2824
+647,Myself,47,0.3199
+648,Myself,48,0.3452
+649,Myself,49,0.3704
+650,Myself,50,0.3374
+651,Myself,51,0.3628
+652,Myself,52,0.3198
+653,Myself,53,0.3468
+654,Myself,54,0.3547
+655,Myself,55,0.3162
+656,Myself,56,0.3507
+657,Myself,57,0.3237
+658,Myself,58,0.3495
+659,Myself,59,0.3648
+660,Myself,60,0.3112
+661,Myself,61,0.3438
+662,Myself,62,0.3368
+663,Myself,63,0.3403
+664,Myself,64,0.3427
+665,Myself,65,0.3245
+666,Myself,66,0.3397
+667,Myself,67,0.3480
+668,Myself,68,0.3313
+669,Myself,69,0.3338
+670,Myself,70,0.3075
+671,Myself,71,0.3158
+672,Myself,72,0.3102
+673,Myself,73,0.3357
+674,Myself,74,0.3317
+675,Myself,75,0.3247
+676,Myself,76,0.3296
+677,Myself,77,0.3034
+678,Myself,78,0.2989
+679,Myself,79,0.3119
+680,Myself,80,0.3188
+681,Myself,81,0.3413
+682,Myself,82,0.3544
+683,Myself,83,0.3086
+684,Myself,84,0.3519
+685,Myself,85,0.3223
+686,Myself,86,0.3293
+687,Myself,87,0.2911
+688,Myself,88,0.3129
+689,Myself,89,0.3275
+690,Myself,90,0.3277
+691,Myself,91,0.3201
+692,Myself,92,0.3137
+693,Myself,93,0.3354
+694,Myself,94,0.3488
+695,Myself,95,0.3187
+696,Myself,96,0.3286
+697,Myself,97,0.3199
+698,Myself,98,0.3323
+699,Myself,99,0.3201
+700,Positive,0,0.3576
+701,Positive,1,0.3593
+702,Positive,2,0.3457
+703,Positive,3,0.3287
+704,Positive,4,0.3812
+705,Positive,5,0.3567
+706,Positive,6,0.3317
+707,Positive,7,0.3653
+708,Positive,8,0.3819
+709,Positive,9,0.3658
+710,Positive,10,0.3918
+711,Positive,11,0.3731
+712,Positive,12,0.3165
+713,Positive,13,0.3708
+714,Positive,14,0.3901
+715,Positive,15,0.3683
+716,Positive,16,0.3831
+717,Positive,17,0.3450
+718,Positive,18,0.3749
+719,Positive,19,0.3835
+720,Positive,20,0.3575
+721,Positive,21,0.3696
+722,Positive,22,0.3578
+723,Positive,23,0.3581
+724,Positive,24,0.3954
+725,Positive,25,0.3686
+726,Positive,26,0.3938
+727,Positive,27,0.3572
+728,Positive,28,0.3638
+729,Positive,29,0.3830
+730,Positive,30,0.3464
+731,Positive,31,0.3644
+732,Positive,32,0.3700
+733,Positive,33,0.3722
+734,Positive,34,0.3779
+735,Positive,35,0.3897
+736,Positive,36,0.3825
+737,Positive,37,0.3975
+738,Positive,38,0.3395
+739,Positive,39,0.3662
+740,Positive,40,0.3617
+741,Positive,41,0.3398
+742,Positive,42,0.3791
+743,Positive,43,0.3608
+744,Positive,44,0.4081
+745,Positive,45,0.3468
+746,Positive,46,0.3448
+747,Positive,47,0.3934
+748,Positive,48,0.3154
+749,Positive,49,0.3782
+750,Positive,50,0.3653
+751,Positive,51,0.3446
+752,Positive,52,0.3405
+753,Positive,53,0.3728
+754,Positive,54,0.3807
+755,Positive,55,0.3522
+756,Positive,56,0.3854
+757,Positive,57,0.4026
+758,Positive,58,0.3812
+759,Positive,59,0.3828
+760,Positive,60,0.3522
+761,Positive,61,0.3543
+762,Positive,62,0.3454
+763,Positive,63,0.3695
+764,Positive,64,0.3695
+765,Positive,65,0.3468
+766,Positive,66,0.3772
+767,Positive,67,0.3923
+768,Positive,68,0.3804
+769,Positive,69,0.3991
+770,Positive,70,0.3676
+771,Positive,71,0.3768
+772,Positive,72,0.3497
+773,Positive,73,0.3843
+774,Positive,74,0.3634
+775,Positive,75,0.3465
+776,Positive,76,0.3372
+777,Positive,77,0.3465
+778,Positive,78,0.3775
+779,Positive,79,0.3525
+780,Positive,80,0.3678
+781,Positive,81,0.3617
+782,Positive,82,0.3850
+783,Positive,83,0.3530
+784,Positive,84,0.3764
+785,Positive,85,0.3694
+786,Positive,86,0.3533
+787,Positive,87,0.3656
+788,Positive,88,0.3708
+789,Positive,89,0.3706
+790,Positive,90,0.3976
+791,Positive,91,0.3778
+792,Positive,92,0.3670
+793,Positive,93,0.3592
+794,Positive,94,0.3975
+795,Positive,95,0.3365
+796,Positive,96,0.3925
+797,Positive,97,0.3639
+798,Positive,98,0.3709
+799,Positive,99,0.3579
+800,Negative,0,0.3685
+801,Negative,1,0.3292
+802,Negative,2,0.3529
+803,Negative,3,0.3558
+804,Negative,4,0.3751
+805,Negative,5,0.3540
+806,Negative,6,0.3257
+807,Negative,7,0.3381
+808,Negative,8,0.3772
+809,Negative,9,0.3517
+810,Negative,10,0.3519
+811,Negative,11,0.3464
+812,Negative,12,0.3194
+813,Negative,13,0.3650
+814,Negative,14,0.3415
+815,Negative,15,0.3551
+816,Negative,16,0.3481
+817,Negative,17,0.3651
+818,Negative,18,0.3770
+819,Negative,19,0.3792
+820,Negative,20,0.3798
+821,Negative,21,0.3522
+822,Negative,22,0.3527
+823,Negative,23,0.3460
+824,Negative,24,0.3562
+825,Negative,25,0.3395
+826,Negative,26,0.3516
+827,Negative,27,0.3620
+828,Negative,28,0.3567
+829,Negative,29,0.3428
+830,Negative,30,0.3667
+831,Negative,31,0.3425
+832,Negative,32,0.3276
+833,Negative,33,0.3681
+834,Negative,34,0.3514
+835,Negative,35,0.3488
+836,Negative,36,0.3367
+837,Negative,37,0.3533
+838,Negative,38,0.3676
+839,Negative,39,0.3534
+840,Negative,40,0.3373
+841,Negative,41,0.3405
+842,Negative,42,0.3760
+843,Negative,43,0.3702
+844,Negative,44,0.3659
+845,Negative,45,0.3213
+846,Negative,46,0.3209
+847,Negative,47,0.3472
+848,Negative,48,0.3553
+849,Negative,49,0.3542
+850,Negative,50,0.3850
+851,Negative,51,0.3506
+852,Negative,52,0.3459
+853,Negative,53,0.3711
+854,Negative,54,0.3460
+855,Negative,55,0.3334
+856,Negative,56,0.3416
+857,Negative,57,0.3582
+858,Negative,58,0.3466
+859,Negative,59,0.3441
+860,Negative,60,0.3490
+861,Negative,61,0.3112
+862,Negative,62,0.3412
+863,Negative,63,0.3533
+864,Negative,64,0.3528
+865,Negative,65,0.3617
+866,Negative,66,0.3636
+867,Negative,67,0.3420
+868,Negative,68,0.3673
+869,Negative,69,0.3565
+870,Negative,70,0.3397
+871,Negative,71,0.3509
+872,Negative,72,0.3658
+873,Negative,73,0.3636
+874,Negative,74,0.3778
+875,Negative,75,0.3738
+876,Negative,76,0.3338
+877,Negative,77,0.3473
+878,Negative,78,0.3711
+879,Negative,79,0.3599
+880,Negative,80,0.3425
+881,Negative,81,0.3362
+882,Negative,82,0.3573
+883,Negative,83,0.3511
+884,Negative,84,0.3779
+885,Negative,85,0.3609
+886,Negative,86,0.3412
+887,Negative,87,0.3738
+888,Negative,88,0.3683
+889,Negative,89,0.3803
+890,Negative,90,0.3535
+891,Negative,91,0.3783
+892,Negative,92,0.3403
+893,Negative,93,0.3629
+894,Negative,94,0.3492
+895,Negative,95,0.3582
+896,Negative,96,0.3792
+897,Negative,97,0.3438
+898,Negative,98,0.3699
+899,Negative,99,0.3629
+900,Surroundings,0,0.3494
+901,Surroundings,1,0.3547
+902,Surroundings,2,0.3417
+903,Surroundings,3,0.3345
+904,Surroundings,4,0.3623
+905,Surroundings,5,0.3509
+906,Surroundings,6,0.3136
+907,Surroundings,7,0.3413
+908,Surroundings,8,0.3526
+909,Surroundings,9,0.3478
+910,Surroundings,10,0.3294
+911,Surroundings,11,0.3513
+912,Surroundings,12,0.3245
+913,Surroundings,13,0.3294
+914,Surroundings,14,0.3433
+915,Surroundings,15,0.3467
+916,Surroundings,16,0.3323
+917,Surroundings,17,0.3528
+918,Surroundings,18,0.3403
+919,Surroundings,19,0.3548
+920,Surroundings,20,0.3370
+921,Surroundings,21,0.3241
+922,Surroundings,22,0.3796
+923,Surroundings,23,0.3459
+924,Surroundings,24,0.3753
+925,Surroundings,25,0.3293
+926,Surroundings,26,0.3488
+927,Surroundings,27,0.3585
+928,Surroundings,28,0.3333
+929,Surroundings,29,0.3597
+930,Surroundings,30,0.3482
+931,Surroundings,31,0.3537
+932,Surroundings,32,0.3467
+933,Surroundings,33,0.3299
+934,Surroundings,34,0.3306
+935,Surroundings,35,0.3490
+936,Surroundings,36,0.3359
+937,Surroundings,37,0.3394
+938,Surroundings,38,0.3310
+939,Surroundings,39,0.3519
+940,Surroundings,40,0.3348
+941,Surroundings,41,0.3152
+942,Surroundings,42,0.3597
+943,Surroundings,43,0.3449
+944,Surroundings,44,0.3455
+945,Surroundings,45,0.3235
+946,Surroundings,46,0.3363
+947,Surroundings,47,0.3268
+948,Surroundings,48,0.3359
+949,Surroundings,49,0.3501
+950,Surroundings,50,0.3439
+951,Surroundings,51,0.3297
+952,Surroundings,52,0.3347
+953,Surroundings,53,0.3379
+954,Surroundings,54,0.3603
+955,Surroundings,55,0.3310
+956,Surroundings,56,0.3599
+957,Surroundings,57,0.3720
+958,Surroundings,58,0.3709
+959,Surroundings,59,0.3302
+960,Surroundings,60,0.3538
+961,Surroundings,61,0.3422
+962,Surroundings,62,0.3431
+963,Surroundings,63,0.3320
+964,Surroundings,64,0.3276
+965,Surroundings,65,0.3324
+966,Surroundings,66,0.3463
+967,Surroundings,67,0.3395
+968,Surroundings,68,0.3373
+969,Surroundings,69,0.3341
+970,Surroundings,70,0.3522
+971,Surroundings,71,0.3337
+972,Surroundings,72,0.3422
+973,Surroundings,73,0.3527
+974,Surroundings,74,0.3533
+975,Surroundings,75,0.3340
+976,Surroundings,76,0.3289
+977,Surroundings,77,0.3346
+978,Surroundings,78,0.3574
+979,Surroundings,79,0.3405
+980,Surroundings,80,0.3226
+981,Surroundings,81,0.3474
+982,Surroundings,82,0.3766
+983,Surroundings,83,0.3306
+984,Surroundings,84,0.3268
+985,Surroundings,85,0.3183
+986,Surroundings,86,0.3535
+987,Surroundings,87,0.3438
+988,Surroundings,88,0.3464
+989,Surroundings,89,0.3358
+990,Surroundings,90,0.3259
+991,Surroundings,91,0.3375
+992,Surroundings,92,0.3151
+993,Surroundings,93,0.3439
+994,Surroundings,94,0.3321
+995,Surroundings,95,0.3479
+996,Surroundings,96,0.3507
+997,Surroundings,97,0.3155
+998,Surroundings,98,0.3444
+999,Surroundings,99,0.3372
+1000,Intrusive,0,0.3529
+1001,Intrusive,1,0.3607
+1002,Intrusive,2,0.3847
+1003,Intrusive,3,0.3858
+1004,Intrusive,4,0.3453
+1005,Intrusive,5,0.3224
+1006,Intrusive,6,0.3600
+1007,Intrusive,7,0.3480
+1008,Intrusive,8,0.3864
+1009,Intrusive,9,0.3086
+1010,Intrusive,10,0.3708
+1011,Intrusive,11,0.3744
+1012,Intrusive,12,0.3532
+1013,Intrusive,13,0.3624
+1014,Intrusive,14,0.3989
+1015,Intrusive,15,0.3629
+1016,Intrusive,16,0.3741
+1017,Intrusive,17,0.3780
+1018,Intrusive,18,0.3799
+1019,Intrusive,19,0.3627
+1020,Intrusive,20,0.3405
+1021,Intrusive,21,0.3751
+1022,Intrusive,22,0.3748
+1023,Intrusive,23,0.3610
+1024,Intrusive,24,0.3981
+1025,Intrusive,25,0.3363
+1026,Intrusive,26,0.3826
+1027,Intrusive,27,0.3675
+1028,Intrusive,28,0.3621
+1029,Intrusive,29,0.3495
+1030,Intrusive,30,0.3923
+1031,Intrusive,31,0.3802
+1032,Intrusive,32,0.3752
+1033,Intrusive,33,0.3395
+1034,Intrusive,34,0.3770
+1035,Intrusive,35,0.4017
+1036,Intrusive,36,0.3813
+1037,Intrusive,37,0.3688
+1038,Intrusive,38,0.3604
+1039,Intrusive,39,0.3635
+1040,Intrusive,40,0.3517
+1041,Intrusive,41,0.3466
+1042,Intrusive,42,0.4005
+1043,Intrusive,43,0.3819
+1044,Intrusive,44,0.3820
+1045,Intrusive,45,0.3772
+1046,Intrusive,46,0.3855
+1047,Intrusive,47,0.3709
+1048,Intrusive,48,0.3635
+1049,Intrusive,49,0.3630
+1050,Intrusive,50,0.3772
+1051,Intrusive,51,0.3960
+1052,Intrusive,52,0.3722
+1053,Intrusive,53,0.3756
+1054,Intrusive,54,0.3783
+1055,Intrusive,55,0.3496
+1056,Intrusive,56,0.3895
+1057,Intrusive,57,0.3526
+1058,Intrusive,58,0.3590
+1059,Intrusive,59,0.3576
+1060,Intrusive,60,0.3627
+1061,Intrusive,61,0.3728
+1062,Intrusive,62,0.3656
+1063,Intrusive,63,0.3635
+1064,Intrusive,64,0.3851
+1065,Intrusive,65,0.3539
+1066,Intrusive,66,0.3707
+1067,Intrusive,67,0.3423
+1068,Intrusive,68,0.3737
+1069,Intrusive,69,0.3697
+1070,Intrusive,70,0.3763
+1071,Intrusive,71,0.3383
+1072,Intrusive,72,0.3736
+1073,Intrusive,73,0.3732
+1074,Intrusive,74,0.3607
+1075,Intrusive,75,0.3761
+1076,Intrusive,76,0.3304
+1077,Intrusive,77,0.3606
+1078,Intrusive,78,0.3802
+1079,Intrusive,79,0.3722
+1080,Intrusive,80,0.3579
+1081,Intrusive,81,0.3885
+1082,Intrusive,82,0.3730
+1083,Intrusive,83,0.3721
+1084,Intrusive,84,0.3613
+1085,Intrusive,85,0.3502
+1086,Intrusive,86,0.3787
+1087,Intrusive,87,0.3554
+1088,Intrusive,88,0.3604
+1089,Intrusive,89,0.3724
+1090,Intrusive,90,0.3983
+1091,Intrusive,91,0.3862
+1092,Intrusive,92,0.3716
+1093,Intrusive,93,0.3615
+1094,Intrusive,94,0.3540
+1095,Intrusive,95,0.3523
+1096,Intrusive,96,0.3935
+1097,Intrusive,97,0.3785
+1098,Intrusive,98,0.3564
+1099,Intrusive,99,0.3857
+1100,Future,0,0.2201
+1101,Future,1,0.2472
+1102,Future,2,0.1932
+1103,Future,3,0.2455
+1104,Future,4,0.1891
+1105,Future,5,0.2260
+1106,Future,6,0.2370
+1107,Future,7,0.2482
+1108,Future,8,0.2458
+1109,Future,9,0.2136
+1110,Future,10,0.2643
+1111,Future,11,0.1816
+1112,Future,12,0.2090
+1113,Future,13,0.2156
+1114,Future,14,0.2294
+1115,Future,15,0.2337
+1116,Future,16,0.2325
+1117,Future,17,0.2092
+1118,Future,18,0.1819
+1119,Future,19,0.2426
+1120,Future,20,0.2211
+1121,Future,21,0.2567
+1122,Future,22,0.2149
+1123,Future,23,0.2480
+1124,Future,24,0.2407
+1125,Future,25,0.2335
+1126,Future,26,0.2301
+1127,Future,27,0.2144
+1128,Future,28,0.2117
+1129,Future,29,0.1961
+1130,Future,30,0.2706
+1131,Future,31,0.2200
+1132,Future,32,0.2120
+1133,Future,33,0.2016
+1134,Future,34,0.2473
+1135,Future,35,0.1980
+1136,Future,36,0.2273
+1137,Future,37,0.2168
+1138,Future,38,0.2064
+1139,Future,39,0.2255
+1140,Future,40,0.2242
+1141,Future,41,0.2218
+1142,Future,42,0.2414
+1143,Future,43,0.2185
+1144,Future,44,0.2430
+1145,Future,45,0.2239
+1146,Future,46,0.2453
+1147,Future,47,0.2238
+1148,Future,48,0.2129
+1149,Future,49,0.2459
+1150,Future,50,0.2435
+1151,Future,51,0.2487
+1152,Future,52,0.2358
+1153,Future,53,0.2196
+1154,Future,54,0.2097
+1155,Future,55,0.2465
+1156,Future,56,0.2319
+1157,Future,57,0.2154
+1158,Future,58,0.2215
+1159,Future,59,0.1924
+1160,Future,60,0.2543
+1161,Future,61,0.2342
+1162,Future,62,0.2418
+1163,Future,63,0.2428
+1164,Future,64,0.2503
+1165,Future,65,0.2319
+1166,Future,66,0.2109
+1167,Future,67,0.2341
+1168,Future,68,0.2372
+1169,Future,69,0.2420
+1170,Future,70,0.2493
+1171,Future,71,0.1982
+1172,Future,72,0.2219
+1173,Future,73,0.2230
+1174,Future,74,0.2682
+1175,Future,75,0.2276
+1176,Future,76,0.2123
+1177,Future,77,0.2396
+1178,Future,78,0.2275
+1179,Future,79,0.2002
+1180,Future,80,0.2564
+1181,Future,81,0.2087
+1182,Future,82,0.2699
+1183,Future,83,0.2369
+1184,Future,84,0.2150
+1185,Future,85,0.2325
+1186,Future,86,0.2339
+1187,Future,87,0.2352
+1188,Future,88,0.2417
+1189,Future,89,0.2511
+1190,Future,90,0.2407
+1191,Future,91,0.2263
+1192,Future,92,0.2528
+1193,Future,93,0.2255
+1194,Future,94,0.2309
+1195,Future,95,0.2648
+1196,Future,96,0.2477
+1197,Future,97,0.2480
+1198,Future,98,0.2579
+1199,Future,99,0.1909
+1200,Past,0,0.3395
+1201,Past,1,0.3354
+1202,Past,2,0.3334
+1203,Past,3,0.3569
+1204,Past,4,0.3212
+1205,Past,5,0.3394
+1206,Past,6,0.3275
+1207,Past,7,0.3477
+1208,Past,8,0.3483
+1209,Past,9,0.3149
+1210,Past,10,0.3353
+1211,Past,11,0.3244
+1212,Past,12,0.3425
+1213,Past,13,0.3294
+1214,Past,14,0.3477
+1215,Past,15,0.3143
+1216,Past,16,0.3643
+1217,Past,17,0.3051
+1218,Past,18,0.3438
+1219,Past,19,0.3534
+1220,Past,20,0.3657
+1221,Past,21,0.3300
+1222,Past,22,0.3060
+1223,Past,23,0.3481
+1224,Past,24,0.3559
+1225,Past,25,0.3219
+1226,Past,26,0.3319
+1227,Past,27,0.3715
+1228,Past,28,0.3426
+1229,Past,29,0.3648
+1230,Past,30,0.3616
+1231,Past,31,0.3494
+1232,Past,32,0.3549
+1233,Past,33,0.3621
+1234,Past,34,0.3442
+1235,Past,35,0.3369
+1236,Past,36,0.3754
+1237,Past,37,0.3700
+1238,Past,38,0.3336
+1239,Past,39,0.3409
+1240,Past,40,0.3366
+1241,Past,41,0.3282
+1242,Past,42,0.3343
+1243,Past,43,0.3381
+1244,Past,44,0.3292
+1245,Past,45,0.3748
+1246,Past,46,0.3519
+1247,Past,47,0.3485
+1248,Past,48,0.2965
+1249,Past,49,0.3498
+1250,Past,50,0.3546
+1251,Past,51,0.3361
+1252,Past,52,0.3200
+1253,Past,53,0.3381
+1254,Past,54,0.3307
+1255,Past,55,0.3119
+1256,Past,56,0.3155
+1257,Past,57,0.3399
+1258,Past,58,0.3517
+1259,Past,59,0.3622
+1260,Past,60,0.3595
+1261,Past,61,0.3210
+1262,Past,62,0.3197
+1263,Past,63,0.3496
+1264,Past,64,0.3304
+1265,Past,65,0.3428
+1266,Past,66,0.3387
+1267,Past,67,0.3641
+1268,Past,68,0.3537
+1269,Past,69,0.3346
+1270,Past,70,0.3342
+1271,Past,71,0.3685
+1272,Past,72,0.3604
+1273,Past,73,0.3441
+1274,Past,74,0.3444
+1275,Past,75,0.3653
+1276,Past,76,0.3376
+1277,Past,77,0.3567
+1278,Past,78,0.3323
+1279,Past,79,0.3655
+1280,Past,80,0.3592
+1281,Past,81,0.3702
+1282,Past,82,0.3396
+1283,Past,83,0.3425
+1284,Past,84,0.3475
+1285,Past,85,0.3385
+1286,Past,86,0.3296
+1287,Past,87,0.3174
+1288,Past,88,0.3535
+1289,Past,89,0.3777
+1290,Past,90,0.3524
+1291,Past,91,0.3171
+1292,Past,92,0.3605
+1293,Past,93,0.3382
+1294,Past,94,0.3304
+1295,Past,95,0.3273
+1296,Past,96,0.3480
+1297,Past,97,0.3538
+1298,Past,98,0.2925
+1299,Past,99,0.3392
+1300,Specific,0,0.2924
+1301,Specific,1,0.2875
+1302,Specific,2,0.2503
+1303,Specific,3,0.2968
+1304,Specific,4,0.2617
+1305,Specific,5,0.2818
+1306,Specific,6,0.2974
+1307,Specific,7,0.2526
+1308,Specific,8,0.2602
+1309,Specific,9,0.2727
+1310,Specific,10,0.2977
+1311,Specific,11,0.2589
+1312,Specific,12,0.2640
+1313,Specific,13,0.2888
+1314,Specific,14,0.2885
+1315,Specific,15,0.2822
+1316,Specific,16,0.2614
+1317,Specific,17,0.2599
+1318,Specific,18,0.2649
+1319,Specific,19,0.2738
+1320,Specific,20,0.2820
+1321,Specific,21,0.3081
+1322,Specific,22,0.2704
+1323,Specific,23,0.2728
+1324,Specific,24,0.2530
+1325,Specific,25,0.2352
+1326,Specific,26,0.2707
+1327,Specific,27,0.3022
+1328,Specific,28,0.2664
+1329,Specific,29,0.2844
+1330,Specific,30,0.2787
+1331,Specific,31,0.2757
+1332,Specific,32,0.2458
+1333,Specific,33,0.2306
+1334,Specific,34,0.2636
+1335,Specific,35,0.3068
+1336,Specific,36,0.2695
+1337,Specific,37,0.2958
+1338,Specific,38,0.2814
+1339,Specific,39,0.2876
+1340,Specific,40,0.2503
+1341,Specific,41,0.2786
+1342,Specific,42,0.2640
+1343,Specific,43,0.2811
+1344,Specific,44,0.2679
+1345,Specific,45,0.2924
+1346,Specific,46,0.2720
+1347,Specific,47,0.3000
+1348,Specific,48,0.2810
+1349,Specific,49,0.2853
+1350,Specific,50,0.3036
+1351,Specific,51,0.2696
+1352,Specific,52,0.3009
+1353,Specific,53,0.2826
+1354,Specific,54,0.2957
+1355,Specific,55,0.2666
+1356,Specific,56,0.2543
+1357,Specific,57,0.2841
+1358,Specific,58,0.2731
+1359,Specific,59,0.2407
+1360,Specific,60,0.3084
+1361,Specific,61,0.2713
+1362,Specific,62,0.2880
+1363,Specific,63,0.2995
+1364,Specific,64,0.2755
+1365,Specific,65,0.2979
+1366,Specific,66,0.2975
+1367,Specific,67,0.2468
+1368,Specific,68,0.3017
+1369,Specific,69,0.2712
+1370,Specific,70,0.2872
+1371,Specific,71,0.2492
+1372,Specific,72,0.3083
+1373,Specific,73,0.2601
+1374,Specific,74,0.2540
+1375,Specific,75,0.2899
+1376,Specific,76,0.2968
+1377,Specific,77,0.3072
+1378,Specific,78,0.2909
+1379,Specific,79,0.2672
+1380,Specific,80,0.2611
+1381,Specific,81,0.2650
+1382,Specific,82,0.2802
+1383,Specific,83,0.3062
+1384,Specific,84,0.2673
+1385,Specific,85,0.2957
+1386,Specific,86,0.3128
+1387,Specific,87,0.2799
+1388,Specific,88,0.2726
+1389,Specific,89,0.2800
+1390,Specific,90,0.2831
+1391,Specific,91,0.2782
+1392,Specific,92,0.2511
+1393,Specific,93,0.2866
+1394,Specific,94,0.2862
+1395,Specific,95,0.2769
+1396,Specific,96,0.2980
+1397,Specific,97,0.2920
+1398,Specific,98,0.2684
+1399,Specific,99,0.2843
